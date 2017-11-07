@@ -1,0 +1,34 @@
+---------------------------------------------------------------------
+
+name:                      star
+version:                   0.0.0.1
+build-type:                Simple
+cabal-version:             >= 1.10
+category:                  Data
+author:                    Daniel Cartwright
+maintainer:                dcartwright@layer3com.com
+license:                   BSD3
+license-file:              LICENSE
+homepage:                  https://github.com/chessai/star#readme
+bug-reports:               https://github.com/chessai/star/issues
+synopsis:                  *-semirings
+description:               *-semirings and Kleene algebras, oh my!
+extra-source-files:        README.md
+tested-with:               GHC == 8.2.1
+
+---------------------------------------------------------------------
+
+source-repository head
+    type:                git
+    branch:              master
+    location:            https://github.com/chessai/star.git
+
+---------------------------------------------------------------------
+
+library
+    hs-source-dirs:        src
+    build-depends:         base       >= 4 && < 5
+    exposed-modules:       StarSemiring
+    default-language:      Haskell2010
+
+---------------------------------------------------------------------
