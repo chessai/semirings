@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 {-# OPTIONS_GHC -Wall #-}
 
 module Data.Semiring 
@@ -32,10 +34,16 @@ instance Semiring () where
   one       = ()
 
 instance Semiring a => Semiring [a] where
-  x `plus` y = x P.++ y
-  zero  = []
-  x `times` y = P.zipWith times x y
-  one   = [one]
+  zero = []
+  one  = [one]
+  
+  [] `plus` y = y
+  x `plus` [] = x
+  (x:xs) `plus` (y:ys) = (x `plus` y):(xs `plus` ys)
+  
+  [] `times` _ = []
+  _  `times` [] = []
+  (a:p) `times` (b:q) = (a `times` b):(P.map (a `times`) q `plus` P.map (`times` b) p `plus` (zero:(p `times` q)))
 
 instance (Semiring a, Semiring b) => Semiring (a,b) where
   zero = (zero,zero)
@@ -108,7 +116,6 @@ instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f
     (a1 `plus` a2, b1 `plus` b2, c1 `plus` c2, d1 `plus` d2, e1 `plus` e2, f1 `plus` f2, g1 `plus` g2, h1 `plus` h2, i1 `plus` i2, j1 `plus` j2)
   (a1,b1,c1,d1,e1,f1,g1,h1,i1,j1) `times` (a2,b2,c2,d2,e2,f2,g2,h2,i2,j2) =
     (a1 `times` a2, b1 `times` b2, c1 `times` c2, d1 `times` d2, e1 `times` e2, f1 `times` f2, g1 `times` g2,h1 `times` h2, i1 `times` i2, j1 `times` j2)
-
 
 instance Semiring Bool where
   plus  = (||)
