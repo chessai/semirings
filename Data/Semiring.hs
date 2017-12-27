@@ -6,9 +6,11 @@ module Data.Semiring
 
 import           Data.Bool (Bool(..), (||), (&&))
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
+import           Data.Tropical (Tropical(..))
+import qualified Data.Tropical as Trop
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
 import qualified Prelude as P
-import           Prelude (Double, Float)
+import           Prelude (Real(..), Double, Float)
 
 class Semiring a where
   {-# MINIMAL plus, zero, times, one #-}
@@ -16,6 +18,60 @@ class Semiring a where
   zero  :: a           -- ^ Additive Unital
   times :: a -> a -> a -- ^ Multiplicative Magma
   one   :: a           -- ^ Multiplicative Unital
+
+instance Semiring b => Semiring (a -> b) where
+  plus f g x  = f x `plus` g x
+  zero        = \_ -> zero
+  times f g x = f x `times` g x
+  one         = \_ -> one
+
+instance Semiring () where
+  plus _ _  = ()
+  zero      = ()
+  times _ _ = ()
+  one       = ()
+
+instance Semiring a => Semiring [a] where
+  x `plus` y = x P.++ y
+  zero  = []
+  x `times` y = P.zipWith times x y
+  one   = [one]
+
+instance (Semiring a, Semiring b) => Semiring (a,b) where
+  zero = (zero,zero)
+  one = (one,one)
+  (a1,b1) `plus` (a2,b2) =
+    (a1 `plus` a2, b1 `plus` b2)
+  (a1,b1) `times` (a2,b2) =
+    (a1 `times` a2, b1 `times` b2)
+
+instance (Semiring a, Semiring b, Semiring c) => Semiring (a,b,c) where
+  zero = (zero, zero, zero)
+  one = (one,one,one)
+  (a1,b1,c1) `plus` (a2,b2,c2) =
+    (a1 `plus` a2, b1 `plus` b2, c1 `plus` c2)
+  (a1,b1,c1) `times` (a2,b2,c2) =
+    (a1 `times` a2, b1 `times` b2, c1 `times` c2)
+
+instance (Semiring a, Semiring b, Semiring c, Semiring d) => Semiring (a,b,c,d) where
+  zero = (zero, zero, zero, zero)
+  one = (one, one, one, one)
+  (a1,b1,c1,d1) `plus` (a2,b2,c2,d2) =
+    (a1 `plus` a2, b1 `plus` b2, c1 `plus` c2, d1 `plus` d2)
+  (a1,b1,c1,d1) `times` (a2,b2,c2,d2) =
+    (a1 `times` a2, b1 `times` b2, c1 `times` c2, d1 `times` d2)
+
+instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e) => Semiring (a,b,c,d,e) where
+  zero = (zero, zero, zero, zero, zero)
+  one = (one, one, one, one, one)
+  (a1,b1,c1,d1,e1) `plus` (a2,b2,c2,d2,e2) =
+    (a1 `plus` a2, b1 `plus` b2, c1 `plus` c2, d1 `plus` d2, e1 `plus` e2)
+  (a1,b1,c1,d1,e1) `times` (a2,b2,c2,d2,e2) =
+    (a1 `times` a2, b1 `times` b2, c1 `times` c2, d1 `times` d2, e1 `times` e2)
+
+--instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f) => Semiring (a,b,c,d,e,f) where
+--  zero = (zero, zero, zero, zero, zero, zero)
+--  one  = (one, one, one, one, one, one)
 
 instance Semiring Bool where
   plus  = (||)
@@ -95,4 +151,8 @@ instance Semiring Word64 where
   times = (P.*)
   one   = 1
 
-
+instance Real t => Semiring (Tropical t) where
+  plus  = Trop.addT
+  zero  = Infinity
+  times = Trop.mulT
+  one   = Tropical 0
