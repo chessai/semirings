@@ -8,11 +8,9 @@ module Data.Semiring
 
 import           Data.Bool (Bool(..), (||), (&&))
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
-import           Data.Tropical (Tropical(..))
-import qualified Data.Tropical as Trop
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
 import qualified Prelude as P
-import           Prelude (Real(..), Double, Float)
+import           Prelude (Double, Float)
 
 class Semiring a where
   {-# MINIMAL plus, zero, times, one #-}
@@ -194,9 +192,3 @@ instance Semiring Word64 where
   zero  = 0
   times = (P.*)
   one   = 1
-
-instance Real t => Semiring (Tropical t) where
-  plus  = Trop.addT
-  zero  = Infinity
-  times = Trop.mulT
-  one   = Tropical 0
