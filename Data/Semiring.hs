@@ -1,13 +1,15 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 {-# OPTIONS_GHC -Wall #-}
 
 module Data.Semiring 
   ( Semiring(..)
+  , (+)
+  , (*)
   , (+++)
   , (***)
   , semisum
@@ -17,17 +19,17 @@ module Data.Semiring
   ) where
 
 import           Control.Applicative (Applicative(..), Const(..))
-import           Control.Category
 import           Data.Bool (Bool(..), (||), (&&))
 import           Data.Foldable (Foldable, foldr, foldr')
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
---import           Data.Maybe
 import           Data.Monoid
-import           Data.Semigroup
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
-import           GHC.Generics (Generic)
 import qualified Prelude as P
 import           Prelude (IO)
+
+(+), (*) :: Semiring a => a -> a -> a
+(+) = plus
+(*) = times
 
 (+++), (***) :: Semiring a => a -> a -> a
 (+++) = plus
@@ -119,7 +121,7 @@ instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f
     (a1 `plus` a2, b1 `plus` b2, c1 `plus` c2, d1 `plus` d2, e1 `plus` e2, f1 `plus` f2, g1 `plus` g2)
   (a1,b1,c1,d1,e1,f1,g1) `times` (a2,b2,c2,d2,e2,f2,g2) =
     (a1 `times` a2, b1 `times` b2, c1 `times` c2, d1 `times` d2, e1 `times` e2, f1 `times` f2, g1 `times` g2)
-    
+
 instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f, Semiring g, Semiring h) => Semiring (a,b,c,d,e,f,g,h) where
   zero = (zero, zero, zero, zero, zero, zero, zero, zero)
   one  = (one, one, one, one, one, one, one, one)
@@ -210,28 +212,6 @@ instance Semiring Word64 where
   times = (P.*)
   one   = 1
 
--- | Category-polymorphic monoid of endomorphisms under composition.
--- 
-newtype CatEndo c a
-  = CatEndo { appCatEndo :: a `c` a }
-  deriving (Generic)
-
-instance (Category c) => Semigroup (CatEndo c a) where
-  CatEndo f <> CatEndo g = CatEndo (f . g)
-
-instance (Category c) => Monoid (CatEndo c a) where
-  mempty = CatEndo id
-  mappend (CatEndo f) (CatEndo g) = CatEndo (f . g)
-
--- the constraint "Category c" doesn't actually get used here.
---deriving instance (Category c, Semiring a, Semiring (c a a)) => Semiring (CatEndo c a)
-
---instance (Category c, Semiring a) => Semiring (CatEndo c a) where
---  zero = CatEndo id
---  one  = CatEndo id
---  plus (CatEndo f) (CatEndo g) = CatEndo (f . g)
---  times (CatEndo f) (CatEndo g) = CatEndo (f . g)
-
 instance Semiring a => Semiring (IO a) where
   zero  = pure zero
   one   = pure one
@@ -244,7 +224,7 @@ instance Semiring a => Semiring (Dual a) where
   one = Dual one
   Dual x `times` Dual y = Dual (y `times` x)
 
-deriving instance Semiring a => Semiring (Endo a)
+deriving newtype instance Semiring a => Semiring (Endo a)
 
 instance (Applicative f, Semiring a) => Semiring (Alt f a) where
   zero  = Alt (pure zero)
@@ -257,3 +237,17 @@ instance Semiring a => Semiring (Const a b) where
   one  = Const one
   plus  (Const x) (Const y) = Const (x `plus`  y)
   times (Const x) (Const y) = Const (x `times` y)
+
+--instance Semiring a => Semiring (Set a) where
+--  zero  = Set.singleton zero
+--  one   = Set.empty
+--  plus  = Set.disjointUnion
+--  times = Set.cartesianProduct
+
+--instance Semiring a => Semiring (Map k a) where
+--
+--
+--
+--
+
+

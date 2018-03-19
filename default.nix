@@ -1,41 +1,35 @@
-{ package ? "star", compiler ? "ghc822" }:
-
-let
-  fetchNixpkgs = import ./nix/fetchNixpkgs.nix;
-  nixpkgs = fetchNixpkgs {
-    rev = "e5629dc51a313c3b99725616718d2deff49cd891"; 
-    sha256 = "0s3a65mswqds5395cqy9d4mj8d75vii2479y4dvyagamv1zh0zp6"; 
-  };
-  pkgs = import nixpkgs { config = {}; };
-  inherit (pkgs) haskell;
-
+{ package ? "semirings", compiler ? "ghc841" }:
+let fetchNixpkgs = import ./nix/fetchNixpkgs.nix;
+    nixpkgs = fetchNixpkgs {
+      rev = "c484079ac7b4cf003f6b09e64cde59cb9a98b923";
+      sha256 = "0sh4f8w30sya7vydwm86dni1ylz59hiq627df1dv1zg7riq036cw";
+      sha256unpacked = "0fc6y2yjlfbss7cq7lgah0xvlnyas5v3is9r5bxyyp7rkwlyvny4";
+    };
+    pkgs = import nixpkgs { config = {}; overlays = []; };
+    inherit (pkgs) haskell;
+ 
   filterPredicate = p: type:
     let path = baseNameOf p; in !(
-         (type == "directory" && path == "dist")
-      || (type == "symlink"   && path == "result")
-      || (type == "directory" && path == ".git")
-      || (type == "symlink"   && pkgs.lib.hasPrefix "result" path)
-      || pkgs.lib.hasSuffix "~" path
-      || pkgs.lib.hasSuffix ".o" path
-      || pkgs.lib.hasSuffix ".so" path
-      || pkgs.lib.hasSuffix ".nix" path);
-   
+       (type == "directory" && path == "dist")
+    || (type == "symlink"   && path == "result")
+    || (type == "directory" && path == ".git")
+    || (type == "symlink"   && pkgs.lib.hasPrefix "result" path)
+    || pkgs.lib.hasSuffix "~" path
+    || pkgs.lib.hasSuffix ".o" path
+    || pkgs.lib.hasSuffix ".so" path
+    || pkgs.lib.hasSuffix ".nix" path);
+    
   overrides = haskell.packages.${compiler}.override {
     overrides = self: super:
     with haskell.lib;
-    with { cp = file: (self.callPackage (./nix/haskell + "/${file}.nix") {});
-           build = name: path: self.callCabal2nix name (builtins.filterSource filterPredicate path) {};
-         };        
+    with { cp = file: (self.callPackage (./nix/haskell + "/${file}.nix") {}); 
+           build = name: path: self.callCabal2nix name (builtins.filterSource filterPredicate path) {}; 
+         };
     {
-      mkDerivation = args: super.mkDerivation (args // {
-        doCheck = pkgs.lib.elem args.pname [ ];
-        doHaddock = false;
-      });
-      star = build "star" ./.;
-
+      semirings = build "semirings" ./.;
     };
   };
 in rec {
   drv = overrides.${package};
-  star = if pkgs.lib.inNixShell then drv.env else drv;
+  semirings = if pkgs.lib.inNixShell then drv.env else drv;
 }
