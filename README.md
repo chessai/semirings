@@ -44,6 +44,6 @@ semirings themselves are useful as a way to express that a type is both an addit
 
 Some relevant reading material:
 
-http://stedolan.net/research/semirings.pdf
-http://r6.ca/blog/20110808T035622Z.html
-https://byorgey.wordpress.com/2016/04/05/the-network-reliability-problem-and-star-semirings/
+http://stedolan.net/research/semirings.pdf <br>
+http://r6.ca/blog/20110808T035622Z.html <br>
+https://byorgey.wordpress.com/2016/04/05/the-network-reliability-problem-and-star-semirings/ <br>
