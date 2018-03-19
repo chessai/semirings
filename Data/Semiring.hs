@@ -2,6 +2,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 {-# OPTIONS_GHC -Wall #-}
 
@@ -179,18 +180,6 @@ instance Semiring Int64 where
   times = (P.*)
   one   = 1
 
---instance Semiring Double where
---  plus  = (P.+)
---  zero  = 0
---  times = (P.*)
---  one   = 1
-
---instance Semiring Float where
---  plus  = (P.+)
---  zero  = 0
---  times = (P.*)
---  one   = 1
-
 instance Semiring Word where
   plus  = (P.+)
   zero  = 0
@@ -234,10 +223,14 @@ instance (Category c) => Monoid (CatEndo c a) where
   mempty = CatEndo id
   mappend (CatEndo f) (CatEndo g) = CatEndo (f . g)
 
-deriving instance (Category c, Semiring (c a a)) => Semiring (CatEndo c a)
+-- the constraint "Category c" doesn't actually get used here.
+--deriving instance (Category c, Semiring a, Semiring (c a a)) => Semiring (CatEndo c a)
 
 --instance (Category c, Semiring a) => Semiring (CatEndo c a) where
---  zero = 
+--  zero = CatEndo id
+--  one  = CatEndo id
+--  plus (CatEndo f) (CatEndo g) = CatEndo (f . g)
+--  times (CatEndo f) (CatEndo g) = CatEndo (f . g)
 
 instance Semiring a => Semiring (IO a) where
   zero  = pure zero
