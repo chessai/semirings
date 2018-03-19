@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -26,6 +27,7 @@ import           Data.Monoid
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
+import           GHC.Generics (Generic, Generic1)
 import qualified Prelude as P
 import           Prelude (IO, ($))
 
@@ -251,9 +253,13 @@ instance (P.Ord a, Semiring a) => Semiring (Set a) where
 
 -- | The type of polynomials in one variable
 newtype Poly  a   = Poly  [a]
+  deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
+            P.Functor, P.Applicative, P.Monad)
 
 -- | The type of polynomials in two variables
 newtype Poly2 a b = Poly2 [(a,b)]
+  deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
+            P.Functor)
 
 instance (Semiring a, Semiring b) => Semiring (Poly2 a b) where
   zero = Poly2 []
