@@ -1,25 +1,51 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators #-}
 
 {-# OPTIONS_GHC -Wall #-}
 
 module Data.Semiring 
   ( Semiring(..)
+  , (+++)
+  , (***)
+  , semisum
+  , semiprod
+  , semisum'
+  , semiprod'
   ) where
 
-import           Control.Applicative (Applicative(..))
+import           Control.Applicative (Applicative(..), Const(..))
+import           Control.Category
 import           Data.Bool (Bool(..), (||), (&&))
+import           Data.Foldable (Foldable, foldr, foldr')
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
-import           Data.Maybe
+--import           Data.Maybe
+import           Data.Monoid
+import           Data.Semigroup
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
+import           GHC.Generics (Generic)
 import qualified Prelude as P
-import           Prelude (Double, Float)
+import           Prelude (IO)
+
+(+++), (***) :: Semiring a => a -> a -> a
+(+++) = plus
+(***) = times
+
+semisum, semiprod :: (Foldable t, Semiring a) => t a -> a
+semisum  = foldr plus zero
+semiprod = foldr times one
+
+semisum', semiprod' :: (Foldable t, Semiring a) => t a -> a
+semisum'  = foldr' plus zero
+semiprod' = foldr' times one
 
 class Semiring a where
   {-# MINIMAL plus, zero, times, one #-}
-  plus  :: a -> a -> a -- ^ Additive Magma
-  zero  :: a           -- ^ Additive Unital
-  times :: a -> a -> a -- ^ Multiplicative Magma
-  one   :: a           -- ^ Multiplicative Unital
+  plus  :: a -> a -> a -- ^ Associative Additive Operation
+  zero  :: a           -- ^ Additive Unit
+  times :: a -> a -> a -- ^ Associative Multiplicative Operation
+  one   :: a           -- ^ Multiplicative Unit
 
 instance Semiring b => Semiring (a -> b) where
   plus f g x  = f x `plus` g x
@@ -153,17 +179,17 @@ instance Semiring Int64 where
   times = (P.*)
   one   = 1
 
-instance Semiring Double where
-  plus  = (P.+)
-  zero  = 0
-  times = (P.*)
-  one   = 1
+--instance Semiring Double where
+--  plus  = (P.+)
+--  zero  = 0
+--  times = (P.*)
+--  one   = 1
 
-instance Semiring Float where
-  plus  = (P.+)
-  zero  = 0
-  times = (P.*)
-  one   = 1
+--instance Semiring Float where
+--  plus  = (P.+)
+--  zero  = 0
+--  times = (P.*)
+--  one   = 1
 
 instance Semiring Word where
   plus  = (P.+)
@@ -195,18 +221,46 @@ instance Semiring Word64 where
   times = (P.*)
   one   = 1
 
-instance Semiring a => Semiring (Maybe a) where
-  zero = Just zero
-  one  = Just one
-  Nothing `plus` m = m
-  m `plus` Nothing = m
-  Just m1 `plus` Just m2 = Just (m1 `plus` m2)
-  Nothing `times` _ = Nothing
-  _ `times` Nothing = Nothing
-  Just m1 `times` Just m2 = Just (m1 `times` m2)
+-- | Category-polymorphic monoid of endomorphisms under composition.
+-- 
+newtype CatEndo c a
+  = CatEndo { appCatEndo :: a `c` a }
+  deriving (Generic)
 
-instance {-# OVERLAPPABLE #-} (Semiring a, Applicative f) => Semiring (f a) where
+instance (Category c) => Semigroup (CatEndo c a) where
+  CatEndo f <> CatEndo g = CatEndo (f . g)
+
+instance (Category c) => Monoid (CatEndo c a) where
+  mempty = CatEndo id
+  mappend (CatEndo f) (CatEndo g) = CatEndo (f . g)
+
+deriving instance (Category c, Semiring (c a a)) => Semiring (CatEndo c a)
+
+--instance (Category c, Semiring a) => Semiring (CatEndo c a) where
+--  zero = 
+
+instance Semiring a => Semiring (IO a) where
   zero  = pure zero
   one   = pure one
   plus  = liftA2 plus
   times = liftA2 times
+
+instance Semiring a => Semiring (Dual a) where
+  zero = Dual zero
+  Dual x `plus` Dual y = Dual (y `plus` x)
+  one = Dual one
+  Dual x `times` Dual y = Dual (y `times` x)
+
+deriving instance Semiring a => Semiring (Endo a)
+
+instance (Applicative f, Semiring a) => Semiring (Alt f a) where
+  zero  = Alt (pure zero)
+  one   = Alt (pure one)
+  plus  = liftA2 plus
+  times = liftA2 times
+
+instance Semiring a => Semiring (Const a b) where
+  zero = Const zero
+  one  = Const one
+  plus  (Const x) (Const y) = Const (x `plus`  y)
+  times (Const x) (Const y) = Const (x `times` y)

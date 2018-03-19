@@ -11,18 +11,13 @@ import Data.Word (Word, Word8, Word16, Word32, Word64)
 import qualified Prelude as P
 import Prelude (Num(..), Real(..), Double, Float, div, (/))
 
--- | star(x) = 1 + x * star(x)
---   star x = one `plus` (x `times` (star x))
---
 class (Semiring a) => Star a where
-  {-# MINIMAL star #-} 
+  {-# MINIMAL star | asterplus #-} 
   star :: a -> a
+  star a = one `plus` asterplus a
+
+  asterplus :: a -> a
+  asterplus a = a `times` star a
 
 instance Star Bool where
   star _ = True
-
-instance Star Double where
-  star d = 1 / (1 - d)
-
-instance Star Float where
-  star f = 1 / (1 - f)
