@@ -249,7 +249,7 @@ instance (P.Ord a, Semiring a) => Semiring (Set a) where
   zero  = Set.empty
   one   = Set.singleton one
   plus  = Set.union
-  times xs ys = Set.fromList $ times (Set.toList xs) (Set.toList ys)
+  times xs ys = Set.map (P.uncurry times) (Set.cartesianProduct xs ys)
 
 -- | The type of polynomials in one variable
 newtype Poly  a   = Poly  [a]
