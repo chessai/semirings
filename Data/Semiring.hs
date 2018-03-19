@@ -249,8 +249,25 @@ instance (P.Ord a, Semiring a) => Semiring (Set a) where
   plus  = Set.union
   times xs ys = Set.fromList $ times (Set.toList xs) (Set.toList ys)
 
--- The type of polynomials in one variable
-newtype Poly a = Poly { unPoly :: [a] }
+-- | The type of polynomials in one variable
+newtype Poly  a   = Poly  [a]
+
+-- | The type of polynomials in two variables
+newtype Poly2 a b = Poly2 [(a,b)]
+
+instance (Semiring a, Semiring b) => Semiring (Poly2 a b) where
+  zero = Poly2 []
+  one  = Poly2 [one]
+
+  plus (Poly2 []) y = y
+  plus x (Poly2 []) = x
+  plus (Poly2 xs) (Poly2 ys)
+    = Poly2 $ liftA2 plus xs ys
+
+  times (Poly2 []) _ = Poly2 []
+  times _ (Poly2 []) = Poly2 []
+  times (Poly2 (a:p)) (Poly2 (b:q))
+    = Poly2 $ (times a b) : (P.map (a `times`) q `plus` P.map (`times` b) p `plus` (zero : (p `times` q))) 
 
 instance Semiring a => Semiring (Poly a) where
   zero = Poly []
@@ -265,30 +282,3 @@ instance Semiring a => Semiring (Poly a) where
   times _ (Poly []) = Poly []
   times (Poly (a:p)) (Poly (b:q))
     = Poly $ (times a b) : (P.map (a `times`) q `plus` P.map (`times` b) p `plus` (zero : (p `times` q))) 
-
-
---instance (P.Ord k, Semiring a) => Semiring (M k a) where
---  zero = M (Map.empty) zero
---  one  = M (Map.singleton one) one
---  plus = union
---  times = P.undefined
-
---union :: (P.Ord k, Semiring v) => M k v -> M k v -> M k v
---union (M mp1 v1) (M mp2 v2) = M (Map.unionWith (+) mp1 mp2) (plus v1 v2)
-
---timesM :: (P.Ord k, Semiring v) => M k v -> M k v -> M k v
---timesM (M mp1 v1) (M mp2 v2) = M (Map.unionWith (*) mp1 mp2) (times v1 v2)
-
--- | Potentially infinite map
---data M k v
---  = M (Map k v) v  -- ^ If a lookup on the map returns Nothing,
-                   --   this is instead what is returned. This is
-                   --   what is meant by 'Infinite' map;
-                   --   'lookup' will return a value of type 'v'
-                   --   for all inputs.
-
--- Anything not in the map is the default value
---lookup :: P.Ord k => k -> M k v -> v
---lookup key (M imp dv) = case Map.lookup key imp of
---  Just v -> v
---  Nothing -> dv
