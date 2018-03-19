@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -22,9 +21,7 @@ import           Control.Applicative (Applicative(..), Const(..))
 import           Data.Bool (Bool(..), (||), (&&))
 import           Data.Foldable (Foldable, foldr, foldr')
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
-import           Data.Map (Map)
-import qualified Data.Map as Map
-import           Data.Maybe
+--import           Data.Maybe
 import           Data.Monoid
 import           Data.Set (Set)
 import qualified Data.Set as Set
@@ -76,11 +73,11 @@ instance Semiring a => Semiring [a] where
 
   [] `plus` y = y
   x `plus` [] = x
-  (x:xs) `plus` (y:ys) = (x `plus` y):(xs `plus` ys)
+  plus xs ys = liftA2 plus xs ys
 
   [] `times` _ = []
   _  `times` [] = []
-  (a:p) `times` (b:q) = (a `times` b):(P.map (a `times`) q `plus` P.map (`times` b) p `plus` (zero:(p `times` q)))
+  times xs ys = liftA2 times xs ys
 
 instance (Semiring a, Semiring b) => Semiring (a,b) where
   zero = (zero,zero)
@@ -250,8 +247,25 @@ instance (P.Ord a, Semiring a) => Semiring (Set a) where
   zero  = Set.empty
   one   = Set.singleton one
   plus  = Set.union
-  -- We don't want to use the instance for list here, because it explodes the size of the set. The list instance should probably be a 'Polynomial' newtype instance, tbh 
-  times xs ys = Set.fromList $ liftA2 (times) (Set.toList xs) (Set.toList ys)
+  times xs ys = Set.fromList $ times (Set.toList xs) (Set.toList ys)
+
+-- The type of polynomials in one variable
+newtype Poly a = Poly { unPoly :: [a] }
+
+instance Semiring a => Semiring (Poly a) where
+  zero = Poly []
+  one  = Poly [one]
+
+  plus (Poly []) y = y
+  plus x (Poly []) = x
+  plus (Poly xs) (Poly ys)
+    = Poly $ liftA2 plus xs ys
+ 
+  times (Poly []) _ = Poly []
+  times _ (Poly []) = Poly []
+  times (Poly (a:p)) (Poly (b:q))
+    = Poly $ (times a b) : (P.map (a `times`) q `plus` P.map (`times` b) p `plus` (zero : (p `times` q))) 
+
 
 --instance (P.Ord k, Semiring a) => Semiring (M k a) where
 --  zero = M (Map.empty) zero
