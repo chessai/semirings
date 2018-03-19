@@ -22,10 +22,18 @@ import           Control.Applicative (Applicative(..), Const(..))
 import           Data.Bool (Bool(..), (||), (&&))
 import           Data.Foldable (Foldable, foldr, foldr')
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
+import           Data.Map (Map)
+import qualified Data.Map as Map
+import           Data.Maybe
 import           Data.Monoid
+import           Data.Set (Set)
+import qualified Data.Set as Set
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
 import qualified Prelude as P
-import           Prelude (IO)
+import           Prelude (IO, ($))
+
+infixl 7 *, ***, `times`
+infixl 6 +, +++, `plus`
 
 (+), (*) :: Semiring a => a -> a -> a
 (+) = plus
@@ -238,16 +246,35 @@ instance Semiring a => Semiring (Const a b) where
   plus  (Const x) (Const y) = Const (x `plus`  y)
   times (Const x) (Const y) = Const (x `times` y)
 
---instance Semiring a => Semiring (Set a) where
---  zero  = Set.singleton zero
---  one   = Set.empty
---  plus  = Set.disjointUnion
---  times = Set.cartesianProduct
+instance (P.Ord a, Semiring a) => Semiring (Set a) where
+  zero  = Set.empty
+  one   = Set.singleton one
+  plus  = Set.union
+  -- We don't want to use the instance for list here, because it explodes the size of the set. The list instance should probably be a 'Polynomial' newtype instance, tbh 
+  times xs ys = Set.fromList $ liftA2 (times) (Set.toList xs) (Set.toList ys)
 
---instance Semiring a => Semiring (Map k a) where
---
---
---
---
+--instance (P.Ord k, Semiring a) => Semiring (M k a) where
+--  zero = M (Map.empty) zero
+--  one  = M (Map.singleton one) one
+--  plus = union
+--  times = P.undefined
 
+--union :: (P.Ord k, Semiring v) => M k v -> M k v -> M k v
+--union (M mp1 v1) (M mp2 v2) = M (Map.unionWith (+) mp1 mp2) (plus v1 v2)
 
+--timesM :: (P.Ord k, Semiring v) => M k v -> M k v -> M k v
+--timesM (M mp1 v1) (M mp2 v2) = M (Map.unionWith (*) mp1 mp2) (times v1 v2)
+
+-- | Potentially infinite map
+--data M k v
+--  = M (Map k v) v  -- ^ If a lookup on the map returns Nothing,
+                   --   this is instead what is returned. This is
+                   --   what is meant by 'Infinite' map;
+                   --   'lookup' will return a value of type 'v'
+                   --   for all inputs.
+
+-- Anything not in the map is the default value
+--lookup :: P.Ord k => k -> M k v -> v
+--lookup key (M imp dv) = case Map.lookup key imp of
+--  Just v -> v
+--  Nothing -> dv
