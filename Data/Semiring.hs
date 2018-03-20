@@ -8,6 +8,9 @@
 
 module Data.Semiring 
   ( Semiring(..)
+  , Poly(..)
+  , Poly2(..)
+  , Poly3(..)
   , (+)
   , (*)
   , (+++)
@@ -75,14 +78,6 @@ instance Semiring a => Semiring [a] where
 
   plus  = listPlus 
   times = listTimes
-
-  --[] `plus` y = y
-  --x `plus` [] = x
-  --plus xs ys = liftA2 plus xs ys
-
-  --[] `times` _ = []
-  --_  `times` [] = []
-  --times xs ys = liftA2 times xs ys
 
 instance (Semiring a, Semiring b) => Semiring (a,b) where
   zero = (zero,zero)
@@ -264,6 +259,11 @@ newtype Poly2 a b = Poly2 [(a,b)]
   deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
             P.Functor)
 
+-- | The type of polynomials in three variables
+newtype Poly3 a b c = Poly3 [(a,b,c)]
+  deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
+            P.Functor)
+
 listPlus :: Semiring a => [a] -> [a] -> [a]
 listPlus [] y = y
 listPlus x [] = x
@@ -280,6 +280,13 @@ polyTimes _ [] = []
 polyTimes (a:p) (b:q)
   = (times a b) : (P.map (a `times`) q `plus` P.map (`times` b) p `plus` (zero : (p `times` q))) 
 
+instance Semiring a => Semiring (Poly a) where
+  zero = Poly []
+  one  = Poly [one]
+
+  plus  (Poly x) (Poly y) = Poly $ listPlus  x y
+  times (Poly x) (Poly y) = Poly $ polyTimes x y
+
 instance (Semiring a, Semiring b) => Semiring (Poly2 a b) where
   zero = Poly2 []
   one  = Poly2 [one]
@@ -287,9 +294,9 @@ instance (Semiring a, Semiring b) => Semiring (Poly2 a b) where
   plus  (Poly2 x) (Poly2 y) = Poly2 $ listPlus  x y
   times (Poly2 x) (Poly2 y) = Poly2 $ polyTimes x y
 
-instance Semiring a => Semiring (Poly a) where
-  zero = Poly []
-  one  = Poly [one]
+instance (Semiring a, Semiring b, Semiring c) => Semiring (Poly3 a b c) where
+  zero = Poly3 []
+  one  = Poly3 [one]
 
-  plus  (Poly x) (Poly y) = Poly $ listPlus  x y
-  times (Poly x) (Poly y) = Poly $ polyTimes x y
+  plus  (Poly3 x) (Poly3 y) = Poly3 $ listPlus  x y
+  times (Poly3 x) (Poly3 y) = Poly3 $ polyTimes x y 
