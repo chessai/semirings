@@ -73,13 +73,16 @@ instance Semiring a => Semiring [a] where
   zero = []
   one  = [one]
 
-  [] `plus` y = y
-  x `plus` [] = x
-  plus xs ys = liftA2 plus xs ys
+  plus  = listPlus 
+  times = listTimes
 
-  [] `times` _ = []
-  _  `times` [] = []
-  times xs ys = liftA2 times xs ys
+  --[] `plus` y = y
+  --x `plus` [] = x
+  --plus xs ys = liftA2 plus xs ys
+
+  --[] `times` _ = []
+  --_  `times` [] = []
+  --times xs ys = liftA2 times xs ys
 
 instance (Semiring a, Semiring b) => Semiring (a,b) where
   zero = (zero,zero)
@@ -261,30 +264,32 @@ newtype Poly2 a b = Poly2 [(a,b)]
   deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
             P.Functor)
 
+listPlus :: Semiring a => [a] -> [a] -> [a]
+listPlus [] y = y
+listPlus x [] = x
+listPlus xs ys = liftA2 plus xs ys
+
+listTimes :: Semiring a => [a] -> [a] -> [a]
+listTimes [] _ = []
+listTimes _ [] = []
+listTimes xs ys = liftA2 times xs ys
+
+polyTimes :: Semiring a => [a] -> [a] -> [a]
+polyTimes [] _ = []
+polyTimes _ [] = []
+polyTimes (a:p) (b:q)
+  = (times a b) : (P.map (a `times`) q `plus` P.map (`times` b) p `plus` (zero : (p `times` q))) 
+
 instance (Semiring a, Semiring b) => Semiring (Poly2 a b) where
   zero = Poly2 []
   one  = Poly2 [one]
 
-  plus (Poly2 []) y = y
-  plus x (Poly2 []) = x
-  plus (Poly2 xs) (Poly2 ys)
-    = Poly2 $ liftA2 plus xs ys
-
-  times (Poly2 []) _ = Poly2 []
-  times _ (Poly2 []) = Poly2 []
-  times (Poly2 (a:p)) (Poly2 (b:q))
-    = Poly2 $ (times a b) : (P.map (a `times`) q `plus` P.map (`times` b) p `plus` (zero : (p `times` q))) 
+  plus  (Poly2 x) (Poly2 y) = Poly2 $ listPlus  x y
+  times (Poly2 x) (Poly2 y) = Poly2 $ polyTimes x y
 
 instance Semiring a => Semiring (Poly a) where
   zero = Poly []
   one  = Poly [one]
 
-  plus (Poly []) y = y
-  plus x (Poly []) = x
-  plus (Poly xs) (Poly ys)
-    = Poly $ liftA2 plus xs ys
- 
-  times (Poly []) _ = Poly []
-  times _ (Poly []) = Poly []
-  times (Poly (a:p)) (Poly (b:q))
-    = Poly $ (times a b) : (P.map (a `times`) q `plus` P.map (`times` b) p `plus` (zero : (p `times` q))) 
+  plus  (Poly x) (Poly y) = Poly $ listPlus  x y
+  times (Poly x) (Poly y) = Poly $ polyTimes x y
