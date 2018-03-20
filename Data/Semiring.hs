@@ -25,10 +25,11 @@ import           Control.Applicative (Applicative(..), Const(..))
 import           Data.Bool (Bool(..), (||), (&&))
 import           Data.Foldable (Foldable, foldr, foldr')
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
---import           Data.Maybe
 import           Data.Monoid
 import           Data.Set (Set)
 import qualified Data.Set as Set
+import           Data.Vector (Vector)
+import qualified Data.Vector as Vector
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
 import           GHC.Generics (Generic, Generic1)
 import qualified Prelude as P
@@ -78,6 +79,13 @@ instance Semiring a => Semiring [a] where
 
   plus  = listPlus 
   times = listTimes
+
+instance Semiring a => Semiring (Vector a) where
+  zero = Vector.empty
+  one  = Vector.singleton one
+
+  plus  = vectorPlus
+  times = vectorTimes
 
 instance (Semiring a, Semiring b) => Semiring (a,b) where
   zero = (zero,zero)
@@ -250,19 +258,34 @@ instance (P.Ord a, Semiring a) => Semiring (Set a) where
   times xs ys = Set.map (P.uncurry times) (Set.cartesianProduct xs ys)
 
 -- | The type of polynomials in one variable
-newtype Poly  a   = Poly  [a]
+newtype Poly  a   = Poly  (Vector a)
   deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
             P.Functor, P.Applicative, P.Monad)
 
 -- | The type of polynomials in two variables
-newtype Poly2 a b = Poly2 [(a,b)]
+newtype Poly2 a b = Poly2 (Vector (a,b))
   deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
             P.Functor)
 
 -- | The type of polynomials in three variables
-newtype Poly3 a b c = Poly3 [(a,b,c)]
+newtype Poly3 a b c = Poly3 (Vector (a,b,c))
   deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
             P.Functor)
+
+vectorPlus :: Semiring a => Vector a -> Vector a -> Vector a
+vectorPlus x y
+  = if Vector.null x then y else if Vector.null y then x else
+  liftA2 plus x y
+
+vectorTimes :: Semiring a => Vector a -> Vector a -> Vector a
+vectorTimes x y
+  = if Vector.null x then x else if Vector.null y then y else
+      Vector.cons (times a b) (Vector.map (a *) q + Vector.map (* b) p + (Vector.cons zero (p * q)))
+  where 
+    a = Vector.head x
+    b = Vector.head y
+    p = (\t d -> if Vector.null t then d else t) (Vector.tail x) (Vector.empty)
+    q = (\t d -> if Vector.null t then d else t) (Vector.tail y) (Vector.empty)
 
 listPlus :: Semiring a => [a] -> [a] -> [a]
 listPlus [] y = y
@@ -274,29 +297,23 @@ listTimes [] _ = []
 listTimes _ [] = []
 listTimes xs ys = liftA2 times xs ys
 
-polyTimes :: Semiring a => [a] -> [a] -> [a]
-polyTimes [] _ = []
-polyTimes _ [] = []
-polyTimes (a:p) (b:q)
-  = (times a b) : (P.map (a `times`) q `plus` P.map (`times` b) p `plus` (zero : (p `times` q))) 
-
 instance Semiring a => Semiring (Poly a) where
-  zero = Poly []
-  one  = Poly [one]
+  zero = Poly (Vector.empty)
+  one  = Poly (Vector.singleton one)
 
-  plus  (Poly x) (Poly y) = Poly $ listPlus  x y
-  times (Poly x) (Poly y) = Poly $ polyTimes x y
+  plus  (Poly x) (Poly y) = Poly $ vectorPlus  x y
+  times (Poly x) (Poly y) = Poly $ vectorTimes x y
 
 instance (Semiring a, Semiring b) => Semiring (Poly2 a b) where
-  zero = Poly2 []
-  one  = Poly2 [one]
+  zero = Poly2 (Vector.empty)
+  one  = Poly2 (Vector.singleton one)
 
-  plus  (Poly2 x) (Poly2 y) = Poly2 $ listPlus  x y
-  times (Poly2 x) (Poly2 y) = Poly2 $ polyTimes x y
+  plus  (Poly2 x) (Poly2 y) = Poly2 $ vectorPlus  x y
+  times (Poly2 x) (Poly2 y) = Poly2 $ vectorTimes x y
 
 instance (Semiring a, Semiring b, Semiring c) => Semiring (Poly3 a b c) where
-  zero = Poly3 []
-  one  = Poly3 [one]
+  zero = Poly3 (Vector.empty)
+  one  = Poly3 (Vector.singleton one)
 
-  plus  (Poly3 x) (Poly3 y) = Poly3 $ listPlus  x y
-  times (Poly3 x) (Poly3 y) = Poly3 $ polyTimes x y 
+  plus  (Poly3 x) (Poly3 y) = Poly3 $ vectorPlus  x y
+  times (Poly3 x) (Poly3 y) = Poly3 $ vectorTimes x y
