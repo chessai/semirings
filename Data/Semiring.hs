@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
@@ -21,20 +22,37 @@ module Data.Semiring
   , semiprod'
   ) where
 
+{-
+(1x^2 + 2x^1 + 3)
+*
+(0x^2 + 3x^1 + 7)
+-------------------
+(0x^4 + 3x^3 + 7x^2        )
++
+(0x^4 + 0x^3 + 6x^2 + 14x^1)
++
+(0x^4 + 0x^3 + 0x^2 +  9x^1 + 21)
+---------------------------------
+0x^4 + 3x^3 + 13x^2 + 23x + 21
+-}
+
 import           Control.Applicative (Applicative(..), Const(..))
+import           Data.Bits
 import           Data.Bool (Bool(..), (||), (&&))
+import           Data.Complex (Complex(..))
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
+import           Data.Maybe
 import           Data.Monoid
 import           Data.Set (Set)
 import qualified Data.Set as Set
-import           Data.Vector (Vector)
+import           Data.Vector (Vector, (!))
 import qualified Data.Vector as Vector
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
 import           GHC.Generics (Generic, Generic1)
 import qualified Prelude as P
-import           Prelude (IO, ($))
+import           Prelude (IO, ($), (.))
 
 infixl 7 *, ***, `times`
 infixl 6 +, +++, `plus`
@@ -62,6 +80,10 @@ class Semiring a where
   times :: a -> a -> a -- ^ Associative Multiplicative Operation
   one   :: a           -- ^ Multiplicative Unit
 
+class Semiring a => Ring a where
+  {-# MINIMAL negate #-} 
+  negate :: a -> a
+
 instance Semiring b => Semiring (a -> b) where
   plus f g x  = f x `plus` g x
   zero        = \_ -> zero
@@ -80,6 +102,24 @@ instance Semiring a => Semiring [a] where
 
   plus  = listPlus 
   times = listTimes
+
+listPlus :: Semiring a => [a] -> [a] -> [a]
+listPlus [] y = y
+listPlus x [] = x
+listPlus xs ys = liftA2 plus xs ys
+
+listTimes :: Semiring a => [a] -> [a] -> [a]
+listTimes [] _ = []
+listTimes _ [] = []
+listTimes xs ys = liftA2 times xs ys
+
+instance Ring a => Semiring (Complex a) where
+  zero = zero :+ zero
+  one  = one  :+ zero
+
+  plus  (x :+ y) (x' :+ y') = (plus x x') :+ (plus y y')
+  times (x :+ y) (x' :+ y')
+    = (x * x' + (negate (y * y'))) :+ (x * y' + y * x')
 
 instance Semiring a => Semiring (Vector a) where
   zero = Vector.empty
@@ -240,6 +280,7 @@ instance Semiring a => Semiring (Dual a) where
 
 deriving newtype instance Semiring a => Semiring (Endo a)
 
+-- this should be wrapped applicative
 instance (Applicative f, Semiring a) => Semiring (Alt f a) where
   zero  = Alt (pure zero)
   one   = Alt (pure one)
@@ -273,27 +314,6 @@ newtype Poly3 a b c = Poly3 (Vector (a,b,c))
   deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
             P.Functor)
 
--- potentially useful
-genPlus :: (Foldable t, Applicative t, Semiring a) => t a -> t a -> t a
-genPlus x y
-  = if Foldable.null x then y else if Foldable.null y then x else
-  liftA2 plus x y
-
--- potentially useful
-genTimes :: (Foldable t, P.Functor t, Semiring a, Semiring (t a))
-         => (a -> t a -> t a) -- ^ cons operator
-         -> ([a] -> t a)      -- ^ fromList (get rid of this) 
-         -> t a -> t a -> t a -- ^ times
-genTimes cons fl x y
-  = if Foldable.null x then x else if Foldable.null y then y else
-  cons (times a b) (P.fmap (a *) q + P.fmap (* b) p + (cons zero (p * q)))
-  where
-    a = Foldable.foldr (\h _ -> h) zero x
-    b = Foldable.foldr (\h _ -> h) zero y
-    p = (\t d -> if Foldable.null t then d else t) (fl $ P.tail $ Foldable.toList x) zero
-    q = (\t d -> if Foldable.null t then d else t) (fl $ P.tail $ Foldable.toList y) zero
-
-
 vectorPlus :: Semiring a => Vector a -> Vector a -> Vector a
 vectorPlus x y
   = if Vector.null x then y else if Vector.null y then x else
@@ -302,22 +322,44 @@ vectorPlus x y
 vectorTimes :: Semiring a => Vector a -> Vector a -> Vector a
 vectorTimes x y
   = if Vector.null x then x else if Vector.null y then y else
-      Vector.cons (times a b) (Vector.map (a *) q + Vector.map (* b) p + (Vector.cons zero (p * q)))
-  where 
-    a = Vector.head x
-    b = Vector.head y
-    p = (\t d -> if Vector.null t then d else t) (Vector.tail x) (Vector.empty)
-    q = (\t d -> if Vector.null t then d else t) (Vector.tail y) (Vector.empty)
+  liftA2 times x y
 
-listPlus :: Semiring a => [a] -> [a] -> [a]
-listPlus [] y = y
-listPlus x [] = x
-listPlus xs ys = liftA2 plus xs ys
+bitrev :: Int -> Vector Int
+bitrev n =
+  let nbits = log2 n
+      bs = Vector.generate nbits P.id
+      onebit i r b = if testBit i b then setBit r (nbits P.- 1 P.- b) else r
+  in Vector.generate n (\i -> Vector.foldl' (onebit i) 0 bs)
 
-listTimes :: Semiring a => [a] -> [a] -> [a]
-listTimes [] _ = []
-listTimes _ [] = []
-listTimes xs ys = liftA2 times xs ys
+log2 :: Int -> Int
+log2 = go (-1)
+  where
+    go !p q
+      | q P.<= 0 = p
+      | P.otherwise = go (p + 1) (q `shiftR` 1)
+
+fft, ifft :: Ring a => Vector a -> Vector a
+fft  = P.undefined
+ifft = P.undefined
+
+{-
+fft :: Vector (Complex P.Double) -> Vector (Complex P.Double)
+fft xs =
+  if Vector.null xs
+    then Vector.empty
+    else if len P.== 2
+      then dft xs
+      else go len ys zs (Vector.generate (len * 2 P.- 1) id)
+  where
+    (ys,zs) = ((fft `con` fft) . deinterleave) xs
+    len = Vector.length xs
+    go = P.undefined
+    deinterleave = P.undefined
+    con = P.undefined
+
+dft :: Vector (Complex P.Double) -> Vector (Complex P.Double)
+dft xs = undefined
+-}
 
 instance Semiring a => Semiring (Poly a) where
   zero = Poly (Vector.empty)
