@@ -23,7 +23,8 @@ module Data.Semiring
 
 import           Control.Applicative (Applicative(..), Const(..))
 import           Data.Bool (Bool(..), (||), (&&))
-import           Data.Foldable (Foldable, foldr, foldr')
+import           Data.Foldable (Foldable)
+import qualified Data.Foldable as Foldable
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
 import           Data.Monoid
 import           Data.Set (Set)
@@ -47,12 +48,12 @@ infixl 6 +, +++, `plus`
 (***) = times
 
 semisum, semiprod :: (Foldable t, Semiring a) => t a -> a
-semisum  = foldr plus zero
-semiprod = foldr times one
+semisum  = Foldable.foldr plus zero
+semiprod = Foldable.foldr times one
 
 semisum', semiprod' :: (Foldable t, Semiring a) => t a -> a
-semisum'  = foldr' plus zero
-semiprod' = foldr' times one
+semisum'  = Foldable.foldr' plus zero
+semiprod' = Foldable.foldr' times one
 
 class Semiring a where
   {-# MINIMAL plus, zero, times, one #-}
@@ -271,6 +272,27 @@ newtype Poly2 a b = Poly2 (Vector (a,b))
 newtype Poly3 a b c = Poly3 (Vector (a,b,c))
   deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
             P.Functor)
+
+-- potentially useful
+genPlus :: (Foldable t, Applicative t, Semiring a) => t a -> t a -> t a
+genPlus x y
+  = if Foldable.null x then y else if Foldable.null y then x else
+  liftA2 plus x y
+
+-- potentially useful
+genTimes :: (Foldable t, P.Functor t, Semiring a, Semiring (t a))
+         => (a -> t a -> t a) -- ^ cons operator
+         -> ([a] -> t a)      -- ^ fromList (get rid of this) 
+         -> t a -> t a -> t a -- ^ times
+genTimes cons fl x y
+  = if Foldable.null x then x else if Foldable.null y then y else
+  cons (times a b) (P.fmap (a *) q + P.fmap (* b) p + (cons zero (p * q)))
+  where
+    a = Foldable.foldr (\h _ -> h) zero x
+    b = Foldable.foldr (\h _ -> h) zero y
+    p = (\t d -> if Foldable.null t then d else t) (fl $ P.tail $ Foldable.toList x) zero
+    q = (\t d -> if Foldable.null t then d else t) (fl $ P.tail $ Foldable.toList y) zero
+
 
 vectorPlus :: Semiring a => Vector a -> Vector a -> Vector a
 vectorPlus x y
