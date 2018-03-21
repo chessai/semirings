@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
@@ -37,7 +38,7 @@ import qualified Data.Vector as Vector
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
 import           GHC.Generics (Generic, Generic1)
 import qualified Prelude as P
-import           Prelude (IO, ($))
+import           Prelude (IO, ($), (.), id)
 
 infixl 7 *, ***, `times`
 infixl 6 +, +++, `plus`
@@ -284,10 +285,16 @@ instance (P.Ord a, Semiring a) => Semiring (Set a) where
   plus  = Set.union
   times xs ys = Set.map (P.uncurry times) (Set.cartesianProduct xs ys)
 
+polyJoin :: Semiring a => Poly (Poly a) -> Poly a
+polyJoin (Poly x) = collapse x
+
+collapse :: Semiring a => Vector (Poly a) -> Poly a
+collapse = Foldable.foldr composePoly zero
+
 -- | The type of polynomials in one variable
 newtype Poly  a   = Poly  (Vector a)
   deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
-            P.Functor, P.Applicative, P.Monad)
+            P.Functor, P.Foldable)
 
 -- | The type of polynomials in two variables
 newtype Poly2 a b = Poly2 (Vector (a,b))
@@ -298,6 +305,20 @@ newtype Poly2 a b = Poly2 (Vector (a,b))
 newtype Poly3 a b c = Poly3 (Vector (a,b,c))
   deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
             P.Functor)
+
+instance Applicative Poly where
+  pure = Poly . Vector.singleton
+  Poly f <*> Poly v = Poly $ Vector.zipWith id f v
+
+composePoly :: Semiring a => Poly a -> Poly a -> Poly a
+composePoly (Poly x) y = horner y (P.fmap (Poly . Vector.singleton) x)
+
+--instance P.Monad Poly where
+--  p >>= f = polyJoin (P.fmap f p)
+
+-- | Horner's scheme for evaluating a polynomial in a semiring
+horner :: (Semiring a, Foldable t) => a -> t a -> a
+horner x = Foldable.foldr (\c val -> c + x * val) zero
 
 vectorPlus :: Semiring a => Vector a -> Vector a -> Vector a
 vectorPlus x y
