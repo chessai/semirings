@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -6,13 +7,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -fno-warn-missing-methods #-}
 
 module Data.Semiring 
   ( Semiring(..)
-  , Poly(..)
-  , Poly2(..)
-  , Poly3(..)
   , (+)
   , (*)
   , (+++)
@@ -21,24 +19,41 @@ module Data.Semiring
   , semiprod
   , semisum'
   , semiprod'
+  , WrappedApplicative(..) 
   ) where
 
-import           Control.Applicative (Applicative(..), Const(..))
+import           Control.Monad (MonadPlus)
+import           Control.Applicative (Alternative(..), Applicative(..), Const(..))
 import           Data.Bool (Bool(..), (||), (&&))
-import           Data.Complex (Complex(..))
+import           Data.Fixed (Fixed, HasResolution)
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
+import           Data.Functor.Identity (Identity(..))
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
 --import           Data.Maybe
 import           Data.Monoid
+import           Data.Ratio (Ratio)
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
+import           Foreign.C.Types
+  (CChar, CClock, CDouble, CFloat, CInt,
+   CIntMax, CIntPtr, CLLong, CLong,
+   CPtrdiff, CSChar, CSUSeconds, CShort,
+   CSigAtomic, CSize, CTime, CUChar, CUInt,
+   CUIntMax, CUIntPtr, CULLong, CULong,
+   CUSeconds, CUShort, CWchar)
+import           Foreign.Ptr (IntPtr, WordPtr)
 import           GHC.Generics (Generic, Generic1)
+import           Numeric.Natural (Natural)
 import qualified Prelude as P
-import           Prelude (IO, ($), (.), id)
+import           Prelude (IO, Integral, Integer, Float, Double)
+import           System.Posix.Types
+  (CCc, CDev, CGid, CIno, CMode, CNlink,
+   COff, CPid, CRLim, CSpeed, CSsize,
+   CTcflag, CUid, Fd)
 
 infixl 7 *, ***, `times`
 infixl 6 +, +++, `plus`
@@ -66,9 +81,15 @@ class Semiring a where
   times :: a -> a -> a -- ^ Associative Multiplicative Operation
   one   :: a           -- ^ Multiplicative Unit
 
-class Semiring a => Ring a where
-  {-# MINIMAL negate #-} 
-  negate :: a -> a
+  -- useful for defining semirings over ground types
+  default zero  :: P.Num a => a
+  default one   :: P.Num a => a
+  default plus  :: P.Num a => a -> a -> a
+  default times :: P.Num a => a -> a -> a
+  zero  = 0
+  one   = 1
+  plus  = (P.+)
+  times = (P.*)
 
 instance Semiring b => Semiring (a -> b) where
   plus f g x  = f x `plus` g x
@@ -86,33 +107,21 @@ instance Semiring a => Semiring [a] where
   zero = []
   one  = [one]
 
-  plus  = listPlus 
-  times = listTimes
+  plus [] y = y
+  plus x [] = x
+  plus xs ys = liftA2 plus xs ys
 
-listPlus :: Semiring a => [a] -> [a] -> [a]
-listPlus [] y = y
-listPlus x [] = x
-listPlus xs ys = liftA2 plus xs ys
-
-listTimes :: Semiring a => [a] -> [a] -> [a]
-listTimes [] _ = []
-listTimes _ [] = []
-listTimes xs ys = liftA2 times xs ys
-
-instance Ring a => Semiring (Complex a) where
-  zero = zero :+ zero
-  one  = one  :+ zero
-
-  plus  (x :+ y) (x' :+ y') = (plus x x') :+ (plus y y')
-  times (x :+ y) (x' :+ y')
-    = (x * x' + (negate (y * y'))) :+ (x * y' + y * x')
+  times [] _ = []
+  times _ [] = []
+  times xs ys = liftA2 times xs ys
 
 instance Semiring a => Semiring (Vector a) where
   zero = Vector.empty
   one  = Vector.singleton one
 
-  plus  = vectorPlus
-  times = vectorTimes
+  plus x y = if Vector.null x then y else if Vector.null y then x else liftA2 plus x y
+
+  times x y = if Vector.null x then x else if Vector.null y then y else liftA2 times x y
 
 instance (Semiring a, Semiring b) => Semiring (a,b) where
   zero = (zero,zero)
@@ -192,66 +201,6 @@ instance Semiring Bool where
   times = (&&)
   one   = True
 
-instance Semiring Int where
-  plus  = (P.+)
-  zero  = 0
-  times = (P.*)
-  one   = 1
-
-instance Semiring Int8 where
-  plus  = (P.+)
-  zero  = 0
-  times = (P.*)
-  one   = 1
-
-instance Semiring Int16 where
-  plus  = (P.+)
-  zero  = 0
-  times = (P.*)
-  one   = 1
-
-instance Semiring Int32 where
-  plus  = (P.+)
-  zero  = 0
-  times = (P.*)
-  one   = 1
-
-instance Semiring Int64 where
-  plus  = (P.+)
-  zero  = 0
-  times = (P.*)
-  one   = 1
-
-instance Semiring Word where
-  plus  = (P.+)
-  zero  = 0
-  times = (P.*)
-  one   = 1
-
-instance Semiring Word8 where
-  plus  = (P.+)
-  zero  = 0
-  times = (P.*)
-  one   = 1
-
-instance Semiring Word16 where
-  plus  = (P.+)
-  zero  = 0
-  times = (P.*)
-  one   = 1
-
-instance Semiring Word32 where
-  plus  = (P.+)
-  zero  = 0
-  times = (P.*)
-  one   = 1
-
-instance Semiring Word64 where
-  plus  = (P.+)
-  zero  = 0
-  times = (P.*)
-  one   = 1
-
 instance Semiring a => Semiring (IO a) where
   zero  = pure zero
   one   = pure one
@@ -264,13 +213,32 @@ instance Semiring a => Semiring (Dual a) where
   one = Dual one
   Dual x `times` Dual y = Dual (y `times` x)
 
+-- | This is not a true semiring. Even if the underlying
+-- monoid is commutative, it is only a near semiring. It
+-- is, however, quite useful. For instance, this type:
+--
+-- @forall a. 'Endo' ('Endo' a)@
+--
+-- is a valid encoding of church numerals, with addition and
+-- multiplication being their semiring variants.
 deriving newtype instance Semiring a => Semiring (Endo a)
 
--- this should be wrapped applicative
-instance (Applicative f, Semiring a) => Semiring (Alt f a) where
-  zero  = Alt (pure zero)
-  one   = Alt (pure one)
+
+newtype WrappedApplicative f a = WrappedApplicative { getApplicative :: f a }
+  deriving (Generic, Generic1, P.Read, P.Show, P.Eq, P.Ord, P.Num,
+            P.Enum, P.Monad, MonadPlus, Applicative,
+            Alternative, P.Functor)
+
+instance (Applicative f, Semiring a) => Semiring (WrappedApplicative f a) where
+  zero  = WrappedApplicative (pure zero)
+  one   = WrappedApplicative (pure one)
   plus  = liftA2 plus
+  times = liftA2 times
+
+instance (Alternative f, Semiring a) => Semiring (Alt f a) where
+  zero  = empty
+  one   = Alt (pure one)
+  plus  = (<|>)
   times = liftA2 times
 
 instance Semiring a => Semiring (Const a b) where
@@ -285,81 +253,63 @@ instance (P.Ord a, Semiring a) => Semiring (Set a) where
   plus  = Set.union
   times xs ys = Set.map (P.uncurry times) (Set.cartesianProduct xs ys)
 
-polyJoin :: Semiring a => Poly (Poly a) -> Poly a
-polyJoin (Poly x) = collapse x
-
-collapse :: Semiring a => Vector (Poly a) -> Poly a
-collapse = Foldable.foldr composePoly zero
-
--- | The type of polynomials in one variable
-newtype Poly  a   = Poly  (Vector a)
-  deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
-            P.Functor, P.Foldable)
-
--- | The type of polynomials in two variables
-newtype Poly2 a b = Poly2 (Vector (a,b))
-  deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
-            P.Functor)
-
--- | The type of polynomials in three variables
-newtype Poly3 a b c = Poly3 (Vector (a,b,c))
-  deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
-            P.Functor)
-
-instance Applicative Poly where
-  pure = Poly . Vector.singleton
-  Poly f <*> Poly v = Poly $ Vector.zipWith id f v
-
-composePoly :: Semiring a => Poly a -> Poly a -> Poly a
-composePoly (Poly x) y = horner y (P.fmap (Poly . Vector.singleton) x)
-
---instance P.Monad Poly where
---  p >>= f = polyJoin (P.fmap f p)
-
--- | Horner's scheme for evaluating a polynomial in a semiring
-horner :: (Semiring a, Foldable t) => a -> t a -> a
-horner x = Foldable.foldr (\c val -> c + x * val) zero
-
-vectorPlus :: Semiring a => Vector a -> Vector a -> Vector a
-vectorPlus x y
-  = if Vector.null x then y else if Vector.null y then x else
-  liftA2 plus x y
-
-vectorTimes :: Semiring a => Vector a -> Vector a -> Vector a
-vectorTimes x y
-  = if Vector.null x then x else if Vector.null y then y else
-  liftA2 times x y
-
--- | There is no way to do better than /O(n^2)/ for any
--- semiring. There is an algorithm that is /O(n log n)/,
--- but it requires something at least as strong as 'RealFloat'.
-polyTimes :: Semiring a => Vector a -> Vector a -> Vector a
-polyTimes x y
-  = if Vector.null x then x else if Vector.null y then y else
-      Vector.cons (times a b) (Vector.map (a *) q + Vector.map (* b) p + (Vector.cons zero (polyTimes p q)))
-  where
-    a = Vector.unsafeHead x
-    b = Vector.unsafeHead y
-    p = (\t d -> if Vector.null t then d else t) (Vector.tail x) (Vector.empty)
-    q = (\t d -> if Vector.null t then d else t) (Vector.tail y) (Vector.empty)
-
-instance Semiring a => Semiring (Poly a) where
-  zero = Poly (Vector.empty)
-  one  = Poly (Vector.singleton one)
-
-  plus  (Poly x) (Poly y) = Poly $ vectorPlus  x y
-  times (Poly x) (Poly y) = Poly $ polyTimes x y
-
-instance (Semiring a, Semiring b) => Semiring (Poly2 a b) where
-  zero = Poly2 (Vector.empty)
-  one  = Poly2 (Vector.singleton one)
-
-  plus  (Poly2 x) (Poly2 y) = Poly2 $ vectorPlus  x y
-  times (Poly2 x) (Poly2 y) = Poly2 $ polyTimes x y
-
-instance (Semiring a, Semiring b, Semiring c) => Semiring (Poly3 a b c) where
-  zero = Poly3 (Vector.empty)
-  one  = Poly3 (Vector.singleton one)
-
-  plus  (Poly3 x) (Poly3 y) = Poly3 $ vectorPlus  x y
-  times (Poly3 x) (Poly3 y) = Poly3 $ polyTimes x y
+instance Semiring Int
+instance Semiring Int8
+instance Semiring Int16
+instance Semiring Int32
+instance Semiring Int64
+instance Semiring Integer
+instance Semiring Word
+instance Semiring Word8
+instance Semiring Word16
+instance Semiring Word32
+instance Semiring Word64
+instance Semiring Float
+instance Semiring Double
+instance Semiring CUIntMax
+instance Semiring CIntMax
+instance Semiring CUIntPtr
+instance Semiring CIntPtr
+instance Semiring CSUSeconds
+instance Semiring CUSeconds
+instance Semiring CTime
+instance Semiring CClock
+instance Semiring CSigAtomic
+instance Semiring CWchar
+instance Semiring CSize
+instance Semiring CPtrdiff
+instance Semiring CDouble
+instance Semiring CFloat
+instance Semiring CULLong
+instance Semiring CLLong
+instance Semiring CULong
+instance Semiring CLong
+instance Semiring CUInt
+instance Semiring CInt
+instance Semiring CUShort
+instance Semiring CShort
+instance Semiring CUChar
+instance Semiring CSChar
+instance Semiring CChar
+instance Semiring IntPtr
+instance Semiring WordPtr
+instance Semiring Fd
+instance Semiring CRLim
+instance Semiring CTcflag
+instance Semiring CSpeed
+instance Semiring CCc
+instance Semiring CUid
+instance Semiring CNlink
+instance Semiring CGid
+instance Semiring CSsize
+instance Semiring CPid
+instance Semiring COff
+instance Semiring CMode
+instance Semiring CIno
+instance Semiring CDev
+instance Semiring Natural
+instance Integral a => Semiring (Ratio a)
+deriving instance Semiring a => Semiring (Product a)
+deriving instance Semiring a => Semiring (Sum a)
+deriving instance Semiring a => Semiring (Identity a)
+instance HasResolution a => Semiring (Fixed a)
