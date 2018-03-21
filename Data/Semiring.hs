@@ -22,37 +22,22 @@ module Data.Semiring
   , semiprod'
   ) where
 
-{-
-(1x^2 + 2x^1 + 3)
-*
-(0x^2 + 3x^1 + 7)
--------------------
-(0x^4 + 3x^3 + 7x^2        )
-+
-(0x^4 + 0x^3 + 6x^2 + 14x^1)
-+
-(0x^4 + 0x^3 + 0x^2 +  9x^1 + 21)
----------------------------------
-0x^4 + 3x^3 + 13x^2 + 23x + 21
--}
-
 import           Control.Applicative (Applicative(..), Const(..))
-import           Data.Bits
 import           Data.Bool (Bool(..), (||), (&&))
 import           Data.Complex (Complex(..))
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
-import           Data.Maybe
+--import           Data.Maybe
 import           Data.Monoid
 import           Data.Set (Set)
 import qualified Data.Set as Set
-import           Data.Vector (Vector, (!))
+import           Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
 import           GHC.Generics (Generic, Generic1)
 import qualified Prelude as P
-import           Prelude (IO, ($), (.))
+import           Prelude (IO, ($))
 
 infixl 7 *, ***, `times`
 infixl 6 +, +++, `plus`
@@ -324,60 +309,36 @@ vectorTimes x y
   = if Vector.null x then x else if Vector.null y then y else
   liftA2 times x y
 
-bitrev :: Int -> Vector Int
-bitrev n =
-  let nbits = log2 n
-      bs = Vector.generate nbits P.id
-      onebit i r b = if testBit i b then setBit r (nbits P.- 1 P.- b) else r
-  in Vector.generate n (\i -> Vector.foldl' (onebit i) 0 bs)
-
-log2 :: Int -> Int
-log2 = go (-1)
+-- | There is no way to do better than /O(n^2)/ for any
+-- semiring. There is an algorithm that is /O(n log n)/,
+-- but it requires something at least as strong as 'RealFloat'.
+polyTimes :: Semiring a => Vector a -> Vector a -> Vector a
+polyTimes x y
+  = if Vector.null x then x else if Vector.null y then y else
+      Vector.cons (times a b) (Vector.map (a *) q + Vector.map (* b) p + (Vector.cons zero (polyTimes p q)))
   where
-    go !p q
-      | q P.<= 0 = p
-      | P.otherwise = go (p + 1) (q `shiftR` 1)
-
-fft, ifft :: Ring a => Vector a -> Vector a
-fft  = P.undefined
-ifft = P.undefined
-
-{-
-fft :: Vector (Complex P.Double) -> Vector (Complex P.Double)
-fft xs =
-  if Vector.null xs
-    then Vector.empty
-    else if len P.== 2
-      then dft xs
-      else go len ys zs (Vector.generate (len * 2 P.- 1) id)
-  where
-    (ys,zs) = ((fft `con` fft) . deinterleave) xs
-    len = Vector.length xs
-    go = P.undefined
-    deinterleave = P.undefined
-    con = P.undefined
-
-dft :: Vector (Complex P.Double) -> Vector (Complex P.Double)
-dft xs = undefined
--}
+    a = Vector.unsafeHead x
+    b = Vector.unsafeHead y
+    p = (\t d -> if Vector.null t then d else t) (Vector.tail x) (Vector.empty)
+    q = (\t d -> if Vector.null t then d else t) (Vector.tail y) (Vector.empty)
 
 instance Semiring a => Semiring (Poly a) where
   zero = Poly (Vector.empty)
   one  = Poly (Vector.singleton one)
 
   plus  (Poly x) (Poly y) = Poly $ vectorPlus  x y
-  times (Poly x) (Poly y) = Poly $ vectorTimes x y
+  times (Poly x) (Poly y) = Poly $ polyTimes x y
 
 instance (Semiring a, Semiring b) => Semiring (Poly2 a b) where
   zero = Poly2 (Vector.empty)
   one  = Poly2 (Vector.singleton one)
 
   plus  (Poly2 x) (Poly2 y) = Poly2 $ vectorPlus  x y
-  times (Poly2 x) (Poly2 y) = Poly2 $ vectorTimes x y
+  times (Poly2 x) (Poly2 y) = Poly2 $ polyTimes x y
 
 instance (Semiring a, Semiring b, Semiring c) => Semiring (Poly3 a b c) where
   zero = Poly3 (Vector.empty)
   one  = Poly3 (Vector.singleton one)
 
   plus  (Poly3 x) (Poly3 y) = Poly3 $ vectorPlus  x y
-  times (Poly3 x) (Poly3 y) = Poly3 $ vectorTimes x y
+  times (Poly3 x) (Poly3 y) = Poly3 $ polyTimes x y
