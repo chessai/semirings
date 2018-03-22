@@ -8,7 +8,7 @@
 
 {-# OPTIONS_GHC -Wall #-}
 
-module Data.Poly
+module Data.Semiring.Poly
   ( Poly(..)
   , Poly2(..)
   , Poly3(..)
