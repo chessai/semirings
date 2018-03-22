@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
@@ -30,8 +31,8 @@ import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
 import           Data.Functor.Identity (Identity(..))
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
---import           Data.Maybe
-import           Data.Monoid
+import           Data.Maybe (Maybe(..))
+import           Data.Monoid (Dual(..), Endo(..), Alt(..), Product(..), Sum(..))
 import           Data.Ratio (Ratio)
 import           Data.Set (Set)
 import qualified Data.Set as Set
@@ -201,6 +202,18 @@ instance Semiring Bool where
   times = (&&)
   one   = True
 
+instance Semiring a => Semiring (Maybe a) where
+  zero  = Nothing
+  one   = Just one
+
+  plus Nothing y = y
+  plus x Nothing = x
+  plus (Just x) (Just y) = Just (plus x y)
+
+  times Nothing _ = Nothing
+  times _ Nothing = Nothing
+  times (Just x) (Just y) = Just (times x y)
+
 instance Semiring a => Semiring (IO a) where
   zero  = pure zero
   one   = pure one
@@ -222,7 +235,6 @@ instance Semiring a => Semiring (Dual a) where
 -- is a valid encoding of church numerals, with addition and
 -- multiplication being their semiring variants.
 deriving newtype instance Semiring a => Semiring (Endo a)
-
 
 newtype WrappedApplicative f a = WrappedApplicative { getApplicative :: f a }
   deriving (Generic, Generic1, P.Read, P.Show, P.Eq, P.Ord, P.Num,
@@ -251,7 +263,11 @@ instance (P.Ord a, Semiring a) => Semiring (Set a) where
   zero  = Set.empty
   one   = Set.singleton one
   plus  = Set.union
+#if !(MIN_VERSION_containers(5,11,0))
+  times xs ys = Set.fromList (times (Set.toList xs) (Set.toList ys))
+#else
   times xs ys = Set.map (P.uncurry times) (Set.cartesianProduct xs ys)
+#endif
 
 instance Semiring Int
 instance Semiring Int8

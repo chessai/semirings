@@ -11,6 +11,8 @@
 
 module Data.Ring
   ( Ring(..)
+  , minus
+  , (-)
   ) where
 
 import           Control.Applicative (Applicative(..), Const(..))
@@ -53,6 +55,13 @@ class Semiring a => Ring a where
 
   default negate :: P.Num a => a -> a
   negate = P.negate
+
+infixl 6 -
+
+(-), minus :: Ring a => a -> a -> a
+minus x y = x `plus` (negate y)
+
+(-) = minus
 
 instance Ring a => Semiring (Complex a) where
   zero = zero :+ zero
