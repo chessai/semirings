@@ -33,7 +33,9 @@ import           Data.Functor.Identity (Identity(..))
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
 import           Data.Maybe (Maybe(..))
 import           Data.Monoid (Dual(..), Endo(..), Alt(..), Product(..), Sum(..))
+import           Data.Ord (Down(..))
 import           Data.Ratio (Ratio)
+import           Data.Semigroup (Max(..), Min(..))
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Vector (Vector)
@@ -263,10 +265,10 @@ instance (P.Ord a, Semiring a) => Semiring (Set a) where
   zero  = Set.empty
   one   = Set.singleton one
   plus  = Set.union
-#if !(MIN_VERSION_containers(5,11,0))
-  times xs ys = Set.fromList (times (Set.toList xs) (Set.toList ys))
-#else
+#if MIN_VERSION_containers(5,11,0)
   times xs ys = Set.map (P.uncurry times) (Set.cartesianProduct xs ys)
+#else
+  times xs ys = Set.fromList (times (Set.toList xs) (Set.toList ys))
 #endif
 
 instance Semiring Int
@@ -328,4 +330,7 @@ instance Integral a => Semiring (Ratio a)
 deriving instance Semiring a => Semiring (Product a)
 deriving instance Semiring a => Semiring (Sum a)
 deriving instance Semiring a => Semiring (Identity a)
+deriving instance Semiring a => Semiring (Down a)
+deriving instance Semiring a => Semiring (Max a)
+deriving instance Semiring a => Semiring (Min a)
 instance HasResolution a => Semiring (Fixed a)
