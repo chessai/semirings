@@ -10,7 +10,7 @@ module Data.Semiring.Fib
   , fib
   ) where
 
-import           GHC.Generics
+import           GHC.Generics (Generic, Generic1)
 import           Data.Semiring
 import           Data.Ring
 
@@ -18,6 +18,11 @@ import Prelude hiding (Num(..),(+),(*),(-),(^),negate)
 
 -- | 'Fib a b' represents a number of the type 'aφ+b'
 --   in Z[x] mod x^2 - x - 1
+--
+--   @'zero' = Fib zero zero
+--   'one'  = Fib  one zero
+--   'Fib' a b `plus`  'Fib' c d = 'Fib' (a + c) (b + d)
+--   'Fib' a b `times` 'Fib' c d = 'Fib' (a*(c + d) + b*c) (a*c + b*d)@
 data Fib a = Fib a a
   deriving (Eq, Foldable, Functor, Show, Traversable, Generic, Generic1)
 
@@ -55,13 +60,19 @@ instance Monad Fib where
     Fib a' _ = f a
     Fib _ b' = f b
 
--- | First we check for a quick exit if both results are consistent.
+two, five :: Semiring a => a
+two  = one + one
+five = one + one + one + one + one
+{-# INLINE two  #-}
+{-# INLINE five #-}
+
+-- First we check for a quick exit if both results are consistent.
 -- It is only when 'sign a /= sign b' in 'aφ+b' that there is a
 -- problem - which is bigger, aφ or b?
 -- We can write a recursive solution that computes repeated remainders,
 -- 'gcd'-style, but we hit the worst case possible for the usual gcd
 -- algorithm for Fib 1 (-1) ^ n. This is <https://www.cut-the-knot.org/blue/LamesTheorem.shtml Lamé's Theorem> showing up in the wild.
--- So instead, in the above instance I convert aφ+b to e√5 + f and
+-- So instead, in the above instance we convert aφ+b to e√5 + f and
 -- compare the squares instead. This works nicely even when 'a' is 'Double'
 -- and is capable of representing √5 on its own.
 instance (Ord a, Ring a) => Ord (Fib a) where
@@ -74,8 +85,4 @@ instance (Ord a, Ring a) => Ord (Fib a) where
    where
      go :: Ring a => (a -> a -> Ordering) -> a -> a -> Ordering
      go k e f = k (square (e + two*f)) (five * square e)
-     two :: Semiring a => a
-     two = one + one
-     five :: Semiring a => a 
-     five = one + one + one + one + one
 
