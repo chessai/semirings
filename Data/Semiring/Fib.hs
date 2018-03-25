@@ -3,7 +3,6 @@
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DeriveTraversable          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Data.Semiring.Fib
   ( Fib(..)
@@ -61,8 +60,7 @@ instance Monad Fib where
 -- problem - which is bigger, aφ or b?
 -- We can write a recursive solution that computes repeated remainders,
 -- 'gcd'-style, but we hit the worst case possible for the usual gcd
--- algorithm for Fib 1 (-1) ^ n. This is <https://www.cut-the-knot.org/blue/LamesTheorem.shtml Lamé's Theorem>
--- showing up in the wild.
+-- algorithm for Fib 1 (-1) ^ n. This is <https://www.cut-the-knot.org/blue/LamesTheorem.shtml Lamé's Theorem> showing up in the wild.
 -- So instead, in the above instance I convert aφ+b to e√5 + f and
 -- compare the squares instead. This works nicely even when 'a' is 'Double'
 -- and is capable of representing √5 on its own.
