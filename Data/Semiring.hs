@@ -14,8 +14,11 @@ module Data.Semiring
   ( Semiring(..)
   , (+)
   , (*)
+  , (^)
+  , (^^^)
   , (+++)
   , (***)
+  , square 
   , semisum
   , semiprod
   , semisum'
@@ -60,6 +63,23 @@ import           System.Posix.Types
 
 infixl 7 *, ***, `times`
 infixl 6 +, +++, `plus`
+infixr 8 ^, ^^^
+
+-- | raise a number to a non-negative integral power
+(^) :: (Semiring a, Integral b) => a -> b -> a
+x0 ^ y0 | y0 P.< 0  = P.error "Negative exponent"
+        | y0 P.== 0 = one
+        | P.otherwise = f x0 y0
+  where
+    f x y | P.even y = f (x * x) (y `P.quot` 2)
+          | y P.== 1 = x
+          | P.otherwise = g (x * x) (y `P.quot` 2) x
+    g x y z | P.even y = g (x * x) (y `P.quot` 2) z
+            | y P.== 1 = x * z
+            | P.otherwise = g (x * x) (y `P.quot` 2) (x * z)
+
+(^^^) :: (Semiring a, Integral b) => a -> b -> a
+(^^^) = (^)
 
 (+), (*) :: Semiring a => a -> a -> a
 (+) = plus
@@ -68,6 +88,9 @@ infixl 6 +, +++, `plus`
 (+++), (***) :: Semiring a => a -> a -> a
 (+++) = plus
 (***) = times
+
+square :: Semiring a => a -> a
+square x = x * x
 
 semisum, semiprod :: (Foldable t, Semiring a) => t a -> a
 semisum  = Foldable.foldr plus zero
