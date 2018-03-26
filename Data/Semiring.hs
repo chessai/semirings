@@ -22,6 +22,8 @@ module Data.Semiring
   , (+++)
   , (***)
   , square 
+  , foldMapP
+  , foldMapT
   , semisum
   , semiprod
   , semisum'
@@ -36,12 +38,17 @@ import           Data.Fixed (Fixed, HasResolution)
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
 import           Data.Functor.Identity (Identity(..))
+import           Data.Hashable (Hashable)
+import           Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as HashMap
+import           Data.HashSet (HashSet)
+import qualified Data.HashSet as HashSet
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Maybe (Maybe(..))
 import           Data.Monoid (Dual(..), Endo(..), Alt(..), Product(..), Sum(..))
-import           Data.Ord (Down(..), Ordering(..), compare)
+import           Data.Ord (Down(..), Ord(..), Ordering(..), compare)
 import           Data.Ratio (Ratio)
 import           Data.Semigroup (Max(..), Min(..))
 import           Data.Set (Set)
@@ -62,8 +69,9 @@ import           Foreign.Ptr (IntPtr, WordPtr)
 import           GHC.Generics (Generic, Generic1)
 import           Numeric.Natural (Natural)
 import qualified Prelude as P
+import           Prelude (Eq(..))
 import           Prelude (IO, Integral, Integer, Float, Double)
-import           Prelude (id,otherwise)
+import           Prelude ((.), flip, id, otherwise)
 import           System.Posix.Types
   (CCc, CDev, CGid, CIno, CMode, CNlink,
    COff, CPid, CRLim, CSpeed, CSsize,
@@ -99,6 +107,12 @@ x0 ^ y0 | y0 P.< 0  = P.error "Negative exponent"
 
 square :: Semiring a => a -> a
 square x = x * x
+
+foldMapP, foldMapT :: (Foldable t, Semiring s) => (a -> s) -> t a -> s
+foldMapP f = Foldable.foldr (plus  . f) zero
+foldMapT f = Foldable.foldr (times . f) one
+{-# INLINE foldMapP #-}
+{-# INLINE foldMapT #-}
 
 semisum, semiprod :: (Foldable t, Semiring a) => t a -> a
 semisum  = Foldable.foldr plus zero
@@ -145,7 +159,6 @@ instance Semiring a => Semiring [a] where
   times = listTimes
 
 listAdd, listTimes :: Semiring a => [a] -> [a] -> [a]
-
 listAdd [] ys = ys
 listAdd xs [] = xs
 listAdd (x:xs) (y:ys) = (x + y) : listAdd xs ys
@@ -347,7 +360,7 @@ instance Semiring a => Semiring (Dual a) where
 deriving newtype instance Semiring a => Semiring (Endo a)
 
 newtype WrappedApplicative f a = WrappedApplicative { getApplicative :: f a }
-  deriving (Generic, Generic1, P.Read, P.Show, P.Eq, P.Ord, P.Num,
+  deriving (Generic, Generic1, P.Read, P.Show, Eq, Ord, P.Num,
             P.Enum, P.Monad, MonadPlus, Applicative,
             Alternative, P.Functor)
 
@@ -369,7 +382,7 @@ instance Semiring a => Semiring (Const a b) where
   plus  (Const x) (Const y) = Const (x `plus`  y)
   times (Const x) (Const y) = Const (x `times` y)
 
-instance (P.Ord a, Semiring a) => Semiring (Set a) where
+instance (Ord a, Semiring a) => Semiring (Set a) where
   zero  = Set.empty
   one   = Set.singleton one
   plus  = Set.union
@@ -380,7 +393,7 @@ instance (P.Ord a, Semiring a) => Semiring (Set a) where
   times xs ys = Set.fromList (times (Set.toList xs) (Set.toList ys))
 #endif
 
-instance (P.Ord a, Semiring a, Semiring b) => Semiring (Map a b) where
+instance (Ord a, Semiring a, Semiring b) => Semiring (Map a b) where
   zero = Map.empty
   one  = Map.singleton zero one
   plus = Map.unionWith (+)
@@ -389,6 +402,22 @@ instance (P.Ord a, Semiring a, Semiring b) => Semiring (Map a b) where
         [ (plus k l, v * u)
         | (k,v) <- Map.toList xs
         , (l,u) <- Map.toList ys ]
+
+instance (Eq a, Hashable a, Semiring a) => Semiring (HashSet a) where
+  zero = HashSet.empty
+  one  = HashSet.singleton one
+  plus = HashSet.union
+  times xs ys = foldMapT (flip HashSet.map ys . times) xs
+
+instance (Eq k, Hashable k, Semiring k, Semiring v) => Semiring (HashMap k v) where
+  zero = HashMap.empty
+  one  = HashMap.singleton zero one
+  plus = HashMap.unionWith (+)
+  xs `times` ys
+    = HashMap.fromListWith (+)
+        [ (k + l, v * u)
+        | (k,v) <- HashMap.toList xs
+        , (l,u) <- HashMap.toList ys ]
 
 instance Semiring Int
 instance Semiring Int8

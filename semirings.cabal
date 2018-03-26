@@ -1,5 +1,3 @@
----------------------------------------------------------------------
-
 name:                      semirings
 version:                   0.0.1.0
 build-type:                Simple
@@ -37,7 +35,9 @@ library
                          , Data.Semiring.Poly
     build-depends:         base       >= 4.7     && <  5.0
                          , containers
+                         , hashable
                          , primitive
+                         , unordered-containers  
                          , vector
     default-language:      Haskell2010
 ---------------------------------------------------------------------
