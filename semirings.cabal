@@ -36,6 +36,7 @@ library
     build-depends:         base       >= 4.7     && <  5.0
                          , containers
                          , hashable
+                         , log-domain 
                          , primitive
                          , unordered-containers  
                          , vector

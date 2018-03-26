@@ -7,6 +7,10 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators #-}
+
+-- this is here because of Generics
+{-# LANGUAGE FlexibleContexts #-}
 
 {-# OPTIONS_GHC -Wall #-}
 
@@ -66,12 +70,14 @@ import           Foreign.C.Types
    CUIntMax, CUIntPtr, CULLong, CULong,
    CUSeconds, CUShort, CWchar)
 import           Foreign.Ptr (IntPtr, WordPtr)
-import           GHC.Generics (Generic, Generic1)
+import           GHC.Generics
+import           Numeric.Log (Log(..), Precise)
+import           Numeric.Log.Signed (SignedLog(..))
 import           Numeric.Natural (Natural)
 import qualified Prelude as P
 import           Prelude (Eq(..))
 import           Prelude (IO, Integral, Integer, Float, Double)
-import           Prelude ((.), flip, id, otherwise)
+import           Prelude ((.), ($), flip, id, otherwise)
 import           System.Posix.Types
   (CCc, CDev, CGid, CIno, CMode, CNlink,
    COff, CPid, CRLim, CSpeed, CSsize,
@@ -113,6 +119,54 @@ foldMapP f = Foldable.foldr (plus  . f) zero
 foldMapT f = Foldable.foldr (times . f) one
 {-# INLINE foldMapP #-}
 {-# INLINE foldMapT #-}
+
+class GSemiring f where
+  {-# MINIMAL gPlus, gZero, gTimes, gOne #-} 
+  gZero  :: f a
+  gOne   :: f a
+  gPlus  :: f a -> f a -> f a
+  gTimes :: f a -> f a -> f a
+
+defZero, defOne :: (Generic a, GSemiring (Rep a)) => a
+defPlus, defTimes :: (Generic a, GSemiring (Rep a)) => a -> a -> a
+defZero = to gZero
+defOne  = to gOne
+defPlus x y = to $ from x `gPlus` from y
+defTimes x y = to $ from x `gTimes` from y
+
+instance GSemiring U1 where
+  gZero = U1
+  gOne  = U1
+  gPlus  _ _ = U1
+  gTimes _ _ = U1
+
+instance (GSemiring a, GSemiring b) => GSemiring (a :*: b) where
+  gZero = gZero :*: gZero
+  gOne  = gOne  :*: gOne
+  gPlus  (a :*: b) (c :*: d) = gPlus  a c :*: gPlus b d
+  gTimes (a :*: b) (c :*: d) = gTimes a c :*: gPlus b d
+
+instance (GSemiring a, GSemiring b) => GSemiring (a :+: b) where
+  gZero = L1 gZero
+  gOne  = L1 gOne
+  gPlus (L1 x) (L1 y) = L1 (gPlus x y)
+  gPlus (R1 x) (R1 y) = R1 (gPlus x y)
+  gPlus x _ = x
+  gTimes (L1 x) (L1 y) = L1 (gTimes x y)
+  gTimes (R1 x) (R1 y) = R1 (gTimes x y)
+  gTimes x _ = x
+
+instance (GSemiring a) => GSemiring (M1 i c a) where
+  gZero = M1 gZero
+  gOne  = M1 gOne
+  gPlus  (M1 x) (M1 y) = M1 $ gPlus  x y
+  gTimes (M1 x) (M1 y) = M1 $ gTimes x y
+
+instance (Semiring a) => GSemiring (K1 i a) where
+  gZero = K1 zero
+  gOne  = K1 one
+  gPlus  (K1 x) (K1 y) = K1 $ plus  x y
+  gTimes (K1 x) (K1 y) = K1 $ times x y
 
 semisum, semiprod :: (Foldable t, Semiring a) => t a -> a
 semisum  = Foldable.foldr plus zero
@@ -247,78 +301,6 @@ instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
         !klen = SV.length ys
         !maxlen = P.max slen klen
 
-instance (Semiring a, Semiring b) => Semiring (a,b) where
-  zero = (zero,zero)
-  one = (one,one)
-  (a1,b1) `plus` (a2,b2) =
-    (a1 `plus` a2, b1 `plus` b2)
-  (a1,b1) `times` (a2,b2) =
-    (a1 `times` a2, b1 `times` b2)
-
-instance (Semiring a, Semiring b, Semiring c) => Semiring (a,b,c) where
-  zero = (zero, zero, zero)
-  one = (one,one,one)
-  (a1,b1,c1) `plus` (a2,b2,c2) =
-    (a1 `plus` a2, b1 `plus` b2, c1 `plus` c2)
-  (a1,b1,c1) `times` (a2,b2,c2) =
-    (a1 `times` a2, b1 `times` b2, c1 `times` c2)
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d) => Semiring (a,b,c,d) where
-  zero = (zero, zero, zero, zero)
-  one = (one, one, one, one)
-  (a1,b1,c1,d1) `plus` (a2,b2,c2,d2) =
-    (a1 `plus` a2, b1 `plus` b2, c1 `plus` c2, d1 `plus` d2)
-  (a1,b1,c1,d1) `times` (a2,b2,c2,d2) =
-    (a1 `times` a2, b1 `times` b2, c1 `times` c2, d1 `times` d2)
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e) => Semiring (a,b,c,d,e) where
-  zero = (zero, zero, zero, zero, zero)
-  one = (one, one, one, one, one)
-  (a1,b1,c1,d1,e1) `plus` (a2,b2,c2,d2,e2) =
-    (a1 `plus` a2, b1 `plus` b2, c1 `plus` c2, d1 `plus` d2, e1 `plus` e2)
-  (a1,b1,c1,d1,e1) `times` (a2,b2,c2,d2,e2) =
-    (a1 `times` a2, b1 `times` b2, c1 `times` c2, d1 `times` d2, e1 `times` e2)
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f) => Semiring (a,b,c,d,e,f) where
-  zero = (zero, zero, zero, zero, zero, zero)
-  one  = (one, one, one, one, one, one)
-  (a1,b1,c1,d1,e1,f1) `plus` (a2,b2,c2,d2,e2,f2) =
-    (a1 `plus` a2, b1 `plus` b2, c1 `plus` c2, d1 `plus` d2, e1 `plus` e2, f1 `plus` f2)
-  (a1,b1,c1,d1,e1,f1) `times` (a2,b2,c2,d2,e2,f2) =
-    (a1 `times` a2, b1 `times` b2, c1 `times` c2, d1 `times` d2, e1 `times` e2, f1 `times` f2)
- 
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f, Semiring g) => Semiring (a,b,c,d,e,f,g) where
-  zero = (zero, zero, zero, zero, zero, zero, zero)
-  one  = (one, one, one, one, one, one, one)
-  (a1,b1,c1,d1,e1,f1,g1) `plus` (a2,b2,c2,d2,e2,f2,g2) =
-    (a1 `plus` a2, b1 `plus` b2, c1 `plus` c2, d1 `plus` d2, e1 `plus` e2, f1 `plus` f2, g1 `plus` g2)
-  (a1,b1,c1,d1,e1,f1,g1) `times` (a2,b2,c2,d2,e2,f2,g2) =
-    (a1 `times` a2, b1 `times` b2, c1 `times` c2, d1 `times` d2, e1 `times` e2, f1 `times` f2, g1 `times` g2)
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f, Semiring g, Semiring h) => Semiring (a,b,c,d,e,f,g,h) where
-  zero = (zero, zero, zero, zero, zero, zero, zero, zero)
-  one  = (one, one, one, one, one, one, one, one)
-  (a1,b1,c1,d1,e1,f1,g1,h1) `plus` (a2,b2,c2,d2,e2,f2,g2,h2) =
-    (a1 `plus` a2, b1 `plus` b2, c1 `plus` c2, d1 `plus` d2, e1 `plus` e2, f1 `plus` f2, g1 `plus` g2, h1 `plus` h2)
-  (a1,b1,c1,d1,e1,f1,g1,h1) `times` (a2,b2,c2,d2,e2,f2,g2,h2) =
-    (a1 `times` a2, b1 `times` b2, c1 `times` c2, d1 `times` d2, e1 `times` e2, f1 `times` f2, g1 `times` g2,h1 `times` h2)
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f, Semiring g, Semiring h, Semiring i) => Semiring (a,b,c,d,e,f,g,h,i) where
-  zero = (zero, zero, zero, zero, zero, zero, zero, zero, zero)
-  one  = (one, one, one, one, one, one, one, one, one)
-  (a1,b1,c1,d1,e1,f1,g1,h1,i1) `plus` (a2,b2,c2,d2,e2,f2,g2,h2,i2) =
-    (a1 `plus` a2, b1 `plus` b2, c1 `plus` c2, d1 `plus` d2, e1 `plus` e2, f1 `plus` f2, g1 `plus` g2, h1 `plus` h2, i1 `plus` i2)
-  (a1,b1,c1,d1,e1,f1,g1,h1,i1) `times` (a2,b2,c2,d2,e2,f2,g2,h2,i2) =
-    (a1 `times` a2, b1 `times` b2, c1 `times` c2, d1 `times` d2, e1 `times` e2, f1 `times` f2, g1 `times` g2,h1 `times` h2, i1 `times` i2)
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f, Semiring g, Semiring h, Semiring i, Semiring j) => Semiring (a,b,c,d,e,f,g,h,i,j) where
-  zero = (zero, zero, zero, zero, zero, zero, zero, zero, zero, zero)
-  one  = (one, one, one, one, one, one, one, one, one, one)
-  (a1,b1,c1,d1,e1,f1,g1,h1,i1,j1) `plus` (a2,b2,c2,d2,e2,f2,g2,h2,i2,j2) =
-    (a1 `plus` a2, b1 `plus` b2, c1 `plus` c2, d1 `plus` d2, e1 `plus` e2, f1 `plus` f2, g1 `plus` g2, h1 `plus` h2, i1 `plus` i2, j1 `plus` j2)
-  (a1,b1,c1,d1,e1,f1,g1,h1,i1,j1) `times` (a2,b2,c2,d2,e2,f2,g2,h2,i2,j2) =
-    (a1 `times` a2, b1 `times` b2, c1 `times` c2, d1 `times` d2, e1 `times` e2, f1 `times` f2, g1 `times` g2,h1 `times` h2, i1 `times` i2, j1 `times` j2)
-
 instance Semiring Bool where
   plus  = (||)
   zero  = False
@@ -418,6 +400,36 @@ instance (Eq k, Hashable k, Semiring k, Semiring v) => Semiring (HashMap k v) wh
         [ (k + l, v * u)
         | (k,v) <- HashMap.toList xs
         , (l,u) <- HashMap.toList ys ]
+
+instance (Precise a, P.RealFloat a) => Semiring (Log a) where
+  zero  = Exp (-(1 P./ 0))
+  one   = Exp 0
+  plus  = (P.+)
+  times = (P.*)
+
+instance (Precise a, P.RealFloat a) => Semiring (SignedLog a) where
+  zero  = SLExp False (-(1 P./ 0))
+  one   = SLExp True 0
+  plus  = (P.+)
+  times = (P.*)
+
+instance (Semiring a, Semiring b) => Semiring (a,b) where
+  zero = defZero; one = defOne; plus = defPlus; times = defTimes; 
+
+instance (Semiring a, Semiring b, Semiring c) => Semiring (a,b,c) where
+  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
+
+instance (Semiring a, Semiring b, Semiring c, Semiring d) => Semiring (a,b,c,d) where
+  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
+
+instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e) => Semiring (a,b,c,d,e) where
+  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
+
+instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f) => Semiring (a,b,c,d,e,f) where
+  zero = defZero; one = defOne; plus = defPlus; times = defTimes; 
+
+instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f, Semiring g) => Semiring (a,b,c,d,e,f,g) where
+  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
 
 instance Semiring Int
 instance Semiring Int8
