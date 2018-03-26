@@ -6,41 +6,46 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 
-{-# OPTIONS_GHC -Wall #-}
+--{-# OPTIONS_GHC -Wall #-}
 
 module Data.Semiring.Poly
   ( Poly(..)
-  , polyBind 
-  , polyJoin
   , collapse
-  , composePoly
+  , compose
   , horner
   ) where
 
+import           Data.Bool (Bool(..), (&&))
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
 import           Data.Ord (Ordering(..), compare)
 import           Data.Vector (Vector)
 import qualified Data.Vector as Vector
+import           GHC.Exts (IsList(..))
 import           GHC.Generics (Generic, Generic1)
 import qualified Prelude as P
+import           Prelude (Eq(..))
 import           Prelude (($), (.), otherwise)
 
---import Data.Ring (Ring(..), (-), minus)
+import Data.Ring (Ring(..))
 
 import Data.Semiring (Semiring(zero,one,plus,times), (+), (*))
-
-polyJoin :: Semiring a => Poly (Poly a) -> Poly a
-polyJoin (Poly x) = collapse x
-
-collapse :: Semiring a => Vector (Poly a) -> Poly a
-collapse = Foldable.foldr composePoly zero
 
 -- | The type of polynomials in one variable
 newtype Poly  a   = Poly { unPoly :: Vector a }
   deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
             P.Functor, P.Foldable)
+
+--instance P.Show a => P.Show (Poly a) where
+--  show = P.show . unPoly
+
+instance IsList (Poly a) where
+  type Item (Poly a) = a
+  fromList  = Poly . Vector.fromList
+  fromListN = (P.fmap Poly) . Vector.fromListN 
+  toList    = Vector.toList . unPoly
 
 empty :: Poly a
 empty = Poly $ Vector.empty
@@ -48,17 +53,40 @@ empty = Poly $ Vector.empty
 singleton :: a -> Poly a
 singleton = Poly . Vector.singleton
 
-composePoly :: Semiring a => Poly a -> Poly a -> Poly a
-composePoly (Poly x) y = horner y (P.fmap (Poly . Vector.singleton) x)
+-- | Lazily compose two polynomials. Illustrated:
+--   f(g(x)) = h(x)
+compose :: Semiring a => Poly a -> Poly a -> Poly a
+compose (Poly x) y = horner y (P.fmap singleton x)
 
-infixl 1 `polyBind`
-
-polyBind :: forall a b. Semiring b => Poly a -> (a -> Poly b) -> Poly b
-p `polyBind` f = polyJoin (P.fmap f p)
+-- | Compose any number of polynomials of the form
+-- f0(f1(f2(...(fN(x))))) into
+-- f(x)
+collapse :: Semiring a => Vector (Poly a) -> Poly a
+collapse = Foldable.foldr compose zero
 
 -- | Horner's scheme for evaluating a polynomial in a semiring
 horner :: (Semiring a, Foldable t) => a -> t a -> a
 horner x = Foldable.foldr (\c val -> c + x * val) zero
+
+shift, unShift :: Semiring a => Poly a -> Poly a
+shift (Poly xs)
+  | Vector.null xs = empty
+  | otherwise = Poly $ zero `Vector.cons` xs
+
+unShift (Poly xs)
+  | Vector.null xs = empty
+  | otherwise = Poly $ Vector.unsafeTail xs
+
+scale :: Semiring a => a -> Poly a -> Poly a
+scale s = Poly . Vector.map (s *) . unPoly
+
+collinear :: (Eq a, Semiring a) => Poly a -> Poly a -> Bool
+collinear (Poly f) (Poly g)
+  | (Vector.length f == 2 && Vector.length g == 2)
+      = Vector.unsafeHead f == Vector.unsafeHead g
+  | (Vector.length f == 1 && Vector.length g == 1)
+      = Vector.unsafeHead f == Vector.unsafeHead g
+  | otherwise = False
 
 polyPlus, polyTimes :: Semiring a => Vector a -> Vector a -> Vector a
 polyPlus xs ys =
@@ -86,5 +114,8 @@ instance Semiring a => Semiring (Poly a) where
   zero = empty
   one  = singleton one
 
-  plus x y  = Poly $ polyPlus  (unPoly x) (unPoly y)
+  plus  x y = Poly $ polyPlus  (unPoly x) (unPoly y)
   times x y = Poly $ polyTimes (unPoly x) (unPoly y)
+
+instance Ring a => Ring (Poly a) where
+  negate = Poly . Vector.map negate . unPoly
