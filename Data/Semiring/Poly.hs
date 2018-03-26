@@ -15,6 +15,12 @@ module Data.Semiring.Poly
   , collapse
   , compose
   , horner
+  , degree
+  , fromList
+  , fromListN
+  , toList
+  , empty
+  , singleton
   ) where
 
 import           Data.Bool (Bool(..), (&&))
@@ -23,29 +29,45 @@ import qualified Data.Foldable as Foldable
 import           Data.Ord (Ordering(..), compare)
 import           Data.Vector (Vector)
 import qualified Data.Vector as Vector
-import           GHC.Exts (IsList(..))
+import qualified GHC.Exts as Exts
 import           GHC.Generics (Generic, Generic1)
 import qualified Prelude as P
 import           Prelude (Eq(..))
 import           Prelude (($), (.), otherwise)
+import           Prelude (Int, IO)
 
-import Data.Ring (Ring(..))
+import Data.Ring (Ring(..), (-))
 
 import Data.Semiring (Semiring(zero,one,plus,times), (+), (*))
 
 -- | The type of polynomials in one variable
 newtype Poly  a   = Poly { unPoly :: Vector a }
-  deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
+  deriving (P.Eq, P.Ord, P.Read, Generic, Generic1,
             P.Functor, P.Foldable)
 
---instance P.Show a => P.Show (Poly a) where
---  show = P.show . unPoly
+instance P.Show a => P.Show (Poly a) where
+  show p = "fromList " P.++ (P.show $ unPoly p)
 
-instance IsList (Poly a) where
+--prettyPrint :: Poly a -> IO ()
+--prettyPrint = P.putStrLn . unPoly
+
+instance Exts.IsList (Poly a) where
   type Item (Poly a) = a
-  fromList  = Poly . Vector.fromList
-  fromListN = (P.fmap Poly) . Vector.fromListN 
-  toList    = Vector.toList . unPoly
+  fromList  = fromList
+  fromListN = fromListN
+  toList    = toList
+
+fromList :: [a] -> Poly a
+fromList = Poly . Vector.fromList
+
+fromListN :: Int -> [a] -> Poly a
+fromListN = (P.fmap Poly) . Vector.fromListN
+
+toList :: Poly a -> [a]
+toList = Vector.toList . unPoly
+
+degree :: Poly a -> Int
+degree p = (Vector.length $ unPoly p) - 1
 
 empty :: Poly a
 empty = Poly $ Vector.empty
@@ -97,16 +119,16 @@ polyPlus xs ys =
 polyTimes signal kernel
   | Vector.null signal = Vector.empty
   | Vector.null kernel = Vector.empty
-  | otherwise = Vector.generate (slen P.+ klen P.- 1) f
+  | otherwise = Vector.generate (slen + klen - 1) f
   where
     f n = Foldable.foldl'
       (\a k ->
         a +
         Vector.unsafeIndex signal k *
-        Vector.unsafeIndex kernel (n P.- k)) zero [kmin .. kmax]
+        Vector.unsafeIndex kernel (n - k)) zero [kmin .. kmax]
       where
-        !kmin = P.max 0 (n P.- (klen P.- 1))
-        !kmax = P.min n (slen P.- 1)
+        !kmin = P.max 0 (n - (klen - 1))
+        !kmax = P.min n (slen - 1)
     !slen = Vector.length signal
     !klen = Vector.length kernel
 
