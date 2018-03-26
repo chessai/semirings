@@ -61,7 +61,7 @@ import           GHC.Generics (Generic, Generic1)
 import           Numeric.Natural (Natural)
 import qualified Prelude as P
 import           Prelude (IO, Integral, Integer, Float, Double)
-import           Prelude (otherwise)
+import           Prelude (id,otherwise)
 import           System.Posix.Types
   (CCc, CDev, CGid, CIno, CMode, CNlink,
    COff, CPid, CRLim, CSpeed, CSsize,
@@ -139,44 +139,53 @@ instance Semiring a => Semiring [a] where
   zero = []
   one  = [one]
 
-  plus [] y = y
-  plus x [] = x
-  plus xs ys = liftA2 plus xs ys
+  plus  = listAdd
+  times = listTimes
 
-  times [] _ = []
-  times _ [] = []
-  times xs ys = liftA2 times xs ys
+listAdd, listTimes :: Semiring a => [a] -> [a] -> [a]
 
-instance Semiring a => Semiring (Vector a) where
-  zero = Vector.empty
-  one  = Vector.singleton one
-  plus xs ys =
-    case compare (Vector.length xs) (Vector.length ys) of
-      EQ -> Vector.zipWith (+) xs ys
-      LT -> Vector.unsafeAccumulate (+) ys (Vector.indexed xs)
-      GT -> Vector.unsafeAccumulate (+) xs (Vector.indexed ys)
-  times signal kernel
-    | Vector.null signal = Vector.empty
-    | Vector.null kernel = Vector.empty
-    | otherwise = Vector.generate (slen P.+ klen P.- 1) f
+listAdd [] ys = ys
+listAdd xs [] = xs
+listAdd (x:xs) (y:ys) = (x + y) : listAdd xs ys
+{-# NOINLINE [0] listAdd #-}
+
+listTimes []  _ = []
+listTimes _  [] = []
+listTimes xs ys = Foldable.foldr f [] xs
+  where
+    f x zs = Foldable.foldr (g x) id ys (zero : zs)
+    g x y a (z:zs) = x * y + z : a zs
+    g x y a []     = x * y     : a []
+
+vectorPlus :: Semiring a => Vector a -> Vector a -> Vector a
+vectorPlus xs ys =
+  case compare (Vector.length xs) (Vector.length ys) of
+    EQ -> Vector.zipWith (+) xs ys
+    LT -> Vector.unsafeAccumulate (+) ys (Vector.indexed xs)
+    GT -> Vector.unsafeAccumulate (+) xs (Vector.indexed ys)
+
+vectorTimes :: Semiring a => Vector a -> Vector a -> Vector a
+vectorTimes xs ys
+  | Vector.null xs = Vector.empty
+  | Vector.null ys = Vector.empty
+  | otherwise = Vector.generate maxlen f
     where
       f n = Foldable.foldl'
-        (\a k ->
-          a +
-          Vector.unsafeIndex signal k *
-          Vector.unsafeIndex kernel (n P.- k)) zero [kmin .. kmax]
+        (\_ k -> 
+          Vector.unsafeIndex xs k *
+          Vector.unsafeIndex ys (n P.- k)) zero [kmin .. kmax]
         where
           !kmin = P.max 0 (n P.- (klen P.- 1))
           !kmax = P.min n (slen P.- 1)
-      !slen = Vector.length signal
-      !klen = Vector.length kernel
+      !slen = Vector.length xs
+      !klen = Vector.length ys
+      !maxlen = P.max slen klen
 
----instance Semiring a => Semiring (Vector a) where
----  zero = Vector.empty
- --- one  = Vector.singleton one
-
----  plus  x y = if Vector.null x then y else if Vector.null y then x else liftA2 plus  x y
----  times x y = if Vector.null x then x else if Vector.null y then y else liftA2 times x y
+instance Semiring a => Semiring (Vector a) where
+  zero  = Vector.empty
+  one   = Vector.singleton one
+  plus  = vectorPlus
+  times = vectorTimes
 
 instance (Semiring a, Semiring b) => Semiring (a,b) where
   zero = (zero,zero)
