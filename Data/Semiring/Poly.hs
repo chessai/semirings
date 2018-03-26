@@ -95,3 +95,9 @@ instance (Semiring a, Semiring b, Semiring c) => Semiring (Poly3 a b c) where
 
   plus  (Poly3 x) (Poly3 y) = Poly3 $ arrayPlus  x y
   times (Poly3 x) (Poly3 y) = Poly3 $ polyTimes x y
+
+--polyTimes' :: Array a -> Array a -> Array a
+--polyTimes' x y = x + y
+
+--splitArray :: Array a -> (Array a, Array a)
+--splitArray x = 

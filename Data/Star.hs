@@ -5,19 +5,34 @@ module Data.Star
 import Data.Bool (Bool(..))
 import Data.Complex (Complex(..))
 import Data.Int (Int, Int8, Int16, Int32, Int64)
-import Data.Semiring (Semiring(..))
+import Data.Vector (Vector)
+import qualified Data.Vector as Vector
 import Data.Word (Word, Word8, Word16, Word32, Word64)
-
 import qualified Prelude as P
-import Prelude (Num(..), Real(..), Double, Float, div, (/))
+import Prelude (id)
+
+import Data.Semiring
 
 class (Semiring a) => Star a where
-  {-# MINIMAL star | asterplus #-} 
+  {-# MINIMAL star | aplus #-} 
   star :: a -> a
-  star a = one `plus` asterplus a
+  star a = one `plus` aplus a
 
-  asterplus :: a -> a
-  asterplus a = a `times` star a
+  aplus :: a -> a
+  aplus a = a `times` star a
 
 instance Star Bool where
-  star _ = True
+  star _  = True
+  aplus   = id
+
+instance Star () where
+  star  _ = ()
+  aplus _ = ()
+
+instance Star a => Star [a] where
+  star [] = one
+  star (x:xs) = r where
+    r = xst : P.fmap (xst *) (xs * r)
+    xst = star x
+
+

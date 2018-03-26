@@ -8,7 +8,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
-{-# OPTIONS_GHC -Wall -fno-warn-missing-methods #-}
+{-# OPTIONS_GHC -Wall #-}
+
+-- this is here because of -XDefaultSignatures
+{-# OPTIONS_GHC -fno-warn-missing-methods #-}
 
 module Data.Semiring 
   ( Semiring(..)
@@ -34,9 +37,11 @@ import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
 import           Data.Functor.Identity (Identity(..))
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
+import           Data.Map (Map)
+import qualified Data.Map as Map
 import           Data.Maybe (Maybe(..))
 import           Data.Monoid (Dual(..), Endo(..), Alt(..), Product(..), Sum(..))
-import           Data.Ord (Down(..))
+import           Data.Ord (Down(..), Ordering(..), compare)
 import           Data.Ratio (Ratio)
 import           Data.Semigroup (Max(..), Min(..))
 import           Data.Set (Set)
@@ -56,6 +61,7 @@ import           GHC.Generics (Generic, Generic1)
 import           Numeric.Natural (Natural)
 import qualified Prelude as P
 import           Prelude (IO, Integral, Integer, Float, Double)
+import           Prelude (otherwise)
 import           System.Posix.Types
   (CCc, CDev, CGid, CIno, CMode, CNlink,
    COff, CPid, CRLim, CSpeed, CSsize,
@@ -144,10 +150,33 @@ instance Semiring a => Semiring [a] where
 instance Semiring a => Semiring (Vector a) where
   zero = Vector.empty
   one  = Vector.singleton one
+  plus xs ys =
+    case compare (Vector.length xs) (Vector.length ys) of
+      EQ -> Vector.zipWith (+) xs ys
+      LT -> Vector.unsafeAccumulate (+) ys (Vector.indexed xs)
+      GT -> Vector.unsafeAccumulate (+) xs (Vector.indexed ys)
+  times signal kernel
+    | Vector.null signal = Vector.empty
+    | Vector.null kernel = Vector.empty
+    | otherwise = Vector.generate (slen P.+ klen P.- 1) f
+    where
+      f n = Foldable.foldl'
+        (\a k ->
+          a +
+          Vector.unsafeIndex signal k *
+          Vector.unsafeIndex kernel (n P.- k)) zero [kmin .. kmax]
+        where
+          !kmin = P.max 0 (n P.- (klen P.- 1))
+          !kmax = P.min n (slen P.- 1)
+      !slen = Vector.length signal
+      !klen = Vector.length kernel
 
-  plus x y = if Vector.null x then y else if Vector.null y then x else liftA2 plus x y
+---instance Semiring a => Semiring (Vector a) where
+---  zero = Vector.empty
+ --- one  = Vector.singleton one
 
-  times x y = if Vector.null x then x else if Vector.null y then y else liftA2 times x y
+---  plus  x y = if Vector.null x then y else if Vector.null y then x else liftA2 plus  x y
+---  times x y = if Vector.null x then x else if Vector.null y then y else liftA2 times x y
 
 instance (Semiring a, Semiring b) => Semiring (a,b) where
   zero = (zero,zero)
@@ -291,8 +320,19 @@ instance (P.Ord a, Semiring a) => Semiring (Set a) where
 #if MIN_VERSION_containers(5,11,0)
   times xs ys = Set.map (P.uncurry times) (Set.cartesianProduct xs ys)
 #else
+  -- I think this could also be 'times xs ys = foldMap (flip Set.map ys . mappend) xs'
   times xs ys = Set.fromList (times (Set.toList xs) (Set.toList ys))
 #endif
+
+instance (P.Ord a, Semiring a, Semiring b) => Semiring (Map a b) where
+  zero = Map.empty
+  one  = Map.singleton zero one
+  plus = Map.unionWith (+)
+  xs `times` ys
+    = Map.fromListWith (+)
+        [ (plus k l, v * u)
+        | (k,v) <- Map.toList xs
+        , (l,u) <- Map.toList ys ]
 
 instance Semiring Int
 instance Semiring Int8
