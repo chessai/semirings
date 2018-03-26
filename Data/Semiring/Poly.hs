@@ -11,8 +11,6 @@
 
 module Data.Semiring.Poly
   ( Poly(..)
-  , Poly2(..)
-  , Poly3(..)
   , polyBind 
   , polyJoin
   , collapse
@@ -30,6 +28,7 @@ import qualified Prelude as P
 import           Prelude (($), (.), otherwise)
 
 --import Data.Ring (Ring(..), (-), minus)
+
 import Data.Semiring (Semiring(zero,one,plus,times), (+), (*))
 
 polyJoin :: Semiring a => Poly (Poly a) -> Poly a
@@ -43,33 +42,11 @@ newtype Poly  a   = Poly { unPoly :: Vector a }
   deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
             P.Functor, P.Foldable)
 
--- | The type of polynomials in two variables
-newtype Poly2 a b = Poly2 { unPoly2 :: Vector (a,b) }
-  deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
-            P.Functor)
-
--- | The type of polynomials in three variables
-newtype Poly3 a b c = Poly3 { unPoly3 :: Vector (a,b,c) }
-  deriving (P.Eq, P.Ord, P.Read, P.Show, Generic, Generic1,
-            P.Functor)
-
 empty :: Poly a
 empty = Poly $ Vector.empty
 
-empty2 :: Poly2 a b
-empty2 = Poly2 $ Vector.empty
-
-empty3 :: Poly3 a b c
-empty3 = Poly3 $ Vector.empty
-
 singleton :: a -> Poly a
 singleton = Poly . Vector.singleton
-
-singleton2 :: (a,b) -> Poly2 a b
-singleton2 = Poly2 . Vector.singleton
-
-singleton3 :: (a,b,c) -> Poly3 a b c
-singleton3 = Poly3 . Vector.singleton
 
 composePoly :: Semiring a => Poly a -> Poly a -> Poly a
 composePoly (Poly x) y = horner y (P.fmap (Poly . Vector.singleton) x)
@@ -109,19 +86,5 @@ instance Semiring a => Semiring (Poly a) where
   zero = empty
   one  = singleton one
 
-  plus x y = Poly $ polyPlus  (unPoly x) (unPoly y)
+  plus x y  = Poly $ polyPlus  (unPoly x) (unPoly y)
   times x y = Poly $ polyTimes (unPoly x) (unPoly y)
-
-instance (Semiring a, Semiring b) => Semiring (Poly2 a b) where
-  zero = empty2
-  one  = singleton2 one
-
-  plus  x y = Poly2 $ polyPlus  (unPoly2 x) (unPoly2 y)
-  times x y = Poly2 $ polyTimes (unPoly2 x) (unPoly2 y)
-
-instance (Semiring a, Semiring b, Semiring c) => Semiring (Poly3 a b c) where
-  zero  = empty3
-  one   = singleton3 one
-
-  plus  x y = Poly3 $ polyPlus  (unPoly3 x) (unPoly3 y)
-  times x y = Poly3 $ polyTimes (unPoly3 x) (unPoly3 y)
