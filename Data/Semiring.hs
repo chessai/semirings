@@ -48,6 +48,8 @@ import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Vector (Vector)
 import qualified Data.Vector as Vector
+import qualified Data.Vector.Storable as SV
+import qualified Data.Vector.Unboxed as UV
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
 import           Foreign.C.Types
   (CChar, CClock, CDouble, CFloat, CInt,
@@ -157,35 +159,80 @@ listTimes xs ys = Foldable.foldr f [] xs
     g x y a (z:zs) = x * y + z : a zs
     g x y a []     = x * y     : a []
 
-vectorPlus :: Semiring a => Vector a -> Vector a -> Vector a
-vectorPlus xs ys =
-  case compare (Vector.length xs) (Vector.length ys) of
-    EQ -> Vector.zipWith (+) xs ys
-    LT -> Vector.unsafeAccumulate (+) ys (Vector.indexed xs)
-    GT -> Vector.unsafeAccumulate (+) xs (Vector.indexed ys)
-
-vectorTimes :: Semiring a => Vector a -> Vector a -> Vector a
-vectorTimes xs ys
-  | Vector.null xs = Vector.empty
-  | Vector.null ys = Vector.empty
-  | otherwise = Vector.generate maxlen f
-    where
-      f n = Foldable.foldl'
-        (\_ k -> 
-          Vector.unsafeIndex xs k *
-          Vector.unsafeIndex ys (n P.- k)) zero [kmin .. kmax]
-        where
-          !kmin = P.max 0 (n P.- (klen P.- 1))
-          !kmax = P.min n (slen P.- 1)
-      !slen = Vector.length xs
-      !klen = Vector.length ys
-      !maxlen = P.max slen klen
-
 instance Semiring a => Semiring (Vector a) where
   zero  = Vector.empty
   one   = Vector.singleton one
-  plus  = vectorPlus
-  times = vectorTimes
+  plus xs ys =
+    case compare (Vector.length xs) (Vector.length ys) of
+      EQ -> Vector.zipWith (+) xs ys
+      LT -> Vector.unsafeAccumulate (+) ys (Vector.indexed xs)
+      GT -> Vector.unsafeAccumulate (+) xs (Vector.indexed ys)
+  times xs ys
+    | Vector.null xs = Vector.empty
+    | Vector.null ys = Vector.empty
+    | otherwise = Vector.generate maxlen f
+      where
+        f n = Foldable.foldl'
+          (\_ k -> 
+            Vector.unsafeIndex xs k *
+            Vector.unsafeIndex ys (n P.- k)) zero [kmin .. kmax]
+          where
+            !kmin = P.max 0 (n P.- (klen P.- 1))
+            !kmax = P.min n (slen P.- 1)
+        !slen = Vector.length xs
+        !klen = Vector.length ys
+        !maxlen = P.max slen klen
+
+instance (UV.Unbox a, Semiring a) => Semiring (UV.Vector a) where
+  zero = UV.empty
+  one  = UV.singleton one
+  plus xs ys =
+    case compare (UV.length xs) (UV.length ys) of
+      EQ -> UV.zipWith (+) xs ys
+      LT -> UV.unsafeAccumulate (+) ys (UV.indexed xs)
+      GT -> UV.unsafeAccumulate (+) xs (UV.indexed ys)
+  times xs ys
+    | UV.null xs = UV.empty
+    | UV.null ys = UV.empty
+    | otherwise = UV.generate maxlen f
+      where
+        f n = Foldable.foldl'
+          (\_ k -> 
+            UV.unsafeIndex xs k *
+            UV.unsafeIndex ys (n P.- k)) zero [kmin .. kmax]
+          where
+            !kmin = P.max 0 (n P.- (klen P.- 1))
+            !kmax = P.min n (slen P.- 1)
+        !slen = UV.length xs
+        !klen = UV.length ys
+        !maxlen = P.max slen klen
+
+instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
+  zero = SV.empty
+  one  = SV.singleton one
+  plus xs ys =
+    case compare lxs lys of
+      EQ -> SV.zipWith (+) xs ys
+      LT -> SV.unsafeAccumulate_ (+) ys (SV.enumFromN 0 lxs) xs
+      GT -> SV.unsafeAccumulate_ (+) xs (SV.enumFromN 0 lys) ys
+    where
+      lxs = SV.length xs
+      lys = SV.length ys
+  times xs ys
+    | SV.null xs = SV.empty
+    | SV.null ys = SV.empty
+    | otherwise  = SV.generate maxlen f
+      where
+        f n = Foldable.foldl'
+          (\_ k -> 
+            SV.unsafeIndex xs k *
+            SV.unsafeIndex ys (n P.- k)) zero [kmin .. kmax]
+          where
+            !kmin = P.max 0 (n P.- (klen P.- 1))
+            !kmax = P.min n (slen P.- 1)
+        !slen = SV.length xs
+        !klen = SV.length ys
+        !maxlen = P.max slen klen
 
 instance (Semiring a, Semiring b) => Semiring (a,b) where
   zero = (zero,zero)
