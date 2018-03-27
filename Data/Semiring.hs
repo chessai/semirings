@@ -127,7 +127,7 @@ class GSemiring f where
   gPlus  :: f a -> f a -> f a
   gTimes :: f a -> f a -> f a
 
-defZero, defOne :: (Generic a, GSemiring (Rep a)) => a
+defZero, defOne   :: (Generic a, GSemiring (Rep a)) => a
 defPlus, defTimes :: (Generic a, GSemiring (Rep a)) => a -> a -> a
 defZero = to gZero
 defOne  = to gOne
@@ -146,15 +146,17 @@ instance (GSemiring a, GSemiring b) => GSemiring (a :*: b) where
   gPlus  (a :*: b) (c :*: d) = gPlus  a c :*: gPlus b d
   gTimes (a :*: b) (c :*: d) = gTimes a c :*: gPlus b d
 
-instance (GSemiring a, GSemiring b) => GSemiring (a :+: b) where
-  gZero = L1 gZero
-  gOne  = L1 gOne
-  gPlus (L1 x) (L1 y) = L1 (gPlus x y)
-  gPlus (R1 x) (R1 y) = R1 (gPlus x y)
-  gPlus x _ = x
-  gTimes (L1 x) (L1 y) = L1 (gTimes x y)
-  gTimes (R1 x) (R1 y) = R1 (gTimes x y)
-  gTimes x _ = x
+-- i do not intend to support sum types
+--
+--instance (GSemiring a, GSemiring b) => GSemiring (a :+: b) where
+--  gZero = L1 gZero
+--  gOne  = L1 gOne
+--  gPlus (L1 x) (L1 y) = L1 (gPlus x y)
+--  gPlus (R1 x) (R1 y) = R1 (gPlus x y)
+--  gPlus x _ = x
+--  gTimes (L1 x) (L1 y) = L1 (gTimes x y)
+--  gTimes (R1 x) (R1 y) = R1 (gTimes x y)
+--  gTimes x _ = x
 
 instance (GSemiring a) => GSemiring (M1 i c a) where
   gZero = M1 gZero
