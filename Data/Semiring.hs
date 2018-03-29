@@ -210,7 +210,6 @@ instance Semiring () where
 instance Semiring a => Semiring [a] where
   zero = []
   one  = [one]
-
   plus  = listAdd
   times = listTimes
 
@@ -220,13 +219,12 @@ listAdd xs [] = xs
 listAdd (x:xs) (y:ys) = (x + y) : listAdd xs ys
 {-# NOINLINE [0] listAdd #-}
 
-listTimes []  _ = []
-listTimes _  [] = []
-listTimes xs ys = Foldable.foldr f [] xs
-  where
-    f x zs = Foldable.foldr (g x) id ys (zero : zs)
-    g x y a (z:zs) = x * y + z : a zs
-    g x y a []     = x * y     : a []
+listTimes [] (_:xs) = zero : listTimes [] xs
+listTimes (_:xs) [] = zero : listTimes [] xs
+listTimes [] _ = []
+listTimes _ [] = []
+listTimes (x:xs) (y:ys) = (x * y) : listTimes xs ys
+{-# NOINLINE [0] listTimes #-}
 
 instance Semiring a => Semiring (Vector a) where
   zero  = Vector.empty
