@@ -18,6 +18,7 @@ module Data.Ring
   ) where
 
 import           Control.Applicative (Alternative(..), Applicative(..), Const(..))
+import           Data.Bool (Bool)
 import           Data.Complex (Complex(..))
 import           Data.Fixed (Fixed, HasResolution)
 import           Data.Functor.Identity (Identity(..))
@@ -66,6 +67,12 @@ instance Ring a => Semiring (Complex a) where
   plus  (x :+ y) (x' :+ y') = (plus x x') :+ (plus y y')
   times (x :+ y) (x' :+ y')
     = (x * x' + (negate (y * y'))) :+ (x * y' + y * x')
+
+instance Ring () where
+  negate _ = ()
+
+instance Ring Bool where
+  negate = P.not
 
 instance Ring a => Ring (Complex a) where
   negate (x :+ y) = negate x :+ negate y

@@ -77,7 +77,7 @@ import           Numeric.Natural (Natural)
 import qualified Prelude as P
 import           Prelude (Eq(..))
 import           Prelude (IO, Integral, Integer, Float, Double)
-import           Prelude ((.), ($), flip, id, otherwise)
+import           Prelude ((.), ($), flip, otherwise)
 import           System.Posix.Types
   (CCc, CDev, CGid, CIno, CMode, CNlink,
    COff, CPid, CRLim, CSpeed, CSsize,
@@ -222,7 +222,7 @@ listAdd (x:xs) (y:ys) = (x + y) : listAdd xs ys
 listTimes [] (_:xs) = zero : listTimes [] xs
 listTimes (_:xs) [] = zero : listTimes [] xs
 listTimes [] _ = []
-listTimes _ [] = []
+--listTimes _ [] = []
 listTimes (x:xs) (y:ys) = (x * y) : listTimes xs ys
 {-# NOINLINE [0] listTimes #-}
 
