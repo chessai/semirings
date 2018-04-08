@@ -1,14 +1,16 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DefaultSignatures          #-}
+{-# LANGUAGE DeriveFoldable             #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE Rank2Types                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeOperators              #-}
 
 -- this is here because of Generics
 {-# LANGUAGE FlexibleContexts #-}
@@ -18,7 +20,20 @@
 -- this is here because of -XDefaultSignatures
 {-# OPTIONS_GHC -fno-warn-missing-methods #-}
 
-module Data.Semiring where 
+module Data.Semiring
+  ( Semiring(..)
+  , Ring(..)
+  , (+)
+  , (*)
+  , (-)
+  , (^)
+  , foldMapP
+  , foldMapT
+  , sum
+  , prod
+  , sum'
+  , prod'
+  ) where 
 
 import           Control.Monad.Constrictor (Ap(..))
 import           Control.Applicative (Alternative(..), Applicative(..), Const(..))
@@ -28,7 +43,7 @@ import           Data.Eq (Eq(..))
 import           Data.Fixed (Fixed, HasResolution)
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
-import           Data.Function ((.), ($), flip)
+import           Data.Function ((.), ($), id, flip)
 import           Data.Functor (fmap)
 import           Data.Functor.Identity (Identity(..))
 import           Data.Hashable (Hashable)
@@ -37,6 +52,10 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
+import           Data.IntMap (IntMap)
+import qualified Data.IntMap as IntMap
+import           Data.IntSet (IntSet)
+import qualified Data.IntSet as IntSet
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Maybe (Maybe(..))
@@ -44,6 +63,8 @@ import           Data.Monoid (Dual(..), Endo(..), Alt(..), Product(..), Sum(..))
 import           Data.Ord (Down(..), Ord(..), Ordering(..), compare)
 import           Data.Ratio (Ratio)
 import           Data.Semigroup (Max(..), Min(..))
+import           Data.Sequence (Seq)
+import qualified Data.Sequence as Seq
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Vector (Vector)
@@ -59,6 +80,7 @@ import           Foreign.C.Types
    CUIntMax, CUIntPtr, CULLong, CULong,
    CUSeconds, CUShort, CWchar)
 import           Foreign.Ptr (IntPtr, WordPtr)
+import           GHC.Base (build)
 import           GHC.Err (error)
 import           GHC.Generics
 import           GHC.Float (Float, Double)
@@ -238,29 +260,12 @@ instance Semiring Bool where
 instance Ring Bool where
   negate = not
 
+-- See Section: List fusion
 instance Semiring a => Semiring [a] where
   zero = []
   one  = [one]
   plus  = listAdd
   times = listTimes
-
---
--- Internal
--- 
-listAdd, listTimes :: Semiring a => [a] -> [a] -> [a]
-listAdd [] ys = ys
-listAdd xs [] = xs
-listAdd (x:xs) (y:ys) = (x + y) : listAdd xs ys
-{-# NOINLINE [0] listAdd #-}
-
-listTimes [] (_:xs) = zero : listTimes [] xs
-listTimes (_:xs) [] = zero : listTimes xs []
-listTimes [] _ = []
-listTimes (x:xs) (y:ys) = (x * y) : listTimes xs ys
-{-# NOINLINE [0] listTimes #-}
---
--- Internal
---
 
 instance Ring a => Ring [a] where
   negate = fmap negate
@@ -511,7 +516,6 @@ instance (Applicative f, Semiring a) => Semiring (Ap f a) where
   plus  = liftA2 plus
   times = liftA2 times
 
-
 {--------------------------------------------------------------------
   Instances (containers)
 --------------------------------------------------------------------}
@@ -536,6 +540,28 @@ instance (Ord a, Semiring a, Semiring b) => Semiring (Map a b) where
         [ (plus k l, v * u)
         | (k,v) <- Map.toList xs
         , (l,u) <- Map.toList ys ]
+
+instance Semiring IntSet where
+  zero = IntSet.empty
+  one  = IntSet.singleton one
+  plus = IntSet.union
+  times xs ys = IntSet.fromList (times (IntSet.toList xs) (IntSet.toList ys))
+
+instance (Semiring a) => Semiring (IntMap a) where
+  zero = IntMap.empty
+  one  = IntMap.singleton zero one
+  plus = IntMap.unionWith (+)
+  xs `times` ys
+    = IntMap.fromListWith (+)
+        [ (plus k l, v * u)
+        | (k,v) <- IntMap.toList xs
+        , (l,u) <- IntMap.toList ys ]
+
+instance (Semiring a) => Semiring (Seq a) where
+  zero = Seq.empty
+  one  = Seq.singleton one
+  plus = (Seq.><)
+  times xs ys = Seq.fromList (times (Foldable.toList xs) (Foldable.toList ys))
 
 {--------------------------------------------------------------------
   Instances (unordered-containers)
@@ -723,3 +749,35 @@ instance (Semiring a) => GSemiring (K1 i a) where
 instance (Ring a) => GRing (K1 i a) where
   gNegate (K1 x) = K1 $ negate x
 
+-- [Section: List fusion]
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+listAdd, listTimes :: Semiring a => [a] -> [a] -> [a]
+listAdd [] ys = ys
+listAdd xs [] = xs
+listAdd (x:xs) (y:ys) = (x + y) : listAdd xs ys
+{-# NOINLINE [0] listAdd #-}
+
+listTimes [] (_:xs) = zero : listTimes [] xs
+listTimes (_:xs) [] = zero : listTimes xs []
+listTimes [] [] = []
+listTimes (x:xs) (y:ys) = (x * y) : listTimes xs ys
+{-# NOINLINE [0] listTimes #-}
+
+type ListBuilder a = forall b. (a -> b -> b) -> b -> b
+
+{-# RULES 
+"listAddFB/left"  forall    (g :: ListBuilder a). listAdd    (build g) = listAddFBL g
+"listAddFB/right" forall xs (g :: ListBuilder a). listAdd xs (build g) = listAddFBR xs g
+  #-}
+
+-- a definition of listAdd which can be fused on its left argument
+listAddFBL :: Semiring a => ListBuilder a -> [a] -> [a]
+listAddFBL xf = xf f id where
+  f x xs (y:ys) = x + y : xs ys
+  f x xs []     = x : xs []
+
+-- a definition of listAdd which can be fused on its right argument
+listAddFBR :: Semiring a => [a] -> ListBuilder a -> [a]
+listAddFBR xs' yf = yf f id xs' where
+  f y ys (x:xs) = x + y : ys xs
+  f y ys []     = y : ys []
