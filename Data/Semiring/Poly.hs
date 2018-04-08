@@ -16,7 +16,7 @@ module Data.Semiring.Poly
   ( Poly(..)
   , collapse
   , compose
-  , horner
+  , evaluate 
   , degree
   , fromList
   , fromListN
@@ -92,7 +92,13 @@ compose (Poly x) y = horner y (fmap singleton x)
 collapse :: Semiring a => Vector (Poly a) -> Poly a
 collapse = Foldable.foldr compose zero
 
--- | Horner's scheme for evaluating a polynomial in a semiring
+-- | Evaluate a polynomial.
+-- 
+-- Given a value x and a function f, compute f(x)
+evaluate :: Semiring a => a -> Poly a -> a
+evaluate = horner
+
+-- horner's scheme for evaluating a polynomial in a semiring
 horner :: (Semiring a, Foldable t) => a -> t a -> a
 horner x = Foldable.foldr (\c val -> c + x * val) zero
 
