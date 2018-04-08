@@ -1,6 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -8,10 +10,10 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
---{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall #-}
 
-module Data.Semiring.RingPoly
-  ( RingPoly(..)
+module Data.Semiring.Poly
+  ( Poly(..)
   , collapse
   , compose
   , horner
@@ -21,121 +23,90 @@ module Data.Semiring.RingPoly
   , toList
   , empty
   , singleton
+  , scale
+  , shift
+  , unShift
   ) where
 
-import           Data.Bool (Bool(..), (&&))
+import           Control.Applicative (Applicative, Alternative)
+import           Control.DeepSeq (NFData)
+import           Control.Monad (MonadPlus)
+import           Control.Monad.Zip (MonadZip)
+import           Data.Data (Data)
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
+import           Data.Functor.Classes
 import           Data.Ord (Ordering(..), compare)
 import           Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import qualified GHC.Exts as Exts
 import           GHC.Generics (Generic, Generic1)
-import qualified Prelude as P
-import           Prelude (Eq(..))
-import           Prelude (($), (.), otherwise)
-import           Prelude (Int, IO)
+import           Prelude hiding (Num(..))
 
 import Data.Semiring
 
--- | The type of polynomials in one variable,
---   but the underlying type is generally treated
---   with the stronger constraint of 'Ring'.
-newtype RingPoly  a   = RingPoly { unRingPoly :: Vector a }
-  deriving (P.Eq, P.Ord, P.Read, Generic, Generic1,
-            P.Functor, P.Foldable)
+-- | The type of polynomials in one variable
+newtype Poly  a   = Poly { unPoly :: Vector a }
+  deriving ( Monad, Functor, Applicative, Foldable
+           , Traversable, Eq1, Ord1, Read1, Show1
+           , MonadZip, Alternative, MonadPlus
+           , Eq, Data, Ord
+           , Read, Show, Semigroup, Monoid
+           , NFData
+           , Generic, Generic1 )
 
-instance P.Show a => P.Show (RingPoly a) where
-  show p = "fromList " P.++ (P.show $ unRingPoly p)
-
-instance Exts.IsList (RingPoly a) where
-  type Item (RingPoly a) = a
+instance Exts.IsList (Poly a) where
+  type Item (Poly a) = a
   fromList  = fromList
   fromListN = fromListN
   toList    = toList
 
-fromList :: [a] -> RingPoly a
-fromList = RingPoly . Vector.fromList
+fromList :: [a] -> Poly a
+fromList = Poly . Vector.fromList
 
-fromListN :: Int -> [a] -> RingPoly a
-fromListN = (P.fmap RingPoly) . Vector.fromListN
+fromListN :: Int -> [a] -> Poly a
+fromListN = (fmap Poly) . Vector.fromListN
 
-toList :: RingPoly a -> [a]
-toList = Vector.toList . unRingPoly
+toList :: Poly a -> [a]
+toList = Vector.toList . unPoly
 
-degree :: RingPoly a -> Int
-degree p = (Vector.length $ unRingPoly p) - 1
+degree :: Poly a -> Int
+degree p = (Vector.length $ unPoly p) - 1
 
-empty :: RingPoly a
-empty = RingPoly $ Vector.empty
+empty :: Poly a
+empty = Poly $ Vector.empty
 
-singleton :: a -> RingPoly a
-singleton = RingPoly . Vector.singleton
+singleton :: a -> Poly a
+singleton = Poly . Vector.singleton
 
--- | Lazily compose two polynomials. Illustrated:
+-- | Compose two polynomials. Illustrated:
+--   compose f g = h
+--   =
 --   f(g(x)) = h(x)
-compose :: Semiring a => RingPoly a -> RingPoly a -> RingPoly a
-compose (RingPoly x) y = horner y (P.fmap singleton x)
+compose :: Semiring a => Poly a -> Poly a -> Poly a
+compose (Poly x) y = horner y (fmap singleton x)
 
 -- | Compose any number of polynomials of the form
 -- f0(f1(f2(...(fN(x))))) into
 -- f(x)
-collapse :: Semiring a => Vector (RingPoly a) -> RingPoly a
+collapse :: Semiring a => Vector (Poly a) -> Poly a
 collapse = Foldable.foldr compose zero
 
 -- | Horner's scheme for evaluating a polynomial in a semiring
 horner :: (Semiring a, Foldable t) => a -> t a -> a
 horner x = Foldable.foldr (\c val -> c + x * val) zero
 
-shift, unShift :: Semiring a => RingPoly a -> RingPoly a
-shift (RingPoly xs)
+shift, unShift :: Semiring a => Poly a -> Poly a
+shift (Poly xs)
   | Vector.null xs = empty
-  | otherwise = RingPoly $ zero `Vector.cons` xs
+  | otherwise = Poly $ zero `Vector.cons` xs
 
-unShift (RingPoly xs)
+unShift (Poly xs)
   | Vector.null xs = empty
-  | otherwise = RingPoly $ Vector.unsafeTail xs
+  | otherwise = Poly $ Vector.unsafeTail xs
 
-scale :: Semiring a => a -> RingPoly a -> RingPoly a
-scale s = RingPoly . Vector.map (s *) . unRingPoly
-
-collinear :: (Eq a, Semiring a) => RingPoly a -> RingPoly a -> Bool
-collinear (RingPoly f) (RingPoly g)
-  | (Vector.length f == 2 && Vector.length g == 2)
-      = Vector.unsafeHead f == Vector.unsafeHead g
-  | (Vector.length f == 1 && Vector.length g == 1)
-      = Vector.unsafeHead f == Vector.unsafeHead g
-  | otherwise = False
-
-polyTimesR :: Ring a => Vector a -> Vector a -> Vector a
-polyTimesR signal kernel
-  | Vector.null signal = Vector.empty
-  | Vector.null kernel = Vector.empty
-  | otherwise = Vector.generate (slen + klen - 1) f
-  where
-    f _ = zero
-
-    !slen = Vector.length signal
-    !klen = Vector.length kernel
-
-polyMulti2 :: Ring a => Vector a -> Vector a -> Vector a
-polyMulti2 xs ys =
-  (u + (y - u - z)) * (len `div` 2) + z * (2 * len `div` 2) 
-  where
-    y = polyMulti2 (a0 + a1) (b0 + b1)
-    u = polyMulti2 a0 b0
-    z = polyMulti2 a1 b1
-    a0 = Vector.generate pow1 f
-    a1 = Vector.generate pow2 f
-    b0 = Vector.generate pow1 f
-    b1 = Vector.generate pow2 f
-    f _ = zero
-   
-    !pow1 = len `div` 2 - 1
-    !pow2 = len - len `div` 2
-    !len  = slen + klen - 1 
-    !slen = Vector.length xs
-    !klen = Vector.length ys
+scale :: Semiring a => a -> Poly a -> Poly a
+scale s = Poly . Vector.map (s *) . unPoly
 
 polyPlus, polyTimes :: Semiring a => Vector a -> Vector a -> Vector a
 polyPlus xs ys =
@@ -154,17 +125,17 @@ polyTimes signal kernel
         Vector.unsafeIndex signal k *
         Vector.unsafeIndex kernel (n - k)) zero [kmin .. kmax]
       where
-        !kmin = P.max 0 (n - (klen - 1))
-        !kmax = P.min n (slen - 1)
+        !kmin = max 0 (n - (klen - 1))
+        !kmax = min n (slen - 1)
     !slen = Vector.length signal
     !klen = Vector.length kernel
 
-instance Semiring a => Semiring (RingPoly a) where
+instance Semiring a => Semiring (Poly a) where
   zero = empty
   one  = singleton one
 
-  plus  x y = RingPoly $ polyPlus  (unRingPoly x) (unRingPoly y)
-  times x y = RingPoly $ polyTimes (unRingPoly x) (unRingPoly y)
+  plus  x y = Poly $ polyPlus  (unPoly x) (unPoly y)
+  times x y = Poly $ polyTimes (unPoly x) (unPoly y)
 
-instance Ring a => Ring (RingPoly a) where
-  negate = RingPoly . Vector.map negate . unRingPoly
+instance Ring a => Ring (Poly a) where
+  negate = Poly . Vector.map negate . unPoly

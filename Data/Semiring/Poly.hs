@@ -1,6 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -8,7 +10,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
---{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall #-}
 
 module Data.Semiring.Poly
   ( Poly(..)
@@ -21,30 +23,37 @@ module Data.Semiring.Poly
   , toList
   , empty
   , singleton
+  , scale
+  , shift
+  , unShift
   ) where
 
-import           Data.Bool (Bool(..), (&&))
+import           Control.Applicative (Applicative, Alternative)
+import           Control.DeepSeq (NFData)
+import           Control.Monad (MonadPlus)
+import           Control.Monad.Zip (MonadZip)
+import           Data.Data (Data)
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
+import           Data.Functor.Classes
 import           Data.Ord (Ordering(..), compare)
 import           Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import qualified GHC.Exts as Exts
 import           GHC.Generics (Generic, Generic1)
-import qualified Prelude as P
-import           Prelude (Eq(..))
-import           Prelude (($), (.), otherwise)
-import           Prelude (Int, IO)
+import           Prelude hiding (Num(..))
 
 import Data.Semiring
 
 -- | The type of polynomials in one variable
 newtype Poly  a   = Poly { unPoly :: Vector a }
-  deriving (P.Eq, P.Ord, P.Read, Generic, Generic1,
-            P.Functor, P.Foldable)
-
-instance P.Show a => P.Show (Poly a) where
-  show p = "fromList " P.++ (P.show $ unPoly p)
+  deriving ( Monad, Functor, Applicative, Foldable
+           , Traversable, Eq1, Ord1, Read1, Show1
+           , MonadZip, Alternative, MonadPlus
+           , Eq, Data, Ord
+           , Read, Show, Semigroup, Monoid
+           , NFData
+           , Generic, Generic1 )
 
 instance Exts.IsList (Poly a) where
   type Item (Poly a) = a
@@ -56,7 +65,7 @@ fromList :: [a] -> Poly a
 fromList = Poly . Vector.fromList
 
 fromListN :: Int -> [a] -> Poly a
-fromListN = (P.fmap Poly) . Vector.fromListN
+fromListN = (fmap Poly) . Vector.fromListN
 
 toList :: Poly a -> [a]
 toList = Vector.toList . unPoly
@@ -70,10 +79,12 @@ empty = Poly $ Vector.empty
 singleton :: a -> Poly a
 singleton = Poly . Vector.singleton
 
--- | Lazily compose two polynomials. Illustrated:
+-- | Compose two polynomials. Illustrated:
+--   compose f g = h
+--   =
 --   f(g(x)) = h(x)
 compose :: Semiring a => Poly a -> Poly a -> Poly a
-compose (Poly x) y = horner y (P.fmap singleton x)
+compose (Poly x) y = horner y (fmap singleton x)
 
 -- | Compose any number of polynomials of the form
 -- f0(f1(f2(...(fN(x))))) into
@@ -97,14 +108,6 @@ unShift (Poly xs)
 scale :: Semiring a => a -> Poly a -> Poly a
 scale s = Poly . Vector.map (s *) . unPoly
 
-collinear :: (Eq a, Semiring a) => Poly a -> Poly a -> Bool
-collinear (Poly f) (Poly g)
-  | (Vector.length f == 2 && Vector.length g == 2)
-      = Vector.unsafeHead f == Vector.unsafeHead g
-  | (Vector.length f == 1 && Vector.length g == 1)
-      = Vector.unsafeHead f == Vector.unsafeHead g
-  | otherwise = False
-
 polyPlus, polyTimes :: Semiring a => Vector a -> Vector a -> Vector a
 polyPlus xs ys =
   case compare (Vector.length xs) (Vector.length ys) of
@@ -122,8 +125,8 @@ polyTimes signal kernel
         Vector.unsafeIndex signal k *
         Vector.unsafeIndex kernel (n - k)) zero [kmin .. kmax]
       where
-        !kmin = P.max 0 (n - (klen - 1))
-        !kmax = P.min n (slen - 1)
+        !kmin = max 0 (n - (klen - 1))
+        !kmax = min n (slen - 1)
     !slen = Vector.length signal
     !klen = Vector.length kernel
 
