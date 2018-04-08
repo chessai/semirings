@@ -25,7 +25,7 @@ module Data.Semiring.RingPoly
   , singleton
   , scale
   , shift
-  , unShift
+  , shiftN
   ) where
 
 import           Control.Applicative (Applicative, Alternative)
@@ -96,17 +96,53 @@ collapse = Foldable.foldr compose zero
 horner :: (Semiring a, Foldable t) => a -> t a -> a
 horner x = Foldable.foldr (\c val -> c + x * val) zero
 
-shift, unShift :: Semiring a => RingPoly a -> RingPoly a
+shiftN :: Semiring a => Int -> RingPoly a -> RingPoly a
+shiftN d (RingPoly v) = RingPoly v'
+  where
+    l = Vector.length v 
+    v' = Vector.generate (d + l) (\i -> if i < l then Vector.unsafeIndex v i else zero)
+
+shift :: Semiring a => RingPoly a -> RingPoly a
 shift (RingPoly xs)
   | Vector.null xs = empty
-  | otherwise = RingPoly $ zero `Vector.cons` xs
-
-unShift (RingPoly xs)
-  | Vector.null xs = empty
-  | otherwise = RingPoly $ Vector.unsafeTail xs
+  | otherwise = RingPoly $ Vector.snoc xs zero
 
 scale :: Semiring a => a -> RingPoly a -> RingPoly a
 scale s = RingPoly . Vector.map (s *) . unRingPoly
+
+-- make two vectors the same size, by prepending 'zero' to the shorter vector
+-- a number of times equal to the difference between their two lengths.
+equalise :: Semiring a => Vector a -> Vector a -> (Vector a, Vector a, Int)
+equalise v1 v2 = case compare l1 l2 of
+  LT ->
+    let
+      diff = l2 - l1 
+      v1L = Vector.generate l2 (\i -> if i < diff then zero else Vector.unsafeIndex v1 (i - diff))
+    in (v1L, v2, l2) 
+  EQ -> (v1, v2, l2)
+  GT ->
+    let
+      diff = l1 - l2
+      v2G = Vector.generate l1 (\i -> if i < diff then zero else Vector.unsafeIndex v2 (i - diff))
+    in (v1, v2G, l1)
+  where
+    l1  = Vector.length v1
+    l2  = Vector.length v2
+
+divideAndConquer :: Ring a => RingPoly a -> RingPoly a -> RingPoly a
+divideAndConquer (RingPoly v1) (RingPoly v2)
+  | Vector.null v1 = empty
+  | Vector.null v2 = empty
+  | otherwise = u + shiftN (d `div` 2) (y - u - z) + shiftN (2 * (d `div` 2)) z
+  where
+    (s1,s2,d) = equalise v1 v2 
+    y = divideAndConquer (a0 + a1) (b0 + b1)
+    u = divideAndConquer a0 b0
+    z = divideAndConquer a1 b1
+    a0 = RingPoly $ Vector.unsafeTake (d `div` 2) s1
+    a1 = RingPoly $ Vector.unsafeDrop (d - (d `div` 2) + 1) s1
+    b0 = RingPoly $ Vector.unsafeTake (d `div` 2) s2
+    b1 = RingPoly $ Vector.unsafeDrop (d - (d `div` 2) + 1) s2
 
 polyPlus, polyTimes :: Semiring a => Vector a -> Vector a -> Vector a
 polyPlus xs ys =

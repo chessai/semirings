@@ -611,6 +611,9 @@ instance Semiring a => Semiring (Vector a) where
         !klen = Vector.length ys
         !maxlen = max slen klen
 
+instance Ring a => Ring (Vector a) where
+  negate = Vector.map negate
+
 instance (UV.Unbox a, Semiring a) => Semiring (UV.Vector a) where
   zero = UV.empty
   one  = UV.singleton one
@@ -634,6 +637,9 @@ instance (UV.Unbox a, Semiring a) => Semiring (UV.Vector a) where
         !slen = UV.length xs
         !klen = UV.length ys
         !maxlen = max slen klen
+
+instance (UV.Unbox a, Ring a) => Ring (UV.Vector a) where
+  negate = UV.map negate
 
 instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
   zero = SV.empty
@@ -661,6 +667,9 @@ instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
         !slen = SV.length xs
         !klen = SV.length ys
         !maxlen = max slen klen
+
+instance (SV.Storable a, Ring a) => Ring (SV.Vector a) where
+  negate = SV.map negate
 
 {-
 instance (Precise a, RealFloat a) => Semiring (Log a) where
