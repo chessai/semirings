@@ -12,7 +12,6 @@ module Data.Semiring.Fib
 
 import           GHC.Generics (Generic, Generic1)
 import           Data.Semiring
-import           Data.Ring
 
 import Prelude hiding (Num(..),(+),(*),(-),(^),negate)
 
@@ -85,4 +84,5 @@ instance (Ord a, Ring a) => Ord (Fib a) where
    where
      go :: Ring a => (a -> a -> Ordering) -> a -> a -> Ordering
      go k e f = k (square (e + two*f)) (five * square e)
-
+     square :: Semiring a => a -> a
+     square x = x * x

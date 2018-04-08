@@ -27,15 +27,16 @@ source-repository head
 ---------------------------------------------------------------------
 
 library
-    exposed-modules:       Data.Ring 
-                         , Data.Semiring 
+    exposed-modules:       Data.Semiring 
                          , Data.Star
                          , Data.Semiring.Fib 
                          , Data.Semiring.Numeric
                          , Data.Semiring.Poly
     build-depends:         base       >= 4.7     && <  5.0
+                         , constrictor
                          , containers
                          , hashable
+                         , integer-gmp 
                          , log-domain 
                          , primitive
                          , unordered-containers  

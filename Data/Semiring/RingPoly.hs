@@ -36,9 +36,7 @@ import           Prelude (Eq(..))
 import           Prelude (($), (.), otherwise)
 import           Prelude (Int, IO)
 
-import Data.Ring (Ring(..), (-))
-
-import Data.Semiring (Semiring(zero,one,plus,times), (+), (*))
+import Data.Semiring
 
 -- | The type of polynomials in one variable,
 --   but the underlying type is generally treated

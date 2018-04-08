@@ -26,6 +26,7 @@ let fetchNixpkgs = import ./nix/fetchNixpkgs.nix;
            build = name: path: self.callCabal2nix name (builtins.filterSource filterPredicate path) {}; 
          };
     {
+      constrictor = cp "constrictor"; 
       semirings = build "semirings" ./.;
     };
   };

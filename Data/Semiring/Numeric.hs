@@ -17,7 +17,6 @@ import           GHC.Generics
 import           Foreign.Storable (Storable)
 
 import           Data.Semiring
-import           Data.Ring
 
 import Prelude hiding ((+),(-),negate)
 
