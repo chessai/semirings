@@ -12,8 +12,8 @@
 
 {-# OPTIONS_GHC -Wall #-}
 
-module Data.Semiring.Poly
-  ( Poly(..)
+module Data.Semiring.RingPoly
+  ( RingPoly(..)
   , collapse
   , compose
   , horner
@@ -46,7 +46,7 @@ import           Prelude hiding (Num(..))
 import Data.Semiring
 
 -- | The type of polynomials in one variable
-newtype Poly  a   = Poly { unPoly :: Vector a }
+newtype RingPoly  a   = RingPoly { unRingPoly :: Vector a }
   deriving ( Monad, Functor, Applicative, Foldable
            , Traversable, Eq1, Ord1, Read1, Show1
            , MonadZip, Alternative, MonadPlus
@@ -55,58 +55,58 @@ newtype Poly  a   = Poly { unPoly :: Vector a }
            , NFData
            , Generic, Generic1 )
 
-instance Exts.IsList (Poly a) where
-  type Item (Poly a) = a
+instance Exts.IsList (RingPoly a) where
+  type Item (RingPoly a) = a
   fromList  = fromList
   fromListN = fromListN
   toList    = toList
 
-fromList :: [a] -> Poly a
-fromList = Poly . Vector.fromList
+fromList :: [a] -> RingPoly a
+fromList = RingPoly . Vector.fromList
 
-fromListN :: Int -> [a] -> Poly a
-fromListN = (fmap Poly) . Vector.fromListN
+fromListN :: Int -> [a] -> RingPoly a
+fromListN = (fmap RingPoly) . Vector.fromListN
 
-toList :: Poly a -> [a]
-toList = Vector.toList . unPoly
+toList :: RingPoly a -> [a]
+toList = Vector.toList . unRingPoly
 
-degree :: Poly a -> Int
-degree p = (Vector.length $ unPoly p) - 1
+degree :: RingPoly a -> Int
+degree p = (Vector.length $ unRingPoly p) - 1
 
-empty :: Poly a
-empty = Poly $ Vector.empty
+empty :: RingPoly a
+empty = RingPoly $ Vector.empty
 
-singleton :: a -> Poly a
-singleton = Poly . Vector.singleton
+singleton :: a -> RingPoly a
+singleton = RingPoly . Vector.singleton
 
 -- | Compose two polynomials. Illustrated:
 --   compose f g = h
 --   =
 --   f(g(x)) = h(x)
-compose :: Semiring a => Poly a -> Poly a -> Poly a
-compose (Poly x) y = horner y (fmap singleton x)
+compose :: Semiring a => RingPoly a -> RingPoly a -> RingPoly a
+compose (RingPoly x) y = horner y (fmap singleton x)
 
 -- | Compose any number of polynomials of the form
 -- f0(f1(f2(...(fN(x))))) into
 -- f(x)
-collapse :: Semiring a => Vector (Poly a) -> Poly a
+collapse :: Semiring a => Vector (RingPoly a) -> RingPoly a
 collapse = Foldable.foldr compose zero
 
 -- | Horner's scheme for evaluating a polynomial in a semiring
 horner :: (Semiring a, Foldable t) => a -> t a -> a
 horner x = Foldable.foldr (\c val -> c + x * val) zero
 
-shift, unShift :: Semiring a => Poly a -> Poly a
-shift (Poly xs)
+shift, unShift :: Semiring a => RingPoly a -> RingPoly a
+shift (RingPoly xs)
   | Vector.null xs = empty
-  | otherwise = Poly $ zero `Vector.cons` xs
+  | otherwise = RingPoly $ zero `Vector.cons` xs
 
-unShift (Poly xs)
+unShift (RingPoly xs)
   | Vector.null xs = empty
-  | otherwise = Poly $ Vector.unsafeTail xs
+  | otherwise = RingPoly $ Vector.unsafeTail xs
 
-scale :: Semiring a => a -> Poly a -> Poly a
-scale s = Poly . Vector.map (s *) . unPoly
+scale :: Semiring a => a -> RingPoly a -> RingPoly a
+scale s = RingPoly . Vector.map (s *) . unRingPoly
 
 polyPlus, polyTimes :: Semiring a => Vector a -> Vector a -> Vector a
 polyPlus xs ys =
@@ -130,12 +130,12 @@ polyTimes signal kernel
     !slen = Vector.length signal
     !klen = Vector.length kernel
 
-instance Semiring a => Semiring (Poly a) where
+instance Semiring a => Semiring (RingPoly a) where
   zero = empty
   one  = singleton one
 
-  plus  x y = Poly $ polyPlus  (unPoly x) (unPoly y)
-  times x y = Poly $ polyTimes (unPoly x) (unPoly y)
+  plus  x y = RingPoly $ polyPlus  (unRingPoly x) (unRingPoly y)
+  times x y = RingPoly $ polyTimes (unRingPoly x) (unRingPoly y)
 
-instance Ring a => Ring (Poly a) where
-  negate = Poly . Vector.map negate . unPoly
+instance Ring a => Ring (RingPoly a) where
+  negate = RingPoly . Vector.map negate . unRingPoly
