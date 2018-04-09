@@ -25,7 +25,7 @@ module Data.Semiring.Poly
   , singleton
   , scale
   , shift
-  , unShift
+  , shiftN 
   ) where
 
 import           Control.Applicative (Applicative, Alternative)
@@ -53,7 +53,8 @@ newtype Poly  a   = Poly { unPoly :: Vector a }
            , Eq, Data, Ord
            , Read, Show, Semigroup, Monoid
            , NFData
-           , Generic, Generic1 )
+           , Generic, Generic1
+           , Ring )
 
 instance Exts.IsList (Poly a) where
   type Item (Poly a) = a
@@ -71,7 +72,7 @@ toList :: Poly a -> [a]
 toList = Vector.toList . unPoly
 
 degree :: Poly a -> Int
-degree p = (Vector.length $ unPoly p) - 1
+degree (Poly p) = Vector.length p
 
 empty :: Poly a
 empty = Poly $ Vector.empty
@@ -102,14 +103,16 @@ evaluate = horner
 horner :: (Semiring a, Foldable t) => a -> t a -> a
 horner x = Foldable.foldr (\c val -> c + x * val) zero
 
-shift, unShift :: Semiring a => Poly a -> Poly a
+shift :: Semiring a => Poly a -> Poly a
 shift (Poly xs)
   | Vector.null xs = empty
-  | otherwise = Poly $ zero `Vector.cons` xs
+  | otherwise = Poly $ Vector.snoc xs zero
 
-unShift (Poly xs)
-  | Vector.null xs = empty
-  | otherwise = Poly $ Vector.unsafeTail xs
+shiftN :: Semiring a => Int -> Poly a -> Poly a
+shiftN d (Poly v) = Poly v'
+  where
+    l = Vector.length v
+    v' = Vector.generate (d + 1) (\i -> if i < l then Vector.unsafeIndex v i else zero)
 
 scale :: Semiring a => a -> Poly a -> Poly a
 scale s = Poly . Vector.map (s *) . unPoly
@@ -142,6 +145,3 @@ instance Semiring a => Semiring (Poly a) where
 
   plus  x y = Poly $ polyPlus  (unPoly x) (unPoly y)
   times x y = Poly $ polyTimes (unPoly x) (unPoly y)
-
-instance Ring a => Ring (Poly a) where
-  negate = Poly . Vector.map negate . unPoly
