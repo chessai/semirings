@@ -1,9 +1,5 @@
-{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DefaultSignatures          #-}
-{-# LANGUAGE DeriveFoldable             #-}
-{-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
@@ -43,7 +39,7 @@ import           Data.Eq (Eq(..))
 import           Data.Fixed (Fixed, HasResolution)
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
-import           Data.Function ((.), id, flip)
+import           Data.Function ((.), const, flip, id)
 import           Data.Functor (fmap)
 import           Data.Functor.Identity (Identity(..))
 #if defined(VERSION_unordered_containers)
@@ -89,7 +85,6 @@ import           Foreign.C.Types
    CUSeconds, CUShort, CWchar)
 import           Foreign.Ptr (IntPtr, WordPtr)
 import           GHC.Base (build)
-import           GHC.Err (error)
 import           GHC.Float (Float, Double)
 import           GHC.IO (IO)
 import           GHC.Integer (Integer)
@@ -111,9 +106,10 @@ infixr 8 ^
   Helpers
 --------------------------------------------------------------------}
 
--- | raise a number to a non-negative integral power
+-- | Raise a number to a non-negative integral power.
+-- If the power is negative, this will return 'zero'.
 (^) :: (Semiring a, Integral b) => a -> b -> a
-x0 ^ y0 | y0 < 0  = error "Negative exponent"
+x0 ^ y0 | y0 < 0  = zero
         | y0 == 0 = one
         | otherwise = f x0 y0
   where
@@ -229,15 +225,12 @@ class Semiring a where
 class Semiring a => Ring a where
   {-# MINIMAL negate #-}
   negate :: a -> a
-  
---  minus  :: a -> a -> a
---  minus x y = x + (negate y)
 
   default negate :: Num.Num a => a -> a
   negate = Num.negate
 
 minus :: Ring a => a -> a -> a
-minus x y = x + (negate y)
+minus x y = x + negate y
 
 {--------------------------------------------------------------------
   Instances (base)
@@ -245,9 +238,9 @@ minus x y = x + (negate y)
 
 instance Semiring b => Semiring (a -> b) where
   plus f g x  = f x `plus` g x
-  zero        = \_ -> zero
+  zero        = const zero
   times f g x = f x `times` g x
-  one         = \_ -> one
+  one         = const one
 
 instance Ring b => Ring (a -> b) where
   negate f x = negate (f x)
@@ -351,9 +344,9 @@ instance Ring a => Ring (Const a b) where
 instance Ring a => Semiring (Complex a) where
   zero = zero :+ zero
   one  = one  :+ zero
-  plus  (x :+ y) (x' :+ y') = (plus x x') :+ (plus y y')
+  plus  (x :+ y) (x' :+ y') = plus x x' :+ plus y y'
   times (x :+ y) (x' :+ y')
-    = (x * x' + (negate (y * y'))) :+ (x * y' + y * x')
+    = (x * x' - (y * y')) :+ (x * y' + y * x')
 
 instance Ring a => Ring (Complex a) where
   negate (x :+ y) = negate x :+ negate y

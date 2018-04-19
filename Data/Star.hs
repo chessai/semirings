@@ -12,6 +12,16 @@ import Data.Semiring.Poly
 
 import Prelude hiding (Num(..))
 
+-- | A <https://en.wikipedia.org/wiki/Semiring#Star_semirings Star semiring>
+-- adds one operation, 'star' to a 'Semiring', such that it follows the
+-- law:
+--
+-- @'star' x = 'one' '+' x '*' 'star' x = 'one' '+' 'star' x '*' x@
+--
+-- Another operation, 'aplus', can be defined in terms of 'star':
+--
+-- @'aplus' x = x '*' 'star' x@
+
 class (Semiring a) => Star a where
   {-# MINIMAL star | aplus #-} 
   star :: a -> a
@@ -43,7 +53,7 @@ instance (Eq a, Monoid a) => Star (Endo a) where
 instance (Star a) => Star (Poly a) where
   star (Poly v)
     | Vector.null v = one
-    | otherwise = Poly $ r
+    | otherwise = Poly r
     where
-      r = Vector.cons xst $ Vector.map (xst *) ((Vector.unsafeTail v) * r)
+      r = Vector.cons xst $ Vector.map (xst *) (Vector.unsafeTail v * r)
       xst = star (Vector.unsafeHead v)
