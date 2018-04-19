@@ -2,6 +2,8 @@ module Data.Star
   ( Star(..)
   ) where
 
+import Control.Monad (ap)
+import Control.Monad.Fix (fix)
 import Data.Bool (Bool(..))
 import Data.Function (id, (.))
 import Data.Monoid
@@ -44,6 +46,8 @@ instance Star () where
 instance (Eq a, Monoid a) => Star (Endo a) where
   star (Endo f) = Endo converge
     where
-      converge inp = mappend inp (if inp == next then inp else converge next)
-        where
-          next = mappend inp (f inp)
+      if' :: Bool -> a -> a -> a
+      if' True  x _ = x
+      if' False _ y = y
+      converge = fix (ap mappend . ap (if' =<< ap (==) (ap mappend f)) . (. ap mappend f))
+      --converge inp = mappend inp (if inp == next then inp else converge next)
