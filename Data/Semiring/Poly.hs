@@ -65,6 +65,7 @@ import           GHC.Generics (Generic, Generic1)
 import           Prelude hiding (Num(..), map)
 
 import Data.Semiring
+import Data.Star
 
 -- | The type of polynomials in one variable.
 -- Backed by 'Data.Vector.Vector'.
@@ -83,6 +84,15 @@ instance Exts.IsList (Poly a) where
   fromList  = fromList
   fromListN = fromListN
   toList    = toList
+
+-- this is horribly inefficient.
+instance (Star a) => Star (Poly a) where
+  star (Poly v)
+    | Vector.null v = one
+    | otherwise = Poly r
+    where
+      r = Vector.cons xst $ Vector.map (xst *) (Vector.unsafeTail v * r)
+      xst = star (Vector.unsafeHead v)
 
 fromList :: [a] -> Poly a
 fromList = Poly . Vector.fromList

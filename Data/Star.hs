@@ -8,7 +8,6 @@ import Data.Monoid
 import qualified Data.Vector as Vector
 
 import Data.Semiring
-import Data.Semiring.Poly
 
 import Prelude hiding (Num(..))
 
@@ -48,12 +47,3 @@ instance (Eq a, Monoid a) => Star (Endo a) where
       converge inp = mappend inp (if inp == next then inp else converge next)
         where
           next = mappend inp (f inp)
-
--- this is horribly inefficient.
-instance (Star a) => Star (Poly a) where
-  star (Poly v)
-    | Vector.null v = one
-    | otherwise = Poly r
-    where
-      r = Vector.cons xst $ Vector.map (xst *) (Vector.unsafeTail v * r)
-      xst = star (Vector.unsafeHead v)

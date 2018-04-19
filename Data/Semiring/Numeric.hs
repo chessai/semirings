@@ -14,14 +14,13 @@ module Data.Semiring.Numeric
   ) where
 
 import           Data.Coerce
+import           Data.Coerce.Util
 import           GHC.Generics
 import           Foreign.Storable (Storable)
 
 import           Data.Semiring
 
 import Prelude hiding ((+),(-),negate)
-
-type WrapBinary f a = (a -> a -> a) -> f a -> f a -> f a
 
 -- | Useful for some constraint problems.
 --

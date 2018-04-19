@@ -85,6 +85,7 @@ library
 
   build-depends:
       base >= 2 && < 5
+    , coerce-util 
     , integer-gmp
   
   if impl(ghc >= 7.2)
