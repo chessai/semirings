@@ -1,11 +1,11 @@
 { mkDerivation, base, fetchgit, stdenv, transformers }:
 mkDerivation {
   pname = "constrictor";
-  version = "0.1.0.2";
+  version = "0.1.1.0";
   src = fetchgit {
     url = "https://github.com/chessai/constrictor.git";
-    sha256 = "0ccf46r1fmzmv6azj90pqh6n8flhbmrjya5i2a24862c6g2hb43n";
-    rev = "20da78d52eddf9cc39254d56aa4a596af6837fd6";
+    sha256 = "1gv3f8n9dfmcf94yjvgf3h34749ii10ifa9h1kw3j1q9casqbzwl";
+    rev = "f76fcb935b62fec90ad6e9cb3b8adb2507402f3a";
   };
   libraryHaskellDepends = [ base transformers ];
   homepage = "https://github.com/chessai/constrictor.git";

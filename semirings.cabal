@@ -35,6 +35,7 @@ library
     build-depends:         base       >= 4.7     && <  5.0
                          , constrictor
                          , containers
+                         , deepseq 
                          , hashable
                          , integer-gmp 
                          , log-domain 
