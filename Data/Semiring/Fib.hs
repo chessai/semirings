@@ -10,31 +10,30 @@ module Data.Semiring.Fib
   , fib
   ) where
 
+import           Control.Monad.Zip (MonadZip(..))
 import           GHC.Generics (Generic, Generic1)
+
 import           Data.Semiring
 
 import Prelude hiding (Num(..),(+),(*),(-),(^),negate)
 
--- | 'Fib a b' represents a number of the type 'aφ+b'
+-- | 'Fib a b' represents a number 'aφ+b'
 --   in Z[x] mod x^2 - x - 1
 --
 --   @'zero' = Fib zero zero
---   'one'  = Fib  one zero
+--   'one'   = Fib  one zero
 --   'Fib' a b `plus`  'Fib' c d = 'Fib' (a + c) (b + d)
 --   'Fib' a b `times` 'Fib' c d = 'Fib' (a*(c + d) + b*c) (a*c + b*d)@
 data Fib a = Fib a a
-  deriving (Eq, Foldable, Functor, Show, Traversable, Generic, Generic1)
+  deriving (Eq, Foldable, Functor, Show, Read, Traversable, Generic, Generic1)
 
+-- | Given 'Fib a b', returns 'a'.
 getPhi :: Fib a -> a
 getPhi (Fib a _) = a
+{-# INLINE getPhi #-}
 
 -- | Compute the nth Fibonacci number in O(log n)
--- This has the benefit of nicely extending to negative Fibonacci, unlike
--- the usual boring definitions people tend to write. Moreover,
--- if we don't 'getPhi' at the end then we get both the desired
--- Fibonacci number and the preceding Fibonacci number, which is
--- is what can be useful to look at as a way to move around in a
--- sequence with 'Fib' as our "cursor"
+-- Note that this extends to negative Fibonacci.
 fib :: Ring a => Integer -> a
 fib n
   | n >= 0 = getPhi (Fib one zero ^ n)
@@ -58,6 +57,10 @@ instance Monad Fib where
   Fib a b >>= f = Fib a' b' where
     Fib a' _ = f a
     Fib _ b' = f b
+
+instance MonadZip Fib where
+  mzipWith f (Fib a b) (Fib c d) = Fib (f a c) (f b d)
+  munzip (Fib (a,b) (c,d)) = (Fib a c, Fib b d)
 
 two, five :: Semiring a => a
 two  = one + one

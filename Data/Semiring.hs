@@ -12,9 +12,6 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeOperators              #-}
 
--- this is here because of Generics
-{-# LANGUAGE FlexibleContexts #-}
-
 {-# OPTIONS_GHC -Wall #-}
 
 -- this is here because of -XDefaultSignatures
@@ -27,6 +24,7 @@ module Data.Semiring
   , (*)
   , (-)
   , (^)
+  , minus 
   , foldMapP
   , foldMapT
   , sum
@@ -35,7 +33,9 @@ module Data.Semiring
   , prod'
   ) where 
 
+#if defined(VERSION_constrictor)
 import           Constrictor (Ap(..))
+#endif
 import           Control.Applicative (Alternative(..), Applicative(..), Const(..))
 import           Data.Bool (Bool(..), (||), (&&), otherwise, not)
 import           Data.Complex (Complex(..))
@@ -43,14 +43,17 @@ import           Data.Eq (Eq(..))
 import           Data.Fixed (Fixed, HasResolution)
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
-import           Data.Function ((.), ($), id, flip)
+import           Data.Function ((.), id, flip)
 import           Data.Functor (fmap)
 import           Data.Functor.Identity (Identity(..))
+#if defined(VERSION_unordered_containers)
 import           Data.Hashable (Hashable)
 import           Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
 import           Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
+#endif
+#if defined(VERSION_containers)
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
@@ -59,18 +62,23 @@ import qualified Data.IntSet as IntSet
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Maybe (Maybe(..))
-import           Data.Monoid (Dual(..), Endo(..), Alt(..), Product(..), Sum(..))
+#endif
+import           Data.Monoid (Monoid(..),Dual(..), Endo(..), Alt(..), Product(..), Sum(..))
 import           Data.Ord (Down(..), Ord(..), Ordering(..), compare)
 import           Data.Ratio (Ratio)
 import           Data.Semigroup (Max(..), Min(..))
+#if defined(VERSION_containers)
 import           Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 import           Data.Set (Set)
 import qualified Data.Set as Set
+#endif
+#if defined(VERSION_vector)
 import           Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import qualified Data.Vector.Storable as SV
 import qualified Data.Vector.Unboxed as UV
+#endif
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
 import           Foreign.C.Types
   (CChar, CClock, CDouble, CFloat, CInt,
@@ -82,15 +90,14 @@ import           Foreign.C.Types
 import           Foreign.Ptr (IntPtr, WordPtr)
 import           GHC.Base (build)
 import           GHC.Err (error)
-import           GHC.Generics
 import           GHC.Float (Float, Double)
 import           GHC.IO (IO)
 import           GHC.Integer (Integer)
 import qualified GHC.Num as Num
 import           GHC.Real (Integral, quot, even)
---import           Numeric.Log (Log(..), Precise)
---import           Numeric.Log.Signed (SignedLog(..))
+#if __GLASGOW_HASKELL__ >= 710
 import           Numeric.Natural (Natural)
+#endif
 import           System.Posix.Types
   (CCc, CDev, CGid, CIno, CMode, CNlink,
    COff, CPid, CRLim, CSpeed, CSsize,
@@ -204,7 +211,7 @@ prod' = Foldable.foldr' times one
 
 class Semiring a where
   {-# MINIMAL plus, zero, times, one #-}
-  plus  :: a -> a -> a -- ^ Associative Additive Operation
+  plus  :: a -> a -> a -- ^ Commutative Additive Operation
   zero  :: a           -- ^ Additive Unit
   times :: a -> a -> a -- ^ Associative Multiplicative Operation
   one   :: a           -- ^ Multiplicative Unit
@@ -223,11 +230,14 @@ class Semiring a => Ring a where
   {-# MINIMAL negate #-}
   negate :: a -> a
   
-  minus  :: a -> a -> a
-  minus x y = x + (negate y)
+--  minus  :: a -> a -> a
+--  minus x y = x + (negate y)
 
   default negate :: Num.Num a => a -> a
   negate = Num.negate
+
+minus :: Ring a => a -> a -> a
+minus x y = x + (negate y)
 
 {--------------------------------------------------------------------
   Instances (base)
@@ -311,8 +321,14 @@ instance Ring a => Ring (Dual a) where
 --
 -- is a valid encoding of church numerals, with addition and
 -- multiplication being their semiring variants.
-deriving newtype instance Semiring a => Semiring (Endo a)
-deriving newtype instance Ring a     => Ring     (Endo a)
+instance Monoid a => Semiring (Endo a) where
+  zero  = Endo mempty
+  plus (Endo f) (Endo g) = Endo (mappend f g)
+  one   = mempty
+  times = mappend
+
+instance (Monoid a, Ring a) => Ring (Endo a) where
+  negate (Endo f) = Endo (negate f)
 
 instance (Alternative f, Semiring a) => Semiring (Alt f a) where
   zero  = empty
@@ -331,42 +347,6 @@ instance Semiring a => Semiring (Const a b) where
 
 instance Ring a => Ring (Const a b) where
   negate (Const x) = Const (negate x)
-
-instance (Semiring a, Semiring b) => Semiring (a,b) where
-  zero = defZero; one = defOne; plus = defPlus; times = defTimes; 
-
-instance (Semiring a, Semiring b, Semiring c) => Semiring (a,b,c) where
-  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d) => Semiring (a,b,c,d) where
-  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e) => Semiring (a,b,c,d,e) where
-  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f) => Semiring (a,b,c,d,e,f) where
-  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f, Semiring g) => Semiring (a,b,c,d,e,f,g) where
-  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
-
-instance (Ring a, Ring b) => Ring (a,b) where
-  negate = defNegate
-
-instance (Ring a, Ring b, Ring c) => Ring (a,b,c) where
-  negate = defNegate
-
-instance (Ring a, Ring b, Ring c, Ring d) => Ring (a,b,c,d) where
-  negate = defNegate
-
-instance (Ring a, Ring b, Ring c, Ring d, Ring e) => Ring (a,b,c,d,e) where
-  negate = defNegate
-
-instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f) => Ring (a,b,c,d,e,f) where
-  negate = defNegate
-
-instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f, Ring g) => Ring (a,b,c,d,e,f,g) where
-  negate = defNegate
 
 instance Ring a => Semiring (Complex a) where
   zero = zero :+ zero
@@ -432,7 +412,9 @@ instance Semiring COff
 instance Semiring CMode
 instance Semiring CIno
 instance Semiring CDev
+#if __GLASGOW_HASKELL__ >= 710
 instance Semiring Natural
+#endif
 instance Integral a => Semiring (Ratio a)
 deriving instance Semiring a => Semiring (Product a)
 deriving instance Semiring a => Semiring (Sum a)
@@ -496,7 +478,9 @@ instance Ring COff
 instance Ring CMode
 instance Ring CIno
 instance Ring CDev
+#if __GLASGOW_HASKELL__ >= 710
 instance Ring Natural
+#endif
 instance Integral a => Ring (Ratio a)
 deriving instance Ring a => Ring (Down a)
 deriving instance Ring a => Ring (Product a)
@@ -510,16 +494,19 @@ instance HasResolution a => Ring (Fixed a)
   Instances (constrictor)
 --------------------------------------------------------------------}
 
+#if defined(VERSION_constrictor)
 instance (Applicative f, Semiring a) => Semiring (Ap f a) where
   zero  = Ap (pure zero)
   one   = Ap (pure one)
   plus  = liftA2 plus
   times = liftA2 times
+#endif
 
 {--------------------------------------------------------------------
   Instances (containers)
 --------------------------------------------------------------------}
 
+#if defined(VERSION_containers)
 instance (Ord a, Semiring a) => Semiring (Set a) where
   zero  = Set.empty
   one   = Set.singleton one
@@ -562,11 +549,13 @@ instance (Semiring a) => Semiring (Seq a) where
   one  = Seq.singleton one
   plus = (Seq.><)
   times xs ys = Seq.fromList (times (Foldable.toList xs) (Foldable.toList ys))
+#endif
 
 {--------------------------------------------------------------------
   Instances (unordered-containers)
 --------------------------------------------------------------------}
 
+#if defined(VERSION_unordered_containers)
 instance (Eq a, Hashable a, Semiring a) => Semiring (HashSet a) where
   zero = HashSet.empty
   one  = HashSet.singleton one
@@ -582,11 +571,13 @@ instance (Eq k, Hashable k, Semiring k, Semiring v) => Semiring (HashMap k v) wh
         [ (k + l, v * u)
         | (k,v) <- HashMap.toList xs
         , (l,u) <- HashMap.toList ys ]
+#endif
 
 {--------------------------------------------------------------------
   Instances (vector)
 --------------------------------------------------------------------}
 
+#if defined(VERSION_vector)
 instance Semiring a => Semiring (Vector a) where
   zero  = Vector.empty
   one   = Vector.singleton one
@@ -670,93 +661,7 @@ instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
 
 instance (SV.Storable a, Ring a) => Ring (SV.Vector a) where
   negate = SV.map negate
-
-{-
-instance (Precise a, RealFloat a) => Semiring (Log a) where
-  zero  = Exp (-(1 / 0))
-  one   = Exp 0
-  plus  = (Num.+)
-  times = (Num.*)
-
-instance (Precise a, RealFloat a) => Semiring (SignedLog a) where
-  zero  = SLExp False (-(1 / 0))
-  one   = SLExp True 0
-  plus  = (Num.+)
-  times = (Num.*)
--}
-
-{--------------------------------------------------------------------
-  Generics
---------------------------------------------------------------------}
-
-class GSemiring f where
-  {-# MINIMAL gPlus, gZero, gTimes, gOne #-} 
-  gZero  :: f a
-  gOne   :: f a
-  gPlus  :: f a -> f a -> f a
-  gTimes :: f a -> f a -> f a
-
-class GRing f where
-  {-# MINIMAL gNegate #-}
-  gNegate :: f a -> f a
-
-defZero, defOne   :: (Generic a, GSemiring (Rep a)) => a
-defPlus, defTimes :: (Generic a, GSemiring (Rep a)) => a -> a -> a
-defZero = to gZero
-defOne  = to gOne
-defPlus x y = to $ from x `gPlus` from y
-defTimes x y = to $ from x `gTimes` from y
-
-defNegate :: (Generic a, GRing (Rep a)) => a -> a
-defNegate x = to $ gNegate $ from x
-
-instance GSemiring U1 where
-  gZero = U1
-  gOne  = U1
-  gPlus  _ _ = U1
-  gTimes _ _ = U1
-
-instance GRing U1 where
-  gNegate _ = U1
-
-instance (GSemiring a, GSemiring b) => GSemiring (a :*: b) where
-  gZero = gZero :*: gZero
-  gOne  = gOne  :*: gOne
-  gPlus  (a :*: b) (c :*: d) = gPlus  a c :*: gPlus b d
-  gTimes (a :*: b) (c :*: d) = gTimes a c :*: gPlus b d
-
-instance (GRing a, GRing b) => GRing (a :*: b) where
-  gNegate (a :*: b) = gNegate a :*: gNegate b
-
--- i do not intend to support sum types (?)
---
---instance (GSemiring a, GSemiring b) => GSemiring (a :+: b) where
---  gZero = L1 gZero
---  gOne  = L1 gOne
---  gPlus (L1 x) (L1 y) = L1 (gPlus x y)
---  gPlus (R1 x) (R1 y) = R1 (gPlus x y)
---  gPlus x _ = x
---  gTimes (L1 x) (L1 y) = L1 (gTimes x y)
---  gTimes (R1 x) (R1 y) = R1 (gTimes x y)
---  gTimes x _ = x
-
-instance (GSemiring a) => GSemiring (M1 i c a) where
-  gZero = M1 gZero
-  gOne  = M1 gOne
-  gPlus  (M1 x) (M1 y) = M1 $ gPlus  x y
-  gTimes (M1 x) (M1 y) = M1 $ gTimes x y
-
-instance (GRing a) => GRing (M1 i c a) where
-  gNegate (M1 x) = M1 $ gNegate x
-
-instance (Semiring a) => GSemiring (K1 i a) where
-  gZero = K1 zero
-  gOne  = K1 one
-  gPlus  (K1 x) (K1 y) = K1 $ plus  x y
-  gTimes (K1 x) (K1 y) = K1 $ times x y
-
-instance (Ring a) => GRing (K1 i a) where
-  gNegate (K1 x) = K1 $ negate x
+#endif
 
 -- [Section: List fusion]
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

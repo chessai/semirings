@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 
 module Data.Semiring.Numeric
   ( Bottleneck(..)
@@ -50,9 +51,9 @@ newtype Division a = Division { getDivision :: a }
 -- paper.
 --
 -- @'plus'   = 'max'
---x 'times' y = 'max' 0 (x '+' y '-' 1)
---'zero'    = 'zero'
---'one'     = 'one'@
+--   x 'times' y = 'max' 0 (x '+' y '-' 1)
+--  'zero'    = 'zero'
+--  'one'     = 'one'@
 newtype Lukas a = Lukas { getLukas :: a }
   deriving (Eq, Ord, Read, Show, Bounded, Generic, Generic1, Num
              ,Enum, Storable, Fractional, Real, RealFrac
@@ -64,9 +65,9 @@ newtype Lukas a = Lukas { getLukas :: a }
 -- paper. Apparently used for probabilistic parsing.
 --
 -- @'plus' = 'max'
---'times' = 'times'
---'zero'  = 'zero'
---'one'   = 'one'@
+--  'times' = 'times'
+--  'zero'  = 'zero'
+--  'one'   = 'one'@
 newtype Viterbi a = Viterbi { getViterbi :: a }
   deriving (Eq, Ord, Read, Show, Bounded, Generic, Generic1, Num
              ,Enum, Storable, Fractional, Real, RealFrac
@@ -75,12 +76,12 @@ newtype Viterbi a = Viterbi { getViterbi :: a }
 -- | Useful for optimising multiplication, or working with large numbers.
 --
 -- @'times'    = ('plus')
---  x 'plus' y = -('log' ('exp' (-x) '`plus`' 'exp' (-y)))
---'zero'       = 'positiveInfinity'
---'one'        = zero@
-newtype Log a = Log { getLog :: a }
-  deriving (Eq, Ord, Read, Show, Generic, Generic1, Functor
-             ,Foldable)
+--   x 'plus' y = -('log' ('exp' (-x) '`plus`' 'exp' (-y)))
+--  'zero'       = 'positiveInfinity'
+--  'one'        = zero@
+data Log a = Log a | Inf
+  deriving ( Eq, Ord, Read, Show, Generic, Generic1
+           , Functor, Foldable, Traversable)
 
 instance (Bounded a, Ord a) => Semiring (Bottleneck a) where
   plus  = (coerce :: WrapBinary Bottleneck a) max
@@ -107,8 +108,12 @@ instance (Ord a, Semiring a) => Semiring (Viterbi a) where
   one   = Viterbi one
 
 instance (Floating a, Ring a) => Semiring (Log a) where
-  zero  = Log zero -- This SHOULD be +Inf
+  zero  = Inf
   one   = Log one
-  times = (coerce :: WrapBinary Log a) plus
+  times Inf _ = Inf
+  times _ Inf = Inf
+  times (Log x) (Log y) = Log (times x y)
+  plus Inf y = y
+  plus x Inf = x
   plus (Log x) (Log y)
     = Log (negate (log (exp (negate x) + exp (negate y))))
