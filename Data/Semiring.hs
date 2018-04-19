@@ -35,7 +35,7 @@ module Data.Semiring
   , prod'
   ) where 
 
-import           Control.Monad.Constrictor (Ap(..))
+import           Constrictor (Ap(..))
 import           Control.Applicative (Alternative(..), Applicative(..), Const(..))
 import           Data.Bool (Bool(..), (||), (&&), otherwise, not)
 import           Data.Complex (Complex(..))
