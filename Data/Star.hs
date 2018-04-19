@@ -3,16 +3,14 @@ module Data.Star
   ) where
 
 import Data.Bool (Bool(..))
-import Data.Complex (Complex(..))
 import Data.Function (id, (.))
-import Data.Functor (Functor(..))
-import Data.Int (Int, Int8, Int16, Int32, Int64)
 import Data.Monoid
-import Data.Vector (Vector)
 import qualified Data.Vector as Vector
-import Data.Word (Word, Word8, Word16, Word32, Word64)
 
 import Data.Semiring
+import Data.Semiring.Poly
+
+import Prelude hiding (Num(..))
 
 class (Semiring a) => Star a where
   {-# MINIMAL star | aplus #-} 
@@ -41,3 +39,11 @@ instance (Eq a, Monoid a) => Star (Endo a) where
         where
           next = mappend inp (f inp)
 
+-- this is horribly inefficient.
+instance (Star a) => Star (Poly a) where
+  star (Poly v)
+    | Vector.null v = one
+    | otherwise = Poly $ r
+    where
+      r = Vector.cons xst $ Vector.map (xst *) ((Vector.unsafeTail v) * r)
+      xst = star (Vector.unsafeHead v)
