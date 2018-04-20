@@ -1,9 +1,9 @@
 { package ? "semirings", compiler ? "ghc841" }:
 let fetchNixpkgs = import ./nix/fetchNixpkgs.nix;
     nixpkgs = fetchNixpkgs {
-      rev = "c484079ac7b4cf003f6b09e64cde59cb9a98b923";
-      sha256 = "0sh4f8w30sya7vydwm86dni1ylz59hiq627df1dv1zg7riq036cw";
-      sha256unpacked = "0fc6y2yjlfbss7cq7lgah0xvlnyas5v3is9r5bxyyp7rkwlyvny4";
+      rev = "951d6a9f93f95b500f37d3c2dbb27f8b7dc512c3"; 
+      sha256 = "00a7bk1awgl2ndndakc280riq8sj6m0gifl46v0xq034pf8mnliw"; 
+      sha256unpacked = "0zzi0sv4a156qkbp3xhb85d5vm127kcxgmsqhfwvwgmlz8fidlnd"; 
     };
     pkgs = import nixpkgs { config = {}; overlays = []; };
     inherit (pkgs) haskell;

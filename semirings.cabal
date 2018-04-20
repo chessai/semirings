@@ -15,10 +15,7 @@ description:
     In mathematics, a semiring is an algebraic structure consisting of a set together with two binary operations, one commutative and one associative. A semiring has two identity elements respective to its operations. Thus a semiring can be seen as a combination of two monoids, a commutative monoid and an associative monoid.
 build-type:    Simple
 extra-source-files: README.md CHANGELOG.md
-tested-with:   GHC == 7.4.2
-             , GHC == 7.6.3
-             , GHC == 7.8.4
-             , GHC == 7.10.3
+tested-with:   GHC == 7.10.3
              , GHC == 8.0.2
              , GHC == 8.2.2
              , GHC == 8.4.1
@@ -41,7 +38,7 @@ flag hashable
 
 flag constrictor
   description:
-    You can disable the use of the `constrictor` package using `-f-containers`.
+    You can disable the use of the `constrictor` package using `-f-constrictor`.
     .
     Disabling this may be useful for accelerating builds in sandboxes for expert users.
     default: True
@@ -73,7 +70,7 @@ flag unordered-containers
 
 flag vector
   description:
-    You can disable the use of the `vector` package using `-f-unordered-containers`.
+    You can disable the use of the `vector` package using `-f-vector`.
     .
     Disabling this may be useful for accelerating builds in sandboxes for expert users.
     default: True
@@ -85,7 +82,6 @@ library
 
   build-depends:
       base >= 2 && < 5
-    , coerce-util 
     , integer-gmp
   
   if impl(ghc >= 7.2)
@@ -93,13 +89,19 @@ library
       Data.Semiring
       Data.Semiring.Fib 
       Data.Semiring.Generic 
-      Data.Semiring.Numeric
       Data.Semiring.Poly 
       Data.Star
-
+  if impl(ghc >= 8.0.1)
+    exposed-modules:
+      Data.Semiring.Matrix
+      Data.Semiring.Numeric
+    
     -- Not needed anymore since GHC 7.10
     if impl(ghc < 7.10)
       build-depends: nats >= 0.1 && < 2
+    
+    if impl(ghc >= 8.0.1)
+      build-depends: coerce-util
 
     if flag(constrictor)
       build-depends: constrictor >= 0.1.1.0 && < 0.2.0.0

@@ -69,21 +69,41 @@ import Data.Star
 
 -- | The type of polynomials in one variable.
 -- Backed by 'Data.Vector.Vector'.
-newtype Poly  a   = Poly { unPoly :: Vector a }
-  deriving ( Monad, Functor, Applicative, Foldable
-           , Traversable, Eq1, Ord1, Read1, Show1
-           , MonadZip, Alternative, MonadPlus
-           , Eq, Data, Ord
-           , Read, Show, Semigroup, Monoid
+newtype Poly a = Poly { unPoly :: Vector a }
+  deriving ( Alternative
+           , Applicative
+           , Data
+           , Eq
+           , Foldable
+           , Functor
+#if MIN_VERSION_base(4,6,0)
+           , Generic
+           , Generic1
+#endif
+           , Monad
+           , MonadFix 
+           , MonadPlus 
+           , MonadZip
+           , Monoid
            , NFData
-           , Generic, Generic1
-           , Ring )
+           , Ord  
+           , Read
+           , Ring
+           , Semigroup
+           , Show
+           , Traversable
+#if MIN_VERSION_base(4,9,0)
+           , Eq1, Ord1, Read1, Show1
+#endif
+           )
 
+#if MIN_VERSION_base(4,7,0)
 instance Exts.IsList (Poly a) where
   type Item (Poly a) = a
   fromList  = fromList
   fromListN = fromListN
   toList    = toList
+#endif
 
 -- this is horribly inefficient.
 instance (Star a) => Star (Poly a) where

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -6,13 +7,17 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 
 module Data.Semiring.Numeric
-  ( Bottleneck(..)
+  (
+#if MIN_VERSION_base(4,9,0) 
+    Bottleneck(..)
   , Division(..)
   , Lukas(..)
   , Viterbi(..)
   , Log(..)
+#endif 
   ) where
 
+#if MIN_VERSION_base(4,9,0)
 import           Data.Coerce
 import           Data.Coerce.Util
 import           GHC.Generics
@@ -116,3 +121,5 @@ instance (Floating a, Ring a) => Semiring (Log a) where
   plus x Inf = x
   plus (Log x) (Log y)
     = Log (negate (log (exp (negate x) + exp (negate y))))
+
+#endif

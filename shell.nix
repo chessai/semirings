@@ -1,4 +1,4 @@
-{ package ? "semirings", compiler ? "ghc841" }:
+{ package ? "semirings", compiler ? "ghc842" }:
 
 (import ./default.nix {
   inherit package compiler;

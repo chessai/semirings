@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -9,12 +10,16 @@
 {-# LANGUAGE TypeFamilies               #-}
 
 module Data.Semiring.Matrix
-  ( Matrix(..)
+  (
+#if MIN_VERSION_base(4,9,0)    
+    Matrix(..)
   , transpose
   , rows
   , cols
+#endif
   ) where
 
+#if MIN_VERSION_base(4,9,0)
 import Control.Applicative (Applicative(..))
 import Data.Coerce
 import Data.Coerce.Util
@@ -127,3 +132,4 @@ instance (Eq1 f, Eq1 g, Eq a) => Eq (Matrix f g a) where
 
 instance (Ord1 f, Ord1 g, Ord a) => Ord (Matrix f g a) where
   compare = compare1
+#endif
