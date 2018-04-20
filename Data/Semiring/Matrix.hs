@@ -34,6 +34,9 @@ import Prelude hiding ((+),(-),negate, sum)
 newtype Matrix f g a = Matrix { getMatrix :: f (g a) }
   deriving (Generic, Generic1, Functor, Foldable, Traversable)
 
+instance (Traversable f, Applicative f, Star a, f ~ g) => Star (Matrix f g a) where
+  star = fmap star
+
 instance (Applicative f, Applicative g) => Applicative (Matrix f g) where
   pure = Matrix #. pure . pure
   (<*>) =

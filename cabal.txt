@@ -1,8 +1,0 @@
-"/nix/store/3a6i4sq7i111gf1azzbpa3jhmbbla5fh-cabal2nix-2.8.2" [label = "cabal2nix-2.8.2", shape = box, style = filled, fillcolor = "#ff0000"];
-"/nix/store/27b2hylj1sv682iqijq3g7mbcfiy1rfw-glibc-2.26-131" -> "/nix/store/3a6i4sq7i111gf1azzbpa3jhmbbla5fh-cabal2nix-2.8.2" [color = "black"];
-"/nix/store/2g13yka1dbh7izd0bi9sqzlsin3xwab4-openssl-1.0.2n" -> "/nix/store/3a6i4sq7i111gf1azzbpa3jhmbbla5fh-cabal2nix-2.8.2" [color = "red"];
-"/nix/store/7vvk71748c7s1xh13n7imiswkika7k18-gmp-6.1.2" -> "/nix/store/3a6i4sq7i111gf1azzbpa3jhmbbla5fh-cabal2nix-2.8.2" [color = "green"];
-"/nix/store/fcxliihmhm2ak9z4890gk0qw63zsbrcx-bash-4.4-p12" -> "/nix/store/3a6i4sq7i111gf1azzbpa3jhmbbla5fh-cabal2nix-2.8.2" [color = "blue"];
-"/nix/store/immjm31qnaqk0dh7b8zqy9vvd0g6k60c-zlib-1.2.11" -> "/nix/store/3a6i4sq7i111gf1azzbpa3jhmbbla5fh-cabal2nix-2.8.2" [color = "magenta"];
-"/nix/store/mrmfxslcgywq4v5iq89pjlkq2357yarm-nix-prefetch-scripts" -> "/nix/store/3a6i4sq7i111gf1azzbpa3jhmbbla5fh-cabal2nix-2.8.2" [color = "burlywood"];
-"/nix/store/yvcm543nk9nd7p18g61fj8a1838i0ni6-nix-1.11.16" -> "/nix/store/3a6i4sq7i111gf1azzbpa3jhmbbla5fh-cabal2nix-2.8.2" [color = "black"];

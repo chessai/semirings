@@ -81,7 +81,6 @@ newtype Poly a = Poly { unPoly :: Vector a }
            , Generic1
 #endif
            , Monad
-           , MonadFix 
            , MonadPlus 
            , MonadZip
            , Monoid
