@@ -29,11 +29,12 @@ A *-semiring (pron. "star-semiring") is any semiring with an additional operatio
 
 A derived operation called "aplus" can be defined in terms of star by:
 
+- star :: a -> a
 - star a = 1 + aplus a
 - aplus :: a -> a
 - aplus a = a * star a
 
-As such, a minimal instance of the typeclass 'Star' requires only 'star' or 'asterplus' to be defined.
+As such, a minimal instance of the typeclass 'Star' requires only 'star' or 'aplus' to be defined.
 
 use cases
 =========
@@ -42,7 +43,7 @@ semirings themselves are useful as a way to express that a type is both a commut
 
 *-semirings are useful in a number of applications; such as matrix algebra, regular expressions, kleene algebras, graph theory, tropical algebra, dataflow analysis, power series, linear recurrence relations.
 
-Some relevant reading material:
+Some relevant (informal) reading material:
 
 http://stedolan.net/research/semirings.pdf <br>
 http://r6.ca/blog/20110808T035622Z.html <br>

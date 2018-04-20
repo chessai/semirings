@@ -22,7 +22,6 @@ import Prelude hiding (Num(..))
 -- Another operation, 'aplus', can be defined in terms of 'star':
 --
 -- @'aplus' x = x '*' 'star' x@
-
 class (Semiring a) => Star a where
   {-# MINIMAL star | aplus #-} 
   star :: a -> a
@@ -51,3 +50,5 @@ instance (Eq a, Monoid a) => Star (Endo a) where
       if' False _ y = y
       converge = fix (ap mappend . ap (if' =<< ap (==) (ap mappend f)) . (. ap mappend f))
       --converge inp = mappend inp (if inp == next then inp else converge next)
+      -- where
+      --   next = mappend inp (f inp)
