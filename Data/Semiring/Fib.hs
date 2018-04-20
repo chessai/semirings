@@ -25,7 +25,17 @@ import Prelude hiding (Num(..),(+),(*),(-),(^),negate)
 --   'Fib' a b `plus`  'Fib' c d = 'Fib' (a + c) (b + d)
 --   'Fib' a b `times` 'Fib' c d = 'Fib' (a*(c + d) + b*c) (a*c + b*d)@
 data Fib a = Fib a a
-  deriving (Eq, Foldable, Functor, Show, Read, Traversable, Generic, Generic1)
+  deriving ( Eq
+           , Foldable
+           , Functor
+#if MIN_VERSION_base(4,6,0)
+           , Generic
+           , Generic1
+#endif
+           , Read
+           , Show
+           , Traversable
+           )
 
 -- | Given 'Fib a b', returns 'a'.
 getPhi :: Fib a -> a

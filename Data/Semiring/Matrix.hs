@@ -29,13 +29,39 @@ import Data.Star
 import Data.Foldable hiding (sum)
 import Data.Traversable
 import GHC.Generics (Generic, Generic1)
-import Prelude hiding ((+),(-),negate, sum)
+import Prelude hiding ((+),(*),(-),negate, sum)
 
 newtype Matrix f g a = Matrix { getMatrix :: f (g a) }
   deriving (Generic, Generic1, Functor, Foldable, Traversable)
 
 instance (Traversable f, Applicative f, Star a, f ~ g) => Star (Matrix f g a) where
-  star = fmap star
+  star m
+    | sizeInner m = fmap star m
+    | otherwise =
+        mjoin ( first' + top' * rest' * left'
+              , top' * rest'
+              , rest' * left'
+              , rest'
+              )
+    where
+      msplit :: Matrix f g a -> (Matrix f g a,Matrix f g a,Matrix f g a,Matrix f g a)
+      mjoin  :: (Matrix f g a,Matrix f g a,Matrix f g a,Matrix f g a) -> Matrix f g a
+      msplit (a,b,c,d) = a + b + c + d 
+      mjoin (a, b, c, d) = times a b + times c d
+        
+        -- Matrix ((a 'hcat' b) ++ (c 'hcat' d)) 
+        -- where hcat = zipWith (++)  
+      (first,top,left,rest) = msplit m 
+      first' = star first
+      top'   = first' * top
+      left'  = left * first'
+      rest'  = star (rest + left' * top)
+
+      sizeInner :: (Foldable f, Foldable g) => Matrix f g a -> Bool
+      sizeInner m' = go (rows m')
+        where
+          go [[_]] = True 
+          go _     = False
 
 instance (Applicative f, Applicative g) => Applicative (Matrix f g) where
   pure = Matrix #. pure . pure

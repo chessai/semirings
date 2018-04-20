@@ -88,9 +88,11 @@ library
     exposed-modules:
       Data.Semiring
       Data.Semiring.Fib 
-      Data.Semiring.Generic 
       Data.Semiring.Poly 
       Data.Star
+  if impl(ghc >= 7.6.1)
+    exposed-modules:
+      Data.Semiring.Generic
   if impl(ghc >= 8.0.1)
     exposed-modules:
       Data.Semiring.Matrix
