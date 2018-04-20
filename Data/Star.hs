@@ -7,7 +7,6 @@ import Control.Monad.Fix (fix)
 import Data.Bool (Bool(..))
 import Data.Function (id, (.))
 import Data.Monoid
-import qualified Data.Vector as Vector
 
 import Data.Semiring
 
