@@ -10,7 +10,7 @@ stability:     provisional
 homepage:      http://github.com/chessai/semirings
 bug-reports:   http://github.com/chessai/semirings/issues
 copyright:     Copyright (C) 2018 chessai
-synopsis:      smush those monoids.
+synopsis:      two monoids as one, in holy haskimony
 description:
     In mathematics, a semiring is an algebraic structure consisting of a set together with two binary operations, one commutative and one associative. A semiring has two identity elements respective to its operations. Thus a semiring can be seen as a combination of two monoids, a commutative monoid and an associative monoid.
     For some useful semirings, see the 'semirings-types' package.
