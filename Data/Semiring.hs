@@ -172,8 +172,10 @@ prod' = Foldable.foldr' times one
 -- | The class of semirings (types with two binary
 -- operations and two respective identities). One
 -- can think of a semiring as two monoids of the same
--- underlying type: An commutative monoid and an
--- associative one.
+-- underlying type: A commutative monoid and an
+-- associative monoid. For any type R with a 'Prelude.Num'
+-- instance, the commutative monoid is (R, '(Prelude.+)', 0)
+-- and the associative monoid is (R, '(Prelude.*)', 1).
 --
 -- Instances should satisfy the following laws:
 --
@@ -187,7 +189,7 @@ prod' = Foldable.foldr' times one
 --
 -- [/additive commutativity/]
 --     
---     @x '+' y = y '+' x
+--     @x '+' y = y '+' x@
 --
 -- [/multiplicative identity/]
 -- 
@@ -204,24 +206,28 @@ prod' = Foldable.foldr' times one
 --
 -- [/annihilation/]
 --
---     @'zero' '*' x = x '*' 'zero' = 'zero'
+--     @'zero' '*' x = x '*' 'zero' = 'zero'@
 
 class Semiring a where
   {-# MINIMAL plus, zero, times, one #-}
-  plus  :: a -> a -> a -- ^ Commutative Additive Operation
-  zero  :: a           -- ^ Additive Unit
-  times :: a -> a -> a -- ^ Associative Multiplicative Operation
-  one   :: a           -- ^ Multiplicative Unit
+  plus  :: a -> a -> a -- ^ Commutative Operation
+  zero  :: a           -- ^ Commutative Unit
+  times :: a -> a -> a -- ^ Associative Operation
+  one   :: a           -- ^ Associative Unit
 
   -- useful for defining semirings over ground types
-  default zero  :: Num.Num a => a
-  default one   :: Num.Num a => a
-  default plus  :: Num.Num a => a -> a -> a
-  default times :: Num.Num a => a -> a -> a
+  default zero  :: Num.Num a => a -- ^ 0
+  default one   :: Num.Num a => a -- ^ 1
+  default plus  :: Num.Num a => a -> a -> a -- ^ '(Prelude.+)'
+  default times :: Num.Num a => a -> a -> a -- ^ '(Prelude.*)'
   zero  = 0
   one   = 1
   plus  = (Num.+)
   times = (Num.*)
+
+-- | The class of semirings with an additive inverse.
+--
+--     @'negate' a '+' a = 'zero'@
 
 class Semiring a => Ring a where
   {-# MINIMAL negate #-}
@@ -230,6 +236,10 @@ class Semiring a => Ring a where
   default negate :: Num.Num a => a -> a
   negate = Num.negate
 
+-- | Substract two 'Ring' values. For any type 'R' with
+-- a 'Prelude.Num' instance, this is the same as '(Prelude.-)'.
+--
+--     @x `minus` y = x '+' 'negate' y@
 minus :: Ring a => a -> a -> a
 minus x y = x + negate y
 

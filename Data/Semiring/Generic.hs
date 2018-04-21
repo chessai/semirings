@@ -8,7 +8,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
--------------------------------------------------------------------        ----------
+-----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Semiring.Generic
 -- Copyright   :  (C) 2018 chessai
@@ -21,7 +21,7 @@
 -- This module provides generic deriving tools for semirings and rings for
 -- product-like structures.
 --
--------------------------------------------------------------------        ---------
+----------------------------------------------------------------------------
 
 module Data.Semiring.Generic
   ( 
@@ -104,7 +104,7 @@ class GRing f where
 gzero :: (Generic a, GSemiring (Rep a)) => a
 gzero = to gzero'
 
--- | Generically generate a 'Semiring' 'one' for any product-like t    ype
+-- | Generically generate a 'Semiring' 'one' for any product-like type
 -- implementing 'Generic'.
 --
 -- It is only defined for product types.
@@ -115,7 +115,7 @@ gzero = to gzero'
 gone :: (Generic a, GSemiring (Rep a)) => a
 gone  = to gone'
 
--- | Generically generate a 'Semiring' 'plus' operation for any typ    e
+-- | Generically generate a 'Semiring' 'plus' operation for any type
 -- implementing 'Generic'. It is only defined for product types.
 --
 -- @
@@ -124,7 +124,7 @@ gone  = to gone'
 gplus :: (Generic a, GSemiring (Rep a)) => a -> a -> a
 gplus x y = to $ from x `gplus'` from y
 
--- | Generically generate a 'Semiring' 'times' operation for any ty    pe
+-- | Generically generate a 'Semiring' 'times' operation for any type
 -- implementing 'Generic'. It is only defined for product types.
 --
 -- @
