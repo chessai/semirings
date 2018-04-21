@@ -1,3 +1,4 @@
+*.ghc*
 test*
 dist*
 dist-newstyle*

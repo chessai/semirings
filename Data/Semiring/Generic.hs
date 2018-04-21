@@ -1,114 +1,181 @@
+{-# LANGUAGE CPP              #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeOperators    #-}
 
 {-# OPTIONS_GHC -Wall #-}
 
 -- below are safe orphan instances
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+
+-------------------------------------------------------------------        ----------
+-- |
+-- Module      :  Data.Semiring.Generic
+-- Copyright   :  (C) 2018 chessai
+-- License     :  MIT (see the file LICENSE)
+--
+-- Maintainer  :  chessai <chessai1996@gmail.com>
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- This module provides generic deriving tools for semirings and rings for
+-- product-like structures.
+--
+-------------------------------------------------------------------        ---------
+
 module Data.Semiring.Generic
-  ( GSemiring(..)
+  ( 
+#if MIN_VERSION_base(4,6,0) 
+    GSemiring(..)
+  , gzero
+  , gone
+  , gplus
+  , gtimes
   , GRing(..)
+  , gnegate
+#endif
   ) where 
 
+#if MIN_VERSION_base(4,6,0)
 import           Data.Semiring
 import           GHC.Generics
 
 import Prelude hiding (Num(..))
 
 instance (Semiring a, Semiring b) => Semiring (a,b) where
-  zero = defZero; one = defOne; plus = defPlus; times = defTimes; 
+  zero = gzero; one = gone; plus = gplus; times = gtimes; 
 
 instance (Semiring a, Semiring b, Semiring c) => Semiring (a,b,c) where
-  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
+  zero = gzero; one = gone; plus = gplus; times = gtimes;
 
 instance (Semiring a, Semiring b, Semiring c, Semiring d) => Semiring (a,b,c,d) where
-  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
+  zero = gzero; one = gone; plus = gplus; times = gtimes;
 
 instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e) => Semiring (a,b,c,d,e) where
-  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
+  zero = gzero; one = gone; plus = gplus; times = gtimes;
 
 instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f) => Semiring (a,b,c,d,e,f) where
-  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
+  zero = gzero; one = gone; plus = gplus; times = gtimes;
 
 instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f, Semiring g) => Semiring (a,b,c,d,e,f,g) where
-  zero = defZero; one = defOne; plus = defPlus; times = defTimes;
+  zero = gzero; one = gone; plus = gplus; times = gtimes;
 
 instance (Ring a, Ring b) => Ring (a,b) where
-  negate = defNegate
+  negate = gnegate
 
 instance (Ring a, Ring b, Ring c) => Ring (a,b,c) where
-  negate = defNegate
+  negate = gnegate
 
 instance (Ring a, Ring b, Ring c, Ring d) => Ring (a,b,c,d) where
-  negate = defNegate
+  negate = gnegate
 
 instance (Ring a, Ring b, Ring c, Ring d, Ring e) => Ring (a,b,c,d,e) where
-  negate = defNegate
+  negate = gnegate
 
 instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f) => Ring (a,b,c,d,e,f) where
-  negate = defNegate
+  negate = gnegate
 
 instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f, Ring g) => Ring (a,b,c,d,e,f,g) where
-  negate = defNegate
+  negate = gnegate
 
 {--------------------------------------------------------------------
   Generics
 --------------------------------------------------------------------}
 
 class GSemiring f where
-  {-# MINIMAL gPlus, gZero, gTimes, gOne #-} 
-  gZero  :: f a
-  gOne   :: f a
-  gPlus  :: f a -> f a -> f a
-  gTimes :: f a -> f a -> f a
+  {-# MINIMAL gplus', gzero', gtimes', gone' #-} 
+  gzero'  :: f a
+  gone'   :: f a
+  gplus'  :: f a -> f a -> f a
+  gtimes' :: f a -> f a -> f a
 
 class GRing f where
-  {-# MINIMAL gNegate #-}
-  gNegate :: f a -> f a
+  {-# MINIMAL gnegate' #-}
+  gnegate' :: f a -> f a
 
-defZero, defOne   :: (Generic a, GSemiring (Rep a)) => a
-defPlus, defTimes :: (Generic a, GSemiring (Rep a)) => a -> a -> a
-defZero = to gZero
-defOne  = to gOne
-defPlus x y = to $ from x `gPlus` from y
-defTimes x y = to $ from x `gTimes` from y
+-- | Generically generate a 'Semiring' 'zero' for any product-like     type
+-- implementing 'Generic'.
+--
+-- It is only defined for product types.
+--
+-- @
+-- 'gplus' 'gzero' a = a = 'gplus' a 'gzero'
+-- @
+gzero :: (Generic a, GSemiring (Rep a)) => a
+gzero = to gzero'
 
-defNegate :: (Generic a, GRing (Rep a)) => a -> a
-defNegate x = to $ gNegate $ from x
+-- | Generically generate a 'Semiring' 'one' for any product-like t    ype
+-- implementing 'Generic'.
+--
+-- It is only defined for product types.
+--
+-- @
+-- 'gtimes' 'gone' a = a = 'gtimes' a 'gone'
+-- @
+gone :: (Generic a, GSemiring (Rep a)) => a
+gone  = to gone'
+
+-- | Generically generate a 'Semiring' 'plus' operation for any typ    e
+-- implementing 'Generic'. It is only defined for product types.
+--
+-- @
+-- 'gplus' a b = 'gplus' b a
+-- @
+gplus :: (Generic a, GSemiring (Rep a)) => a -> a -> a
+gplus x y = to $ from x `gplus'` from y
+
+-- | Generically generate a 'Semiring' 'times' operation for any ty    pe
+-- implementing 'Generic'. It is only defined for product types.
+--
+-- @
+-- 'gtimes' a ('gtimes' b c) = 'gtimes' ('gtimes' a b) c
+-- 'gtimes' a 'gzero' = 'gzero' = 'gtimes' 'gzero' a
+-- @
+gtimes :: (Generic a, GSemiring (Rep a)) => a -> a -> a
+gtimes x y = to $ from x `gtimes'` from y
+
+-- | Generically generate a 'Ring' 'negate' operation for any type
+-- implementing 'Generic'. It is only defined for product types.
+--
+-- @
+-- 'gplus' a ('gnegate' a) = 'zero'
+-- @
+gnegate :: (Generic a, GRing (Rep a)) => a -> a
+gnegate x = to $ gnegate' $ from x
 
 instance GSemiring U1 where
-  gZero = U1
-  gOne  = U1
-  gPlus  _ _ = U1
-  gTimes _ _ = U1
+  gzero' = U1
+  gone'  = U1
+  gplus'  _ _ = U1
+  gtimes' _ _ = U1
 
 instance GRing U1 where
-  gNegate _ = U1
+  gnegate' _ = U1
 
 instance (GSemiring a, GSemiring b) => GSemiring (a :*: b) where
-  gZero = gZero :*: gZero
-  gOne  = gOne  :*: gOne
-  gPlus  (a :*: b) (c :*: d) = gPlus  a c :*: gPlus b d
-  gTimes (a :*: b) (c :*: d) = gTimes a c :*: gPlus b d
+  gzero' = gzero' :*: gzero'
+  gone'  = gone'  :*: gone'
+  gplus'  (a :*: b) (c :*: d) = gplus'  a c :*: gplus' b d
+  gtimes' (a :*: b) (c :*: d) = gtimes' a c :*: gplus' b d
 
 instance (GRing a, GRing b) => GRing (a :*: b) where
-  gNegate (a :*: b) = gNegate a :*: gNegate b
+  gnegate' (a :*: b) = gnegate' a :*: gnegate' b
 
 instance (GSemiring a) => GSemiring (M1 i c a) where
-  gZero = M1 gZero
-  gOne  = M1 gOne
-  gPlus  (M1 x) (M1 y) = M1 $ gPlus  x y
-  gTimes (M1 x) (M1 y) = M1 $ gTimes x y
+  gzero' = M1 gzero'
+  gone'  = M1 gone'
+  gplus'  (M1 x) (M1 y) = M1 $ gplus'  x y
+  gtimes' (M1 x) (M1 y) = M1 $ gtimes' x y
 
 instance (GRing a) => GRing (M1 i c a) where
-  gNegate (M1 x) = M1 $ gNegate x
+  gnegate' (M1 x) = M1 $ gnegate' x
 
 instance (Semiring a) => GSemiring (K1 i a) where
-  gZero = K1 zero
-  gOne  = K1 one
-  gPlus  (K1 x) (K1 y) = K1 $ plus  x y
-  gTimes (K1 x) (K1 y) = K1 $ times x y
+  gzero' = K1 zero
+  gone'  = K1 one
+  gplus'  (K1 x) (K1 y) = K1 $ plus  x y
+  gtimes' (K1 x) (K1 y) = K1 $ times x y
 
 instance (Ring a) => GRing (K1 i a) where
-  gNegate (K1 x) = K1 $ negate x
+  gnegate' (K1 x) = K1 $ negate x
+#endif

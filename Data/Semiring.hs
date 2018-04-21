@@ -175,8 +175,8 @@ prod' = Foldable.foldr' times one
 -- | The class of semirings (types with two binary
 -- operations and two respective identities). One
 -- can think of a semiring as two monoids of the same
--- underlying type: An additive, abelian (commutative)
--- monoid, and a multiplicative, associative monoid.
+-- underlying type: An commutative monoid and an
+-- associative one.
 --
 -- Instances should satisfy the following laws:
 --
