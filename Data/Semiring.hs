@@ -91,9 +91,7 @@ import           GHC.IO (IO)
 import           GHC.Integer (Integer)
 import qualified GHC.Num as Num
 import           GHC.Real (Integral, quot, even)
-#if __GLASGOW_HASKELL__ >= 710
 import           Numeric.Natural (Natural)
-#endif
 import           System.Posix.Types
   (CCc, CDev, CGid, CIno, CMode, CNlink,
    COff, CPid, CRLim, CSpeed, CSsize,
@@ -406,9 +404,7 @@ instance Semiring COff
 instance Semiring CMode
 instance Semiring CIno
 instance Semiring CDev
-#if __GLASGOW_HASKELL__ >= 710
 instance Semiring Natural
-#endif
 instance Integral a => Semiring (Ratio a)
 deriving instance Semiring a => Semiring (Product a)
 deriving instance Semiring a => Semiring (Sum a)
@@ -472,9 +468,7 @@ instance Ring COff
 instance Ring CMode
 instance Ring CIno
 instance Ring CDev
-#if __GLASGOW_HASKELL__ >= 710
 instance Ring Natural
-#endif
 instance Integral a => Ring (Ratio a)
 deriving instance Ring a => Ring (Down a)
 deriving instance Ring a => Ring (Product a)

@@ -88,6 +88,7 @@ library
   build-depends:
       base >= 2 && < 5
     , integer-gmp
+    , semigroups
   
   if impl(ghc >= 7.2)
     exposed-modules:
