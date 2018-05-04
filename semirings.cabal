@@ -89,9 +89,11 @@ library
       base >= 4.5 && < 5
     , integer-gmp
     , semigroups
-    , nats
     , transformers
   
+  if impl(ghc < 7.10)
+    build-depends: nats >= 0.1 && < 2
+    
   if impl(ghc >= 7.2)
     exposed-modules:
       Data.Semiring
@@ -99,9 +101,6 @@ library
   if impl(ghc >= 7.6.1)
     exposed-modules:
       Data.Semiring.Generic
-    
-    if impl(ghc < 7.10)
-      build-depends: nats >= 0.1 && < 2
     
     if flag(constrictor)
       build-depends: constrictor >= 0.1.1.0 && < 0.2.0.0
