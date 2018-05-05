@@ -27,11 +27,7 @@ module Data.Semiring
   ) where 
 
 #if defined(VERSION_constrictor)
-#if MIN_VERSION_constrictor(0,1,1)
 import           Constrictor (Ap(..))
-#else
-import           Control.Monad.Constrictor (Ap(..))
-#endif
 #endif
 import           Control.Applicative (Alternative(..), Applicative(..), Const(..), liftA2)
 import           Data.Bool (Bool(..), (||), (&&), otherwise, not)
