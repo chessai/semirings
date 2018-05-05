@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DefaultSignatures          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -212,7 +213,9 @@ prod' = Foldable.foldr' times one
 --     @'zero' '*' x = x '*' 'zero' = 'zero'@
 
 class Semiring a where
+#if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL plus, zero, times, one #-}
+#endif
   plus  :: a -> a -> a -- ^ Commutative Operation
   zero  :: a           -- ^ Commutative Unit
   times :: a -> a -> a -- ^ Associative Operation
@@ -233,7 +236,9 @@ class Semiring a where
 --     @'negate' a '+' a = 'zero'@
 
 class Semiring a => Ring a where
+#if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL negate #-}
+#endif
   negate :: a -> a
 
   default negate :: Num.Num a => a -> a
