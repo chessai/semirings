@@ -11,19 +11,22 @@
 {-# OPTIONS_GHC -fno-warn-missing-methods #-}
 
 module Data.Semiring
-  ( Semiring(..)
-  , Ring(..)
+  ( -- * Semiring typeclass
+    Semiring(..)
   , (+)
   , (*)
-  , (-)
   , (^)
-  , minus 
   , foldMapP
   , foldMapT
   , sum
   , prod
   , sum'
   , prod'
+  
+    -- * Ring typeclass 
+  , Ring(..)
+  , (-)
+  , minus 
   ) where 
 
 #if defined(VERSION_constrictor)

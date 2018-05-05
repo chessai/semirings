@@ -93,7 +93,7 @@ class GRing f where
   {-# MINIMAL gnegate' #-}
   gnegate' :: f a -> f a
 
--- | Generically generate a 'Semiring' 'zero' for any product-like     type
+-- | Generically generate a 'Semiring' 'zero' for any product-like type
 -- implementing 'Generic'.
 --
 -- It is only defined for product types.
