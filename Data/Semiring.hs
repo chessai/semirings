@@ -535,7 +535,8 @@ instance (Ord a, Semiring a, Semiring b) => Semiring (Map a b) where
     = Map.fromListWith (+)
         [ (plus k l, v * u)
         | (k,v) <- Map.toList xs
-        , (l,u) <- Map.toList ys ]
+        , (l,u) <- Map.toList ys
+        ]
 
 instance Semiring IntSet where
   zero = IntSet.empty
@@ -551,7 +552,8 @@ instance (Semiring a) => Semiring (IntMap a) where
     = IntMap.fromListWith (+)
         [ (plus k l, v * u)
         | (k,v) <- IntMap.toList xs
-        , (l,u) <- IntMap.toList ys ]
+        , (l,u) <- IntMap.toList ys
+        ]
 
 instance (Semiring a) => Semiring (Seq a) where
   zero = Seq.empty
