@@ -33,7 +33,7 @@ import           Constrictor (Ap(..))
 import           Control.Monad.Constrictor (Ap(..))
 #endif
 #endif
-import           Control.Applicative (Alternative(..), Applicative(..), Const(..))
+import           Control.Applicative (Alternative(..), Applicative(..), Const(..), liftA2)
 import           Data.Bool (Bool(..), (||), (&&), otherwise, not)
 import           Data.Complex (Complex(..))
 import           Data.Eq (Eq(..))
@@ -50,18 +50,24 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
 #endif
-#if defined(VERSION_containers)
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
+import           Data.Maybe (Maybe(..))
+#if defined(VERSION_containers)
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
 import           Data.IntSet (IntSet)
 import qualified Data.IntSet as IntSet
 import           Data.Map (Map)
 import qualified Data.Map as Map
-import           Data.Maybe (Maybe(..))
 #endif
-import           Data.Monoid (Monoid(..),Dual(..), Endo(..), Alt(..), Product(..), Sum(..))
-import           Data.Ord (Down(..), Ord(..), Ordering(..), compare)
+import           Data.Monoid (Monoid(..),Dual(..), Endo(..), Product(..), Sum(..))
+#if MIN_VERSION_base(4,8,0)
+import           Data.Monoid (Alt(..))
+#endif
+import           Data.Ord (Ord(..), Ordering(..), compare)
+#if MIN_VERSION_base(4,6,0)
+import           Data.Ord (Down(..))
+#endif
 import           Data.Ratio (Ratio)
 import           Data.Semigroup (Max(..), Min(..))
 #if defined(VERSION_containers)
@@ -332,6 +338,7 @@ instance Monoid a => Semiring (Endo a) where
 instance (Monoid a, Ring a) => Ring (Endo a) where
   negate (Endo f) = Endo (negate f)
 
+#if MIN_VERSION_base(4,8,0)
 instance (Alternative f, Semiring a) => Semiring (Alt f a) where
   zero  = empty
   one   = Alt (pure one)
@@ -340,6 +347,7 @@ instance (Alternative f, Semiring a) => Semiring (Alt f a) where
 
 instance (Alternative f, Ring a) => Ring (Alt f a) where
   negate = fmap negate
+#endif
 
 instance Semiring a => Semiring (Const a b) where
   zero = Const zero
@@ -419,7 +427,9 @@ instance Integral a => Semiring (Ratio a)
 deriving instance Semiring a => Semiring (Product a)
 deriving instance Semiring a => Semiring (Sum a)
 deriving instance Semiring a => Semiring (Identity a)
+#if MIN_VERSION_base(4,6,0)
 deriving instance Semiring a => Semiring (Down a)
+#endif
 deriving instance Semiring a => Semiring (Max a)
 deriving instance Semiring a => Semiring (Min a)
 instance HasResolution a => Semiring (Fixed a)
@@ -480,7 +490,9 @@ instance Ring CIno
 instance Ring CDev
 instance Ring Natural
 instance Integral a => Ring (Ratio a)
+#if MIN_VERSION_base(4,6,0)
 deriving instance Ring a => Ring (Down a)
+#endif
 deriving instance Ring a => Ring (Product a)
 deriving instance Ring a => Ring (Sum a)
 deriving instance Ring a => Ring (Identity a)
