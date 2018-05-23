@@ -49,14 +49,6 @@ flag hashable
   default: True
   manual: True
 
-flag constrictor
-  description:
-    You can disable the use of the `constrictor` package using `-f-constrictor`.
-    .
-    Disabling this may be useful for accelerating builds in sandboxes for expert users.
-    default: True
-    manual: True
-
 flag containers
   description:
     You can disable the use of the `containers` package using `-f-containers`.
@@ -104,9 +96,6 @@ library
   if impl(ghc >= 7.6.1)
     exposed-modules:
       Data.Semiring.Generic
-    
-    if flag(constrictor)
-      build-depends: constrictor >= 0.1.1.1 && < 0.2.0.0
     
     if flag(containers)
       build-depends: containers >= 0.3 && < 0.6

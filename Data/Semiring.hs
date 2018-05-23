@@ -30,9 +30,6 @@ module Data.Semiring
   , minus 
   ) where 
 
-#if defined(VERSION_constrictor)
-import           Constrictor (Ap(..))
-#endif
 import           Control.Applicative (Alternative(..), Applicative(..), Const(..), liftA2)
 import           Data.Bool (Bool(..), (||), (&&), otherwise, not)
 import           Data.Complex (Complex(..))
@@ -503,18 +500,6 @@ deriving instance Ring a => Ring (Identity a)
 deriving instance Ring a => Ring (Max a)
 deriving instance Ring a => Ring (Min a)
 instance HasResolution a => Ring (Fixed a)
-
-{--------------------------------------------------------------------
-  Instances (constrictor)
---------------------------------------------------------------------}
-
-#if defined(VERSION_constrictor)
-instance (Applicative f, Semiring a) => Semiring (Ap f a) where
-  zero  = Ap (pure zero)
-  one   = Ap (pure one)
-  plus  = liftA2 plus
-  times = liftA2 times
-#endif
 
 {--------------------------------------------------------------------
   Instances (containers)
