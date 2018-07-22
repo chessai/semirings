@@ -333,24 +333,25 @@ instance Ring a => Ring (Dual a) where
 --
 -- is a valid encoding of church numerals, with addition and
 -- multiplication being their semiring variants.
-instance Monoid a => Semiring (Endo a) where
-  zero  = Endo mempty
-  plus (Endo f) (Endo g) = Endo (mappend f g)
-  one   = mempty
-  times = mappend
-
-instance (Monoid a, Ring a) => Ring (Endo a) where
-  negate (Endo f) = Endo (negate f)
+--instance (Semiring a) => Semiring (Endo a) where
+--  zero  = Endo (const zero)
+--  plus (Endo f) (Endo g) = Endo (f `plus` g)
+--  one   = Endo id
+--  times (Endo f) (Endo g) = Endo (f . g)
+--
+--instance (Monoid a, Ring a) => Ring (Endo a) where
+--  negate (Endo f) = Endo (negate f)
 
 #if MIN_VERSION_base(4,8,0)
-instance (Alternative f, Semiring a) => Semiring (Alt f a) where
-  zero  = empty
-  one   = Alt (pure one)
-  plus  = (<|>)
-  times = liftA2 times
-
-instance (Alternative f, Ring a) => Ring (Alt f a) where
-  negate = fmap negate
+-- | '<|>' == 'plus' is not commutative!
+--instance (Alternative f, Semiring a) => Semiring (Alt f a) where
+--  zero  = empty
+--  one   = Alt (pure one)
+--  plus  = (<|>)
+--  times = liftA2 times
+--
+--instance (Alternative f, Ring a) => Ring (Alt f a) where
+--  negate = fmap negate
 #endif
 
 instance Semiring a => Semiring (Const a b) where
@@ -435,6 +436,7 @@ instance Semiring CMode
 instance Semiring CIno
 instance Semiring CDev
 instance Semiring Natural
+-- | The positive rationals form a semiring.
 instance Integral a => Semiring (Ratio a)
 deriving instance Semiring a => Semiring (Product a)
 deriving instance Semiring a => Semiring (Sum a)
@@ -517,33 +519,52 @@ instance HasResolution a => Ring (Fixed a)
 --------------------------------------------------------------------}
 
 #if defined(VERSION_containers)
-instance (Ord a, Semiring a) => Semiring (Set a) where
-  zero  = Set.empty
-  one   = Set.singleton one
-  plus  = Set.union
-#if MIN_VERSION_containers(5,11,0)
-   times xs ys = Set.map (P.uncurry times) (Set.cartesianProduct xs ys)
-#else
-  -- I think this could also be 'times xs ys = foldMapT (flip Set.map ys . times) xs'
-  times xs ys = Set.fromList (times (Set.toList xs) (Set.toList ys))
-#endif
 
-instance (Ord a, Semiring a, Semiring b) => Semiring (Map a b) where
+-- | The multiplication laws are satisfied for
+--   any underlying 'Monoid', so we require a
+--   'Monoid' contraint instead of a 'Semiring'
+--   constraint since 'times' can use
+--   the context of either.
+instance (Ord a, Monoid a) => Semiring (Set a) where
+  zero  = Set.empty
+  one   = Set.singleton mempty
+  plus  = Set.union
+  times xs ys = Foldable.foldMap (flip Set.map ys . mappend) xs
+
+-- | The multiplication laws are satisfied for
+--   any underlying 'Monoid' as the key type,
+--   so we require a 'Monoid' contraint instead of
+--   a 'Semiring' constraint since 'times' can use
+--   the context of either.
+instance (Ord k, Monoid k, Semiring v) => Semiring (Map k v) where
   zero = Map.empty
-  one  = Map.singleton zero one
+  one  = Map.singleton mempty one
   plus = Map.unionWith (+)
   xs `times` ys
     = Map.fromListWith (+)
-        [ (plus k l, v * u)
+        [ (mappend k l, v * u)
         | (k,v) <- Map.toList xs
         , (l,u) <- Map.toList ys
         ]
 
-instance Semiring IntSet where
-  zero = IntSet.empty
-  one  = IntSet.singleton one
-  plus = IntSet.union
-  times xs ys = IntSet.fromList (times (IntSet.toList xs) (IntSet.toList ys))
+newtype IntSetP = IntSetP { intSetP :: IntSet }
+newtype IntSetT = IntSetT { intSetT :: IntSet }
+
+instance Semiring IntSetP where
+  zero = IntSetP (IntSet.empty)
+  one  = IntSetP (IntSet.singleton zero)
+  plus (IntSetP x) (IntSetP y) = IntSetP (IntSet.union x y)
+  times (IntSetP xs) (IntSetP ys) = IntSetP (foldMapIntSet (flip IntSet.map ys . plus) xs)
+
+instance Semiring IntSetT where
+  zero = IntSetT IntSet.empty
+  one  = IntSetT (IntSet.singleton one)
+  plus (IntSetT x) (IntSetT y) = IntSetT (IntSet.union x y)
+  times (IntSetT xs) (IntSetT ys) = IntSetT (foldMapIntSet (flip IntSet.map ys . times) xs)
+
+foldMapIntSet :: Monoid m => (Int -> m) -> IntSet -> m
+foldMapIntSet f = IntSet.foldl' (flip (mappend . f)) mempty
+{-# INLINE foldMapIntSet #-}
 
 instance (Semiring a) => Semiring (IntMap a) where
   zero = IntMap.empty
@@ -555,12 +576,6 @@ instance (Semiring a) => Semiring (IntMap a) where
         | (k,v) <- IntMap.toList xs
         , (l,u) <- IntMap.toList ys
         ]
-
-instance (Semiring a) => Semiring (Seq a) where
-  zero = Seq.empty
-  one  = Seq.singleton one
-  plus = (Seq.><)
-  times xs ys = Seq.fromList (times (Foldable.toList xs) (Foldable.toList ys))
 #endif
 
 {--------------------------------------------------------------------
@@ -568,19 +583,30 @@ instance (Semiring a) => Semiring (Seq a) where
 --------------------------------------------------------------------}
 
 #if defined(VERSION_unordered_containers)
-instance (Eq a, Hashable a, Semiring a) => Semiring (HashSet a) where
-  zero = HashSet.empty
-  one  = HashSet.singleton one
-  plus = HashSet.union
-  times xs ys = foldMapT (flip HashSet.map ys . times) xs
 
-instance (Eq k, Hashable k, Semiring k, Semiring v) => Semiring (HashMap k v) where
+-- | The multiplication laws are satisfied for
+--   any underlying 'Monoid', so we require a
+--   'Monoid' contraint instead of a 'Semiring'
+--   constraint since 'times' can use
+--   the context of either.
+instance (Eq a, Hashable a, Monoid a) => Semiring (HashSet a) where
+  zero = HashSet.empty
+  one  = HashSet.singleton mempty
+  plus = HashSet.union
+  times xs ys = Foldable.foldMap (flip HashSet.map ys . mappend) xs
+
+-- | The multiplication laws are satisfied for
+--   any underlying 'Monoid' as the key type,
+--   so we require a 'Monoid' contraint instead of
+--   a 'Semiring' constraint since 'times' can use
+--   the context of either.
+instance (Eq k, Hashable k, Monoid k, Semiring v) => Semiring (HashMap k v) where
   zero = HashMap.empty
-  one  = HashMap.singleton zero one
+  one  = HashMap.singleton mempty one
   plus = HashMap.unionWith (+)
   xs `times` ys
     = HashMap.fromListWith (+)
-        [ (k + l, v * u)
+        [ (mappend k l, v * u)
         | (k,v) <- HashMap.toList xs
         , (l,u) <- HashMap.toList ys ]
 #endif
@@ -598,21 +624,23 @@ instance Semiring a => Semiring (Vector a) where
       EQ -> Vector.zipWith (+) xs ys
       LT -> Vector.unsafeAccumulate (+) ys (Vector.indexed xs)
       GT -> Vector.unsafeAccumulate (+) xs (Vector.indexed ys)
-  times xs ys
-    | Vector.null xs = Vector.empty
-    | Vector.null ys = Vector.empty
-    | otherwise = Vector.generate maxlen f
-      where
-        f n = Foldable.foldl'
-          (\_ k -> 
-            Vector.unsafeIndex xs k *
-            Vector.unsafeIndex ys (n Num.- k)) zero [kmin .. kmax]
-          where
-            !kmin = max 0 (n Num.- (klen Num.- 1))
-            !kmax = min n (slen Num.- 1)
-        !slen = Vector.length xs
-        !klen = Vector.length ys
-        !maxlen = max slen klen
+  times signal kernel
+    | Vector.null signal = Vector.empty
+    | Vector.null kernel = Vector.empty
+    | otherwise = Vector.generate (slen + klen - 1) f
+    where
+      !slen = Vector.length signal
+      !klen = Vector.length kernel
+      f n = Foldable.foldl'
+        (\a k -> a +
+                 Vector.unsafeIndex signal k *
+                 Vector.unsafeIndex kernel (n - k)
+        )
+        zero
+        [kmin .. kmax]
+        where
+          !kmin = max 0 (n - (klen - 1))
+          !kmax = min n (slen - 1)
 
 instance Ring a => Ring (Vector a) where
   negate = Vector.map negate
@@ -625,28 +653,30 @@ instance (UV.Unbox a, Semiring a) => Semiring (UV.Vector a) where
       EQ -> UV.zipWith (+) xs ys
       LT -> UV.unsafeAccumulate (+) ys (UV.indexed xs)
       GT -> UV.unsafeAccumulate (+) xs (UV.indexed ys)
-  times xs ys
-    | UV.null xs = UV.empty
-    | UV.null ys = UV.empty
-    | otherwise = UV.generate maxlen f
-      where
-        f n = Foldable.foldl'
-          (\_ k -> 
-            UV.unsafeIndex xs k *
-            UV.unsafeIndex ys (n Num.- k)) zero [kmin .. kmax]
-          where
-            !kmin = max 0 (n Num.- (klen Num.- 1))
-            !kmax = min n (slen Num.- 1)
-        !slen = UV.length xs
-        !klen = UV.length ys
-        !maxlen = max slen klen
+  times signal kernel
+    | UV.null signal = UV.empty
+    | UV.null kernel = UV.empty
+    | otherwise = UV.generate (slen + klen - 1) f
+    where
+      !slen = UV.length signal
+      !klen = UV.length kernel
+      f n = Foldable.foldl'
+        (\a k -> a +
+                 UV.unsafeIndex signal k *
+                 UV.unsafeIndex kernel (n - k)
+        )
+        zero
+        [kmin .. kmax]
+        where
+          !kmin = max 0 (n - (klen - 1))
+          !kmax = min n (slen - 1)
 
 instance (UV.Unbox a, Ring a) => Ring (UV.Vector a) where
   negate = UV.map negate
 
 instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
   zero = SV.empty
-  one  = SV.singleton one
+  one = SV.singleton one
   plus xs ys =
     case compare lxs lys of
       EQ -> SV.zipWith (+) xs ys
@@ -655,21 +685,22 @@ instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
     where
       lxs = SV.length xs
       lys = SV.length ys
-  times xs ys
-    | SV.null xs = SV.empty
-    | SV.null ys = SV.empty
-    | otherwise  = SV.generate maxlen f
+  times signal kernel
+    | SV.null signal = SV.empty
+    | SV.null kernel = SV.empty
+    | otherwise = SV.generate (slen + klen - 1) f
       where
+        !slen = SV.length signal
+        !klen = SV.length kernel
         f n = Foldable.foldl'
-          (\_ k -> 
-            SV.unsafeIndex xs k *
-            SV.unsafeIndex ys (n Num.- k)) zero [kmin .. kmax]
+          (\a k -> a +
+                  SV.unsafeIndex signal k *
+                  SV.unsafeIndex kernel (n - k))
+                zero
+                [kmin .. kmax]
           where
-            !kmin = max 0 (n Num.- (klen Num.- 1))
-            !kmax = min n (slen Num.- 1)
-        !slen = SV.length xs
-        !klen = SV.length ys
-        !maxlen = max slen klen
+            !kmin = max 0 (n - (klen - 1))
+            !kmax = min n (slen - 1)
 
 instance (SV.Storable a, Ring a) => Ring (SV.Vector a) where
   negate = SV.map negate

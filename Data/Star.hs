@@ -41,13 +41,9 @@ instance Star () where
   star  _ = ()
   aplus _ = ()
 
-instance (Eq a, Monoid a) => Star (Endo a) where
-  star (Endo f) = Endo converge
-    where
-      if' :: Bool -> a -> a -> a
-      if' True  x _ = x
-      if' False _ y = y
-      converge = fix (ap mappend . ap (if' =<< ap (==) (ap mappend f)) . (. ap mappend f))
-      --converge inp = mappend inp (if inp == next then inp else converge next)
-      -- where
-      --   next = mappend inp (f inp)
+--instance (Eq a, Semiring a) => Star (Endo a) where
+--  star (Endo f) = Endo converge
+--    where
+--      converge inp = times inp (if inp == next then inp else converge next)
+--        where
+--          next = times inp (f inp)

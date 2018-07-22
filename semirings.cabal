@@ -1,6 +1,6 @@
 name:          semirings
 category:      Algebra, Data, Data Structures, Math, Maths, Mathematics
-version:       0.1.3
+version:       0.2.0.0
 license:       BSD3
 cabal-version: >= 1.10
 license-file:  LICENSE
@@ -13,7 +13,6 @@ copyright:     Copyright (C) 2018 chessai
 synopsis:      two monoids as one, in holy haskimony
 description:
     In mathematics, a semiring is an algebraic structure consisting of a set together with two binary operations, one commutative and one associative. A semiring has two identity elements respective to its operations. Thus a semiring can be seen as a combination of two monoids, a commutative monoid and an associative monoid.
-    For some useful semirings, see the 'semirings-types' package.
 build-type:    Simple
 extra-source-files: README.md CHANGELOG.md
 tested-with:   GHC == 7.4.1 
@@ -94,6 +93,7 @@ library
   if impl(ghc >= 7.2)
     exposed-modules:
       Data.Semiring
+      Data.Semiring.Free
       Data.Star
   if impl(ghc >= 7.6.1)
     exposed-modules:

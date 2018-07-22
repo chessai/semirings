@@ -23,6 +23,7 @@ test-suite test
                , QuickCheck 
                , base-orphans
                , containers
+               , hashable
                , quickcheck-classes >= 0.4.11.1
                , quickcheck-instances 
                , semirings
