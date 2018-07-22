@@ -49,6 +49,9 @@ import qualified Data.HashSet as HashSet
 #endif
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
 import           Data.Maybe (Maybe(..))
+#if MIN_VERSION_base(4,12,0)
+import           Data.Monoid (Ap(..))
+#endif
 #if defined(VERSION_containers)
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
@@ -369,6 +372,14 @@ instance Ring a => Semiring (Complex a) where
 instance Ring a => Ring (Complex a) where
   negate (x :+ y) = negate x :+ negate y
 
+#if MIN_VERSION_base(4,12,0)
+instance (Semiring a, Applicative f) => Semiring (Ap f a) where
+  zero  = pure zero
+  one   = pure one
+  plus  = liftA2 plus
+  times = liftA2 times
+#endif
+
 instance Semiring Int
 instance Semiring Int8
 instance Semiring Int16
@@ -511,7 +522,7 @@ instance (Ord a, Semiring a) => Semiring (Set a) where
   one   = Set.singleton one
   plus  = Set.union
 #if MIN_VERSION_containers(5,11,0)
-  times xs ys = Set.map (P.uncurry times) (Set.cartesianProduct xs ys)
+   times xs ys = Set.map (P.uncurry times) (Set.cartesianProduct xs ys)
 #else
   -- I think this could also be 'times xs ys = foldMapT (flip Set.map ys . times) xs'
   times xs ys = Set.fromList (times (Set.toList xs) (Set.toList ys))

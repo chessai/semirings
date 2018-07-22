@@ -1,7 +1,6 @@
 *.ghc*
-test*
-dist*
-dist-newstyle*
+*dist*
+*dist-newstyle*
 *.swo
 *.swp
 *.swa

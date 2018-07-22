@@ -1,0 +1,38 @@
+Name:           semirings-tests
+Version:        0.1
+License:        BSD3
+License-File:   LICENSE
+
+Author:         chessai
+Maintainer:     chessai <chessai1996@gmail.com>
+Copyright:      (c) chessai
+Homepage:       https://github.com/chessai/semirings
+Bug-Reports:    https://github.com/chessai/semirings
+Category:       Data
+Synopsis:       semirings tests
+Cabal-Version:  >= 1.10
+Build-Type:     Simple
+Description:    @semirings@ tests
+
+test-suite test
+  Default-Language: Haskell2010
+  hs-source-dirs: .
+  main-is: main.hs
+  type: exitcode-stdio-1.0
+  build-depends: base >= 4.5 && < 4.12
+               , QuickCheck 
+               , base-orphans
+               , containers
+               , quickcheck-classes >= 0.4.11.1
+               , quickcheck-instances 
+               , semirings
+               , tasty
+               , tasty-quickcheck
+               , unordered-containers
+               , vector
+  ghc-options: -O2
+
+source-repository head
+  type:     git
+  location: https://github.com/chessai/semirings
+  subdir:   test
