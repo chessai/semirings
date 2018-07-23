@@ -1,13 +1,13 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 module Data.Star
   ( Star(..)
   ) where
 
 import Data.Bool (Bool(..))
 import Data.Function (id, (.))
-
+import Data.Proxy (Proxy(..))
 import Data.Semiring
-
-import Prelude hiding (Num(..))
 
 -- | A <https://en.wikipedia.org/wiki/Semiring#Star_semirings Star semiring>
 -- adds one operation, 'star' to a 'Semiring', such that it follows the
@@ -29,18 +29,24 @@ class (Semiring a) => Star a where
 instance Star b => Star (a -> b) where
   star  = (.) star
   aplus = (.) aplus
+  {-# INLINE star #-}
+  {-# INLINE aplus #-}
 
 instance Star Bool where
   star _  = True
   aplus   = id
+  {-# INLINE star #-}
+  {-# INLINE aplus #-}
 
 instance Star () where
   star  _ = ()
   aplus _ = ()
+  {-# INLINE star #-}
+  {-# INLINE aplus #-}
 
---instance (Eq a, Semiring a) => Star (Endo a) where
---  star (Endo f) = Endo converge
---    where
---      converge inp = times inp (if inp == next then inp else converge next)
---        where
---          next = times inp (f inp)
+instance Star (Proxy a) where
+  star _ = Proxy
+  aplus _ = Proxy
+  {-# INLINE star #-}
+  {-# INLINE aplus #-}
+

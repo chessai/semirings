@@ -95,7 +95,10 @@ library
 
   if impl(ghc < 8.0)
     build-depends: semigroups
-    
+
+  if impl(ghc < 7.8)
+    build-depends: tagged
+
   if impl(ghc >= 7.2)
     exposed-modules:
       Data.Semiring
@@ -109,7 +112,7 @@ library
       build-depends: primitive >= 0.6.4.0 && < 0.6.5.0
 
     if flag(containers)
-      build-depends: containers >= 0.3 && < 0.6
+      build-depends: containers >= 0.5.4 && < 0.6.1.0
 
     if flag(hashable)
       build-depends: hashable >= 1.1  && < 1.3

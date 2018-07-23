@@ -1,13 +1,26 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE StandaloneDeriving #-}
+
+#if !MIN_VERSION_base(4,9,0)
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+#endif
 
 module Data.Semiring.Free
-  ( Free(..)
+  (
+#if defined(VERSION_containers)
+#if MIN_VERSION_base(4,8,0)
+    Free(..)
   , runFree
   , lowerFree
   , liftFree
+#endif
+#endif
   ) where
 
+#if defined(VERSION_containers)
+#if MIN_VERSION_base(4,8,0)
 import           Control.Applicative (pure)
 import           Data.Bool (otherwise)
 import           Data.Coerce (Coercible, coerce)
@@ -16,11 +29,13 @@ import           Data.Functor (Functor(..))
 import           Data.Functor.Identity (Identity(..))
 import           Data.Function (flip,id, (.))
 import           Data.Ord (Ord)
+#if !MIN_VERSION_base(4,9,0)
+import           Data.Semigroup ()
+#endif
 import           Data.Semiring
 import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import           Data.Monoid (Monoid(..))
-import           Data.Sequence (Seq)
 
 import           GHC.Show (Show)
 import           GHC.Read (Read)
@@ -31,8 +46,13 @@ newtype Free a = Free
   { getFree :: Map (Identity a) Natural
   } deriving (Show, Read, Eq, Ord, Semiring)
 
+#if !MIN_VERSION_base(4,9,0)
+--deriving instance Semigroup a => Semigroup (Identity a)
+deriving instance Monoid a => Monoid (Identity a)
+#endif
+
 runFree :: Semiring s => (a -> s) -> Free a -> s
-runFree f = getAdd #. Map.foldMapWithKey ((rep .# Add) . prod . fmap f) . getFree
+runFree f = getAdd #. Map.foldMapWithKey ((rep .# Add) . product . fmap f) . getFree
 
 lowerFree :: Semiring s => Free s -> s
 lowerFree = runFree id
@@ -63,3 +83,7 @@ infixr 9 .#
 (.#) :: Coercible a b => (b -> c) -> (a -> b) -> a -> c
 (.#) f _ = coerce f
 {-# INLINE (.#) #-}
+
+#endif
+
+#endif

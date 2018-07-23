@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DefaultSignatures          #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -25,9 +26,9 @@ module Data.Semiring
   , foldMapP
   , foldMapT
   , sum
-  , prod
+  , product
   , sum'
-  , prod'
+  , product'
 
     -- * Types
   , Add(..)
@@ -40,8 +41,6 @@ module Data.Semiring
   ) where 
 
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
-import           Control.Monad (Monad(..))
-import           Control.Monad.ST (ST, runST)
 import           Data.Bool (Bool(..), (||), (&&), otherwise, not)
 import           Data.Complex (Complex(..))
 import           Data.Eq (Eq(..))
@@ -64,10 +63,10 @@ import           Data.Maybe (Maybe(..))
 import           Data.Monoid (Ap(..))
 #endif
 #if defined(VERSION_containers)
-import           Data.IntMap (IntMap)
-import qualified Data.IntMap as IntMap
-import           Data.IntSet (IntSet)
-import qualified Data.IntSet as IntSet
+--import           Data.IntMap (IntMap)
+--import qualified Data.IntMap as IntMap
+--import           Data.IntSet (IntSet)
+--import qualified Data.IntSet as IntSet
 import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
@@ -76,16 +75,17 @@ import           Data.Ord (Ord(..), Ordering(..), compare)
 #if MIN_VERSION_base(4,6,0)
 import           Data.Ord (Down(..))
 #endif
+import           Data.Proxy (Proxy(..))
 import           Data.Ratio (Ratio)
 import           Data.Semigroup (Semigroup(..),Max(..), Min(..))
 #if defined(VERSION_containers)
 import           Data.Set (Set)
 import qualified Data.Set as Set
 #endif
-#if defined(VERSION_primitive)
-import           Data.Primitive.Array (Array(..))
-import qualified Data.Primitive.Array as Array
-#endif
+-- #if defined(VERSION_primitive)
+-- import           Data.Primitive.Array (Array(..))
+-- import qualified Data.Primitive.Array as Array
+-- #endif
 import           Data.Traversable (Traversable)
 import           Data.Typeable (Typeable)
 #if defined(VERSION_vector)
@@ -143,18 +143,22 @@ x0 ^ y0 | y0 < 0  = zero
     g x y z | even y = g (x * x) (y `quot` 2) z
             | y == 1 = x * z
             | otherwise = g (x * x) (y `quot` 2) (x * z)
+{-# INLINE (^) #-}
 
 -- | Infix shorthand for 'plus'.
 (+) :: Semiring a => a -> a -> a
 (+) = plus
+{-# INLINE (+) #-}
 
 -- | Infix shorthand for 'times'.
 (*) :: Semiring a => a -> a -> a
 (*) = times
+{-# INLINE (*) #-}
 
 -- | Infix shorthand for 'minus'.
 (-) :: Ring a => a -> a -> a
 (-) = minus
+{-# INLINE (-) #-}
 
 -- | Map each element of the structure to a semiring, and combine the results
 --   using 'plus'.
@@ -172,21 +176,25 @@ foldMapT f = Foldable.foldr (times . f) one
 --   This function is lazy. For a strict version, see 'sum''.
 sum  :: (Foldable t, Semiring a) => t a -> a
 sum  = Foldable.foldr plus zero
+{-# INLINE sum #-}
 
 -- | The 'prod' function computes the multiplicative sum of the elements in a structure.
 --   This function is lazy. for a strict version, see 'prod''.
-prod :: (Foldable t, Semiring a) => t a -> a
-prod = Foldable.foldr times one
+product :: (Foldable t, Semiring a) => t a -> a
+product = Foldable.foldr times one
+{-# INLINE product #-}
 
 -- | The 'sum'' function computes the additive sum of the elements in a structure.
 --   This function is strict. For a lazy version, see 'sum'.
 sum'  :: (Foldable t, Semiring a) => t a -> a
 sum'  = Foldable.foldl' plus zero
+{-# INLINE sum' #-}
 
 -- | The 'prod'' function computes the additive sum of the elements in a structure.
 --   This function is strict. For a lazy version, see 'prod'.
-prod' :: (Foldable t, Semiring a) => t a -> a
-prod' = Foldable.foldl' times one
+product' :: (Foldable t, Semiring a) => t a -> a
+product' = Foldable.foldl' times one
+{-# INLINE product' #-}
 
 newtype Add a = Add { getAdd :: a }
   deriving
@@ -196,8 +204,10 @@ newtype Add a = Add { getAdd :: a }
     , Foldable
     , Fractional
     , Functor
+#if MIN_VERSION_base(4,6,1)
     , Generic
     , Generic1
+#endif
     , Num.Num
     , Ord
     , Read
@@ -218,8 +228,10 @@ newtype Mul a = Mul { getMul :: a }
     , Foldable
     , Fractional
     , Functor
+#if MIN_VERSION_base(4,6,1)
     , Generic
     , Generic1
+#endif
     , Num.Num
     , Ord
     , Read
@@ -234,17 +246,23 @@ newtype Mul a = Mul { getMul :: a }
 
 instance Semiring a => Semigroup (Add a) where
   (<>) = (+)
+  {-# INLINE (<>) #-}
 
 instance Semiring a => Monoid (Add a) where
   mempty = Add zero
   mappend = (<>)
+  {-# INLINE mempty #-}
+  {-# INLINE mappend #-}
 
 instance Semiring a => Semigroup (Mul a) where
   (<>) = (*)
+  {-# INLINE (<>) #-}
 
 instance Semiring a => Monoid (Mul a) where
   mempty = Mul one
   mappend = (<>)
+  {-# INLINE mempty #-}
+  {-# INLINE mappend #-}
 
 {--------------------------------------------------------------------
   Classes
@@ -327,6 +345,7 @@ class Semiring a => Ring a where
 --     @x `minus` y = x '+' 'negate' y@
 minus :: Ring a => a -> a -> a
 minus x y = x + negate y
+{-# INLINE minus #-}
 
 {--------------------------------------------------------------------
   Instances (base)
@@ -337,27 +356,52 @@ instance Semiring b => Semiring (a -> b) where
   zero        = const zero
   times f g x = f x `times` g x
   one         = const one
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
 instance Ring b => Ring (a -> b) where
   negate f x = negate (f x)
+  {-# INLINE negate #-}
 
 instance Semiring () where
   plus _ _  = ()
   zero      = ()
   times _ _ = ()
   one       = ()
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
 instance Ring () where
   negate _ = ()
+  {-# INLINE negate #-}
+
+instance Semiring (Proxy a) where
+  plus _ _  = Proxy
+  zero      = Proxy
+  times _ _ = Proxy
+  one       = Proxy
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
 instance Semiring Bool where
   plus  = (||)
   zero  = False
   times = (&&)
   one   = True
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
 instance Ring Bool where
   negate = not
+  {-# INLINE negate #-}
 
 -- See Section: List fusion
 instance Semiring a => Semiring [a] where
@@ -365,9 +409,14 @@ instance Semiring a => Semiring [a] where
   one  = [one]
   plus  = listAdd
   times = listTimes
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
 instance Ring a => Ring [a] where
   negate = fmap negate
+  {-# INLINE negate #-}
 
 instance Semiring a => Semiring (Maybe a) where
   zero  = Nothing
@@ -380,65 +429,56 @@ instance Semiring a => Semiring (Maybe a) where
   times Nothing _ = Nothing
   times _ Nothing = Nothing
   times (Just x) (Just y) = Just (times x y)
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
 instance Ring a => Ring (Maybe a) where
   negate = fmap negate
+  {-# INLINE negate #-}
 
 instance Semiring a => Semiring (IO a) where
   zero  = pure zero
   one   = pure one
   plus  = liftA2 plus
   times = liftA2 times
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
 instance Ring a => Ring (IO a) where
   negate = fmap negate
+  {-# INLINE negate #-}
 
 instance Semiring a => Semiring (Dual a) where
   zero = Dual zero
   Dual x `plus` Dual y = Dual (y `plus` x)
   one = Dual one
   Dual x `times` Dual y = Dual (y `times` x)
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
 instance Ring a => Ring (Dual a) where
   negate (Dual x) = Dual (negate x)
-
--- | This is not a true semiring. Even if the underlying
--- monoid is commutative, it is only a near semiring. It
--- is, however, quite useful. For instance, this type:
---
--- @forall a. 'Endo' ('Endo' a)@
---
--- is a valid encoding of church numerals, with addition and
--- multiplication being their semiring variants.
---instance (Semiring a) => Semiring (Endo a) where
---  zero  = Endo (const zero)
---  plus (Endo f) (Endo g) = Endo (f `plus` g)
---  one   = Endo id
---  times (Endo f) (Endo g) = Endo (f . g)
---
---instance (Monoid a, Ring a) => Ring (Endo a) where
---  negate (Endo f) = Endo (negate f)
-
-#if MIN_VERSION_base(4,8,0)
--- | '<|>' == 'plus' is not commutative!
---instance (Alternative f, Semiring a) => Semiring (Alt f a) where
---  zero  = empty
---  one   = Alt (pure one)
---  plus  = (<|>)
---  times = liftA2 times
---
---instance (Alternative f, Ring a) => Ring (Alt f a) where
---  negate = fmap negate
-#endif
+  {-# INLINE negate #-}
 
 instance Semiring a => Semiring (Const a b) where
   zero = Const zero
   one  = Const one
   plus  (Const x) (Const y) = Const (x `plus`  y)
   times (Const x) (Const y) = Const (x `times` y)
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
 instance Ring a => Ring (Const a b) where
   negate (Const x) = Const (negate x)
+  {-# INLINE negate #-}
 
 -- | This instance can suffer due to floating point arithmetic.
 instance Ring a => Semiring (Complex a) where
@@ -447,9 +487,14 @@ instance Ring a => Semiring (Complex a) where
   plus  (x :+ y) (x' :+ y') = plus x x' :+ plus y y'
   times (x :+ y) (x' :+ y')
     = (x * x' - (y * y')) :+ (x * y' + y * x')
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
 instance Ring a => Ring (Complex a) where
   negate (x :+ y) = negate x :+ negate y
+  {-# INLINE negate #-}
 
 #if MIN_VERSION_base(4,12,0)
 instance (Semiring a, Applicative f) => Semiring (Ap f a) where
@@ -457,6 +502,10 @@ instance (Semiring a, Applicative f) => Semiring (Ap f a) where
   one   = pure one
   plus  = liftA2 plus
   times = liftA2 times
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 #endif
 
 instance Semiring Int
@@ -610,6 +659,10 @@ instance (Ord a, Monoid a) => Semiring (Set a) where
   one   = Set.singleton mempty
   plus  = Set.union
   times xs ys = Foldable.foldMap (flip Set.map ys . mappend) xs
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
 -- | The multiplication laws are satisfied for
 --   any underlying 'Monoid' as the key type,
@@ -626,36 +679,40 @@ instance (Ord k, Monoid k, Semiring v) => Semiring (Map k v) where
         | (k,v) <- Map.toList xs
         , (l,u) <- Map.toList ys
         ]
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
-newtype IntSetP = IntSetP { intSetP :: IntSet }
-newtype IntSetT = IntSetT { intSetT :: IntSet }
+--newtype IntSetP = IntSetP { intSetP :: IntSet }
+--newtype IntSetT = IntSetT { intSetT :: IntSet }
+--
+--instance Semiring IntSetP where
+--  zero = IntSetP (IntSet.empty)
+--  one  = IntSetP (IntSet.singleton zero)
+--  plus (IntSetP x) (IntSetP y) = IntSetP (IntSet.union x y)
+--  times (IntSetP xs) (IntSetP ys) = IntSetP (foldMapIntSet (flip IntSet.map ys . plus) xs)
+--
+--instance Semiring IntSetT where
+--  zero = IntSetT IntSet.empty
+--  one  = IntSetT (IntSet.singleton one)
+--  plus (IntSetT x) (IntSetT y) = IntSetT (IntSet.union x y)
+--  times (IntSetT xs) (IntSetT ys) = IntSetT (foldMapIntSet (flip IntSet.map ys . times) xs)
+--
+--foldMapIntSet :: Monoid m => (Int -> m) -> IntSet -> m
+--foldMapIntSet f = IntSet.foldl' (flip (mappend . f)) mempty
+--{-# INLINE foldMapIntSet #-}
 
-instance Semiring IntSetP where
-  zero = IntSetP (IntSet.empty)
-  one  = IntSetP (IntSet.singleton zero)
-  plus (IntSetP x) (IntSetP y) = IntSetP (IntSet.union x y)
-  times (IntSetP xs) (IntSetP ys) = IntSetP (foldMapIntSet (flip IntSet.map ys . plus) xs)
-
-instance Semiring IntSetT where
-  zero = IntSetT IntSet.empty
-  one  = IntSetT (IntSet.singleton one)
-  plus (IntSetT x) (IntSetT y) = IntSetT (IntSet.union x y)
-  times (IntSetT xs) (IntSetT ys) = IntSetT (foldMapIntSet (flip IntSet.map ys . times) xs)
-
-foldMapIntSet :: Monoid m => (Int -> m) -> IntSet -> m
-foldMapIntSet f = IntSet.foldl' (flip (mappend . f)) mempty
-{-# INLINE foldMapIntSet #-}
-
-instance (Semiring a) => Semiring (IntMap a) where
-  zero = IntMap.empty
-  one  = IntMap.singleton zero one
-  plus = IntMap.unionWith (+)
-  xs `times` ys
-    = IntMap.fromListWith (+)
-        [ (plus k l, v * u)
-        | (k,v) <- IntMap.toList xs
-        , (l,u) <- IntMap.toList ys
-        ]
+--instance (Semiring a) => Semiring (IntMap a) where
+--  zero = IntMap.empty
+--  one  = IntMap.singleton zero one
+--  plus = IntMap.unionWith (+)
+--  xs `times` ys
+--    = IntMap.fromListWith (+)
+--        [ (plus k l, v * u)
+--        | (k,v) <- IntMap.toList xs
+--        , (l,u) <- IntMap.toList ys
+--        ]
 #endif
 
 {--------------------------------------------------------------------
@@ -674,6 +731,10 @@ instance (Eq a, Hashable a, Monoid a) => Semiring (HashSet a) where
   one  = HashSet.singleton mempty
   plus = HashSet.union
   times xs ys = Foldable.foldMap (flip HashSet.map ys . mappend) xs
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
 -- | The multiplication laws are satisfied for
 --   any underlying 'Monoid' as the key type,
@@ -688,7 +749,12 @@ instance (Eq k, Hashable k, Monoid k, Semiring v) => Semiring (HashMap k v) wher
     = HashMap.fromListWith (+)
         [ (mappend k l, v * u)
         | (k,v) <- HashMap.toList xs
-        , (l,u) <- HashMap.toList ys ]
+        , (l,u) <- HashMap.toList ys
+        ]
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 #endif
 
 {--------------------------------------------------------------------
@@ -701,13 +767,17 @@ instance (Eq k, Hashable k, Monoid k, Semiring v) => Semiring (HashMap k v) wher
 --   'Monoid' contraint instead of a 'Semiring'
 --   constraint since 'times' can use
 --   the context of either.
-instance (Monoid a) => Semiring (Array a) where
-  zero  = mempty
-  one   = runST e where
-    e :: forall s a. Monoid a => ST s (Array a)
-    e = (Array.newArray 1 mempty) >>= Array.unsafeFreezeArray
-  plus _ _ = mempty
-  times _ _ = mempty
+-- instance (Monoid a) => Semiring (Array a) where
+--   zero  = mempty
+--   one   = runST e where
+--     e :: forall s. Monoid a => ST s (Array a)
+--     e = (Array.newArray 1 mempty) >>= Array.unsafeFreezeArray
+--   plus _ _ = mempty
+--   times _ _ = mempty
+--   {-# INLINE plus  #-}
+--   {-# INLINE zero  #-}
+--   {-# INLINE times #-}
+--   {-# INLINE one   #-}
 #endif
 
 {--------------------------------------------------------------------
@@ -740,9 +810,14 @@ instance Semiring a => Semiring (Vector a) where
         where
           !kmin = max 0 (n - (klen - 1))
           !kmax = min n (slen - 1)
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
 
 instance Ring a => Ring (Vector a) where
   negate = Vector.map negate
+  {-# INLINE negate #-}
 
 instance (UV.Unbox a, Semiring a) => Semiring (UV.Vector a) where
   zero = UV.empty
@@ -769,9 +844,14 @@ instance (UV.Unbox a, Semiring a) => Semiring (UV.Vector a) where
         where
           !kmin = max 0 (n - (klen - 1))
           !kmax = min n (slen - 1)
-
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
+ 
 instance (UV.Unbox a, Ring a) => Ring (UV.Vector a) where
   negate = UV.map negate
+  {-# INLINE negate #-}
 
 instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
   zero = SV.empty
@@ -800,9 +880,14 @@ instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
           where
             !kmin = max 0 (n - (klen - 1))
             !kmax = min n (slen - 1)
-
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
+  
 instance (SV.Storable a, Ring a) => Ring (SV.Vector a) where
   negate = SV.map negate
+  {-# INLINE negate #-}
 #endif
 
 -- [Section: List fusion]

@@ -1,7 +1,8 @@
 {-# LANGUAGE CPP              #-}
+#if MIN_VERSION_base(4,6,0)
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators    #-}
-
+#endif
 {-# OPTIONS_GHC -Wall #-}
 
 -- below are safe orphan instances
