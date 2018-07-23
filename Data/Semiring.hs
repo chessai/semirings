@@ -1,9 +1,14 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DefaultSignatures          #-}
+{-# LANGUAGE DeriveFoldable             #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE Rank2Types                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 
 {-# OPTIONS_GHC -Wall #-}
@@ -23,14 +28,20 @@ module Data.Semiring
   , prod
   , sum'
   , prod'
-  
+
+    -- * Types
+  , Add(..)
+  , Mul(..)
+
     -- * Ring typeclass 
   , Ring(..)
   , (-)
   , minus 
   ) where 
 
-import           Control.Applicative (Alternative(..), Applicative(..), Const(..), liftA2)
+import           Control.Applicative (Applicative(..), Const(..), liftA2)
+import           Control.Monad (Monad(..))
+import           Control.Monad.ST (ST, runST)
 import           Data.Bool (Bool(..), (||), (&&), otherwise, not)
 import           Data.Complex (Complex(..))
 import           Data.Eq (Eq(..))
@@ -38,7 +49,7 @@ import           Data.Fixed (Fixed, HasResolution)
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
 import           Data.Function ((.), const, flip, id)
-import           Data.Functor (fmap)
+import           Data.Functor (Functor(..))
 import           Data.Functor.Identity (Identity(..))
 #if defined(VERSION_unordered_containers)
 import           Data.Hashable (Hashable)
@@ -60,22 +71,23 @@ import qualified Data.IntSet as IntSet
 import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
-import           Data.Monoid (Monoid(..),Dual(..), Endo(..), Product(..), Sum(..))
-#if MIN_VERSION_base(4,8,0)
-import           Data.Monoid (Alt(..))
-#endif
+import           Data.Monoid (Monoid(..),Dual(..), Product(..), Sum(..))
 import           Data.Ord (Ord(..), Ordering(..), compare)
 #if MIN_VERSION_base(4,6,0)
 import           Data.Ord (Down(..))
 #endif
 import           Data.Ratio (Ratio)
-import           Data.Semigroup (Max(..), Min(..))
+import           Data.Semigroup (Semigroup(..),Max(..), Min(..))
 #if defined(VERSION_containers)
-import           Data.Sequence (Seq)
-import qualified Data.Sequence as Seq
 import           Data.Set (Set)
 import qualified Data.Set as Set
 #endif
+#if defined(VERSION_primitive)
+import           Data.Primitive.Array (Array(..))
+import qualified Data.Primitive.Array as Array
+#endif
+import           Data.Traversable (Traversable)
+import           Data.Typeable (Typeable)
 #if defined(VERSION_vector)
 import           Data.Vector (Vector)
 import qualified Data.Vector as Vector
@@ -91,12 +103,19 @@ import           Foreign.C.Types
    CUIntMax, CUIntPtr, CULLong, CULong,
    CUSeconds, CUShort, CWchar)
 import           Foreign.Ptr (IntPtr, WordPtr)
+import           Foreign.Storable (Storable)
 import           GHC.Base (build)
+import           GHC.Enum (Enum, Bounded)
 import           GHC.Float (Float, Double)
+#if MIN_VERSION_base(4,6,1)
+import           GHC.Generics (Generic,Generic1)
+#endif
 import           GHC.IO (IO)
 import           GHC.Integer (Integer)
 import qualified GHC.Num as Num
-import           GHC.Real (Integral, quot, even)
+import           GHC.Read (Read)
+import           GHC.Real (Integral, Fractional, Real, RealFrac, quot, even)
+import           GHC.Show (Show)
 import           Numeric.Natural (Natural)
 import           System.Posix.Types
   (CCc, CDev, CGid, CIno, CMode, CNlink,
@@ -162,12 +181,70 @@ prod = Foldable.foldr times one
 -- | The 'sum'' function computes the additive sum of the elements in a structure.
 --   This function is strict. For a lazy version, see 'sum'.
 sum'  :: (Foldable t, Semiring a) => t a -> a
-sum'  = Foldable.foldr' plus zero
+sum'  = Foldable.foldl' plus zero
 
 -- | The 'prod'' function computes the additive sum of the elements in a structure.
 --   This function is strict. For a lazy version, see 'prod'.
 prod' :: (Foldable t, Semiring a) => t a -> a
-prod' = Foldable.foldr' times one
+prod' = Foldable.foldl' times one
+
+newtype Add a = Add { getAdd :: a }
+  deriving
+    ( Bounded
+    , Enum
+    , Eq
+    , Foldable
+    , Fractional
+    , Functor
+    , Generic
+    , Generic1
+    , Num.Num
+    , Ord
+    , Read
+    , Real
+    , RealFrac
+    , Semiring
+    , Show
+    , Storable
+    , Traversable
+    , Typeable
+    )
+
+newtype Mul a = Mul { getMul :: a }
+  deriving
+    ( Bounded
+    , Enum
+    , Eq
+    , Foldable
+    , Fractional
+    , Functor
+    , Generic
+    , Generic1
+    , Num.Num
+    , Ord
+    , Read
+    , Real
+    , RealFrac
+    , Semiring
+    , Show
+    , Storable
+    , Traversable
+    , Typeable
+    )
+
+instance Semiring a => Semigroup (Add a) where
+  (<>) = (+)
+
+instance Semiring a => Monoid (Add a) where
+  mempty = Add zero
+  mappend = (<>)
+
+instance Semiring a => Semigroup (Mul a) where
+  (<>) = (*)
+
+instance Semiring a => Monoid (Mul a) where
+  mempty = Mul one
+  mappend = (<>)
 
 {--------------------------------------------------------------------
   Classes
@@ -363,6 +440,7 @@ instance Semiring a => Semiring (Const a b) where
 instance Ring a => Ring (Const a b) where
   negate (Const x) = Const (negate x)
 
+-- | This instance can suffer due to floating point arithmetic.
 instance Ring a => Semiring (Complex a) where
   zero = zero :+ zero
   one  = one  :+ zero
@@ -392,7 +470,9 @@ instance Semiring Word8
 instance Semiring Word16
 instance Semiring Word32
 instance Semiring Word64
+-- | This instance can suffer due to floating point arithmetic.
 instance Semiring Float
+-- | This instance can suffer due to floating point arithmetic.
 instance Semiring Double
 instance Semiring CUIntMax
 instance Semiring CIntMax
@@ -436,7 +516,7 @@ instance Semiring CMode
 instance Semiring CIno
 instance Semiring CDev
 instance Semiring Natural
--- | The positive rationals form a semiring.
+-- | Non-negative rational numbers form a semiring.
 instance Integral a => Semiring (Ratio a)
 deriving instance Semiring a => Semiring (Product a)
 deriving instance Semiring a => Semiring (Sum a)
@@ -609,6 +689,25 @@ instance (Eq k, Hashable k, Monoid k, Semiring v) => Semiring (HashMap k v) wher
         [ (mappend k l, v * u)
         | (k,v) <- HashMap.toList xs
         , (l,u) <- HashMap.toList ys ]
+#endif
+
+{--------------------------------------------------------------------
+  Instances (primitive)
+--------------------------------------------------------------------}
+
+#if defined(VERSION_primitive)
+-- | The multiplication laws are satisfied for
+--   any underlying 'Monoid', so we require a
+--   'Monoid' contraint instead of a 'Semiring'
+--   constraint since 'times' can use
+--   the context of either.
+instance (Monoid a) => Semiring (Array a) where
+  zero  = mempty
+  one   = runST e where
+    e :: forall s a. Monoid a => ST s (Array a)
+    e = (Array.newArray 1 mempty) >>= Array.unsafeFreezeArray
+  plus _ _ = mempty
+  times _ _ = mempty
 #endif
 
 {--------------------------------------------------------------------

@@ -38,13 +38,19 @@ source-repository head
   type: git
   location: git://github.com/chessai/semirings.git
 
+flag primitive
+  description:
+    You can disable the use of the `primitive` package using `-f-primitive`.
+    .
+    Disabling this may be useful for accelerating builds in sandboxes for expert users.
+  default: True
+  manual: True
+
 flag hashable
   description:
     You can disable the use of the `hashable` package using `-f-hashable`.
     .
     Disabling this may be useful for accelerating builds in sandboxes for expert users.
-    .
-    If disabled we will not supply instances of `Hashable`
     .
     Note: `-f-hashable` implies `-f-unordered-containers`, as we are necessarily not able to supply those instances as well.
   default: True
@@ -98,7 +104,10 @@ library
   if impl(ghc >= 7.6.1)
     exposed-modules:
       Data.Semiring.Generic
-    
+   
+    if flag(primitive)
+      build-depends: primitive >= 0.6.4.0 && < 0.6.5.0
+
     if flag(containers)
       build-depends: containers >= 0.3 && < 0.6
 

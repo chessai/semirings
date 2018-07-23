@@ -4,10 +4,13 @@
 {-# LANGUAGE TypeApplications #-}
 
 import Prelude hiding (Num(..))
+import qualified GHC.Num as Num
+import qualified Data.Sequence as Seq
 import Control.Applicative (liftA2)
 import Data.Hashable
 import Data.Complex
 import Data.Fixed
+import qualified Data.Map as Map
 import Data.Int
 import Data.Word
 import Data.Monoid
@@ -15,6 +18,7 @@ import Data.Semigroup
 import Data.Ratio
 import Data.Proxy (Proxy(..))
 import Data.Semiring
+import Data.Semiring.Free
 import Test.Tasty (defaultMain, testGroup, TestTree)
 import qualified Test.QuickCheck.Classes as QCC
 import Text.Show.Functions ()
@@ -70,13 +74,11 @@ namedTests =
   , ("Identity", myLaws pIdentity)
   , ("Dual", myLaws pDual)
   , ("(->)", myLaws pFunction)
---  , ("Endo", myLaws pEndo) -- no Eq instance (this should fail anyway)
   , ("Sum", myLaws pSum)
   , ("Product", myLaws pProduct)
   , ("Down", myLaws pDown)
---  , ("Alt", myLaws pAlt) -- additive commutativity fails
   , ("Const", myLaws pConst)
-  , ("IntMap", myLaws pIntMap)
+--  , ("IntMap", myLaws pIntMap)
   , ("Set", myLaws pSet)
 --  , ("IntSet", myLaws pIntSet) -- needs newtypes
   , ("HashSet", myLaws pHashSet)
@@ -85,7 +87,14 @@ namedTests =
   , ("Storable Vector", myLaws pStorableVector) -- many problems
   , ("Unboxed Vector", myLaws pUnboxedVector) -- many problems
   , ("Map", myLaws pMap)
+  , ("Free", myLaws pFree)
   ]
+
+instance (Arbitrary a, Ord a, Num.Num a) => Arbitrary (Free a) where
+  arbitrary =
+    let n = suchThat (arbitrary :: Gen Natural) (\t -> t > 0 && t < 20)
+        s = arbitrary :: Gen (Identity a)
+    in Free <$> (liftA2 Map.singleton s n)
 
 deriving instance Arbitrary a => Arbitrary (Down a)
 
@@ -173,4 +182,5 @@ pMap = p @(Map (Sum Int) Int)
 pHashMap = p @(HashMap (Sum Int) Int)
 pConst = p @(Const Int Int)
 pAlt = p @(Alt Maybe Int)
+pFree = p @(Free (Sum Int))
 

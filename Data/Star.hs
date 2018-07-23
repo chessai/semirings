@@ -2,11 +2,8 @@ module Data.Star
   ( Star(..)
   ) where
 
-import Control.Monad (ap)
-import Control.Monad.Fix (fix)
 import Data.Bool (Bool(..))
 import Data.Function (id, (.))
-import Data.Monoid
 
 import Data.Semiring
 
