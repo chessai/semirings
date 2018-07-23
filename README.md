@@ -5,7 +5,7 @@ Haskellers are usually familiar with monoids and semigroups. A monoid has an app
 
 A Semiring has two appending operations, 'plus' and 'times', and two respective identity elements, 'zero' and 'one'.
 
-More formally, A semiring <i>R</i> is a set equipped with two binary relations + and *, such that:
+More formally, A semiring R is a set equipped with two binary relations + and *, such that:
 
 - (R, +) is a commutative monoid with identity element 0:
   - (a + b) + c = a + (b + c)
@@ -45,9 +45,11 @@ semirings themselves are useful as a way to express that a type is both a commut
 
 Some relevant (informal) reading material:
 
-http://stedolan.net/research/semirings.pdf <br>
-http://r6.ca/blog/20110808T035622Z.html <br>
-https://byorgey.wordpress.com/2016/04/05/the-network-reliability-problem-and-star-semirings/ <br>
+http://stedolan.net/research/semirings.pdf
+
+http://r6.ca/blog/20110808T035622Z.html
+
+https://byorgey.wordpress.com/2016/04/05/the-network-reliability-problem-and-star-semirings/
 
 additional credit
 ======
