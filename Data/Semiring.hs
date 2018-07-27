@@ -49,6 +49,9 @@ import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
 import           Data.Function ((.), const, flip, id)
 import           Data.Functor (Functor(..))
+#if MIN_VERSION_base(4,12,0)
+import           Data.Functor.Contravariant (Predicate(..), Comparison(..), Equivalence(..), Op(..))
+#endif
 import           Data.Functor.Identity (Identity(..))
 #if defined(VERSION_unordered_containers)
 import           Data.Hashable (Hashable)
@@ -220,6 +223,16 @@ newtype Add a = Add { getAdd :: a }
     , Typeable
     )
 
+instance Semiring a => Semigroup (Add a) where
+  (<>) = (+)
+  {-# INLINE (<>) #-}
+
+instance Semiring a => Monoid (Add a) where
+  mempty = Add zero
+  mappend = (<>)
+  {-# INLINE mempty #-}
+  {-# INLINE mappend #-}
+
 newtype Mul a = Mul { getMul :: a }
   deriving
     ( Bounded
@@ -243,16 +256,6 @@ newtype Mul a = Mul { getMul :: a }
     , Traversable
     , Typeable
     )
-
-instance Semiring a => Semigroup (Add a) where
-  (<>) = (+)
-  {-# INLINE (<>) #-}
-
-instance Semiring a => Monoid (Add a) where
-  mempty = Add zero
-  mappend = (<>)
-  {-# INLINE mempty #-}
-  {-# INLINE mappend #-}
 
 instance Semiring a => Semigroup (Mul a) where
   (<>) = (*)
@@ -506,6 +509,21 @@ instance (Semiring a, Applicative f) => Semiring (Ap f a) where
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+
+instance (Ring a, Applicative f) => Ring (Ap f a) where
+  negate = fmap negate
+  {-# INLINE negate #-}
+#endif
+
+#if MIN_VERSION_base(4,12,0)
+deriving instance Semiring (Predicate a)
+deriving instance Ring (Predicate a)
+
+deriving instance Semiring a => Semiring (Equivalence a)
+deriving instance Ring a => Ring (Equivalence a)
+
+deriving instance Semiring a => Semiring (Op a b)
+deriving instance Ring a => Ring (Op a b)
 #endif
 
 instance Semiring Int

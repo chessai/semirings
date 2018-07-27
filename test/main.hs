@@ -2,45 +2,46 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE DeriveFunctor #-}
 
-import Prelude hiding (Num(..))
-import qualified GHC.Num as Num
-import qualified Data.Sequence as Seq
 import Control.Applicative (liftA2)
-import Data.Hashable
 import Data.Complex
 import Data.Fixed
-import qualified Data.Map as Map
-import Data.Int
-import Data.Word
-import Data.Monoid
-import Data.Semigroup
-import Data.Ratio
-import Data.Proxy (Proxy(..))
-import Data.Semiring
-import Data.Semiring.Free
-import Test.Tasty (defaultMain, testGroup, TestTree)
-import qualified Test.QuickCheck.Classes as QCC
-import Text.Show.Functions ()
-import GHC.Natural
-import Data.Map
-import Data.Set
-import Data.IntSet
-import Data.Sequence
-import Data.HashSet
-import Data.HashMap.Strict
-import Data.Vector hiding (generate)
-import Data.IntMap.Strict
-import qualified Data.Vector.Storable as SV
-import qualified Data.Vector.Unboxed as UV
 import Data.Functor.Const
 import Data.Functor.Identity
+import Data.HashMap.Strict
+import Data.HashSet
+import Data.Hashable
+import Data.Int
+import Data.IntMap.Strict
+import Data.IntSet
+import Data.Map
+import Data.Monoid
 import Data.Ord (Down(..))
 import Data.Orphans ()
-import Test.QuickCheck.Instances ()
+import Data.Proxy (Proxy(..))
+import Data.Ratio
+import Data.Semigroup
+import Data.Semiring
+import Data.Semiring.Free
+import Data.Sequence
+import Data.Set
+import Data.Vector hiding (generate)
+import Data.Word
+import GHC.Natural
+import Prelude hiding (Num(..))
+import System.IO.Unsafe
 import Test.QuickCheck hiding (Fixed)
 import Test.QuickCheck.Gen (suchThat)
-import System.IO.Unsafe
+import Test.QuickCheck.Instances ()
+import Test.Tasty (defaultMain, testGroup, TestTree)
+import Text.Show.Functions ()
+import qualified Data.Map as Map
+import qualified Data.Sequence as Seq
+import qualified Data.Vector.Storable as SV
+import qualified Data.Vector.Unboxed as UV
+import qualified GHC.Num as Num
+import qualified Test.QuickCheck.Classes as QCC
 
 type Laws = QCC.Laws
 
@@ -78,17 +79,53 @@ namedTests =
   , ("Product", myLaws pProduct)
   , ("Down", myLaws pDown)
   , ("Const", myLaws pConst)
---  , ("IntMap", myLaws pIntMap)
+--  , ("IntMap", myLaws pIntMap) -- needs newtypes
   , ("Set", myLaws pSet)
 --  , ("IntSet", myLaws pIntSet) -- needs newtypes
   , ("HashSet", myLaws pHashSet)
   , ("HashMap", myLaws pHashMap)
-  , ("Vector", myLaws pVector) -- many problems
-  , ("Storable Vector", myLaws pStorableVector) -- many problems
-  , ("Unboxed Vector", myLaws pUnboxedVector) -- many problems
+  , ("Vector", myLaws pVector)
+  , ("Storable Vector", myLaws pStorableVector)
+  , ("Unboxed Vector", myLaws pUnboxedVector)
   , ("Map", myLaws pMap)
   , ("Free", myLaws pFree)
+  , ("Predicate", myLaws pPredicate)
+  , ("Equivalence", myLaws pEquivalence)
+  , ("Op", myLaws pOp)
+  , ("Ap", myLaws pAp)
   ]
+
+newtype Ap f a = Ap { getAp :: f a }
+  deriving (Eq, Functor, Applicative, Show)
+instance (Semiring a, Applicative f) => Semiring (Ap f a) where
+  zero = pure zero
+  one = pure one
+  plus = liftA2 plus
+  times = liftA2 times
+deriving instance (Arbitrary (f a)) => Arbitrary (Ap f a)
+
+newtype Predicate a = Predicate (a -> Bool)
+  deriving (Eq, Show)
+deriving instance Semiring (Predicate a)
+deriving instance Ring (Predicate a)
+deriving instance (Arbitrary a, CoArbitrary a) => Arbitrary (Predicate a)
+
+newtype Equivalence a = Equivalence (a -> a -> Bool)
+  deriving (Eq, Show)
+deriving instance Semiring a => Semiring (Equivalence a)
+deriving instance Ring a => Ring (Equivalence a)
+deriving instance (Arbitrary a, CoArbitrary a) => Arbitrary (Equivalence a)
+
+newtype Op a b = Op (b -> a)
+  deriving (Eq, Show)
+deriving instance Semiring a => Semiring (Op a b)
+deriving instance Ring a => Ring (Op a b)
+deriving instance (Arbitrary a, CoArbitrary a, CoArbitrary b) => Arbitrary (Op a b)
+
+pAp = p @(Ap Identity Int)
+pPredicate = p @(Predicate Int)
+pEquivalence = p @(Equivalence Int)
+pOp = p @(Op Int Int)
 
 instance (Arbitrary a, Ord a, Num.Num a) => Arbitrary (Free a) where
   arbitrary =
