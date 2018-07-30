@@ -17,6 +17,12 @@
 -- this is here because of -XDefaultSignatures
 {-# OPTIONS_GHC -fno-warn-missing-methods #-}
 
+-----------------------------------------------------------------------------
+-- |
+-- A class for semirings (types with two binary operations, one commutative and one associative, and two respective identites), with various general-purpose instances.
+--
+-----------------------------------------------------------------------------
+
 module Data.Semiring
   ( -- * Semiring typeclass
     Semiring(..)
@@ -181,8 +187,8 @@ sum  :: (Foldable t, Semiring a) => t a -> a
 sum  = Foldable.foldr plus zero
 {-# INLINE sum #-}
 
--- | The 'prod' function computes the multiplicative sum of the elements in a structure.
---   This function is lazy. for a strict version, see 'prod''.
+-- | The 'product' function computes the product of the elements in a structure.
+--   This function is lazy. for a strict version, see 'product''.
 product :: (Foldable t, Semiring a) => t a -> a
 product = Foldable.foldr times one
 {-# INLINE product #-}
@@ -193,12 +199,14 @@ sum'  :: (Foldable t, Semiring a) => t a -> a
 sum'  = Foldable.foldl' plus zero
 {-# INLINE sum' #-}
 
--- | The 'prod'' function computes the additive sum of the elements in a structure.
---   This function is strict. For a lazy version, see 'prod'.
+-- | The 'product'' function computes the additive sum of the elements in a structure.
+--   This function is strict. For a lazy version, see 'product'.
 product' :: (Foldable t, Semiring a) => t a -> a
 product' = Foldable.foldl' times one
 {-# INLINE product' #-}
 
+-- | Monoid under 'plus'. Analogous to 'Data.Monoid.Sum', but
+--   uses the 'Semiring' constraint rather than 'Num'.
 newtype Add a = Add { getAdd :: a }
   deriving
     ( Bounded
@@ -233,6 +241,8 @@ instance Semiring a => Monoid (Add a) where
   {-# INLINE mempty #-}
   {-# INLINE mappend #-}
 
+-- | Monoid under 'times'. Analogous to 'Data.Monoid.Product', but
+--   uses the 'Semiring' constraint rather than 'Num'.
 newtype Mul a = Mul { getMul :: a }
   deriving
     ( Bounded

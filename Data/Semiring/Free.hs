@@ -7,6 +7,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 #endif
 
+-- | Polynomials with natural number coefficients
+--   form a commutative semiring. In fact, this is
+--   the free commutative semiring.
 module Data.Semiring.Free
   (
 #if defined(VERSION_containers)
@@ -21,11 +24,9 @@ module Data.Semiring.Free
 
 #if defined(VERSION_containers)
 #if MIN_VERSION_base(4,8,0)
-import           Control.Applicative (pure)
 import           Data.Bool (otherwise)
 import           Data.Coerce (Coercible, coerce)
 import           Data.Eq (Eq)
-import           Data.Functor (Functor(..))
 import           Data.Functor.Identity (Identity(..))
 import           Data.Function (flip,id, (.))
 import           Data.Ord (Ord)
@@ -42,23 +43,34 @@ import           GHC.Read (Read)
 import           GHC.Real (even, div)
 import           Numeric.Natural
 
+-- | N[x], polynomials with natural number
+--   coefficients form the free commutative semiring
+--   on a single generator {x}.
 newtype Free a = Free
-  { getFree :: Map (Identity a) Natural
+  { getFree :: Map a Natural
   } deriving (Show, Read, Eq, Ord, Semiring)
 
 #if !MIN_VERSION_base(4,9,0)
---deriving instance Semigroup a => Semigroup (Identity a)
 deriving instance Monoid a => Monoid (Identity a)
 #endif
 
+-- | Run a 'Free'
 runFree :: Semiring s => (a -> s) -> Free a -> s
-runFree f = getAdd #. Map.foldMapWithKey ((rep .# Add) . product . fmap f) . getFree
+runFree f = getAdd #.
+  Map.foldMapWithKey
+  ((rep .# Add) . product . Identity . f)
+  . getFree
+{-# INLINE runFree #-}
 
+-- | Run a 'Free', interpreting it in the underlying semiring.
 lowerFree :: Semiring s => Free s -> s
 lowerFree = runFree id
+{-# INLINE lowerFree #-}
 
+-- | Create a 'Free' with one item.
 liftFree :: a -> Free a
-liftFree = Free . flip Map.singleton one . pure
+liftFree = Free . flip Map.singleton one
+{-# INLINE liftFree #-}
 
 rep :: Monoid m => m -> Natural -> m
 rep x = go
