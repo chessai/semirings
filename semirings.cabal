@@ -1,6 +1,6 @@
 name:          semirings
 category:      Algebra, Data, Data Structures, Math, Maths, Mathematics
-version:       0.2.0.0
+version:       0.2.0.1
 license:       BSD3
 cabal-version: >= 1.10
 license-file:  LICENSE
@@ -69,8 +69,8 @@ flag vector
     You can disable the use of the `vector` package using `-f-vector`.
     .
     Disabling this may be useful for accelerating builds in sandboxes for expert users.
-    default: True
-    manual: True
+  default: True
+  manual: True
 
 library
   default-language: Haskell98
