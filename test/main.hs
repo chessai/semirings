@@ -23,7 +23,6 @@ import Data.Proxy (Proxy(..))
 import Data.Ratio
 import Data.Semigroup
 import Data.Semiring
-import Data.Semiring.Free
 import Data.Sequence
 import Data.Set
 import Data.Vector hiding (generate)
@@ -88,7 +87,6 @@ namedTests =
   , ("Storable Vector", myLaws pStorableVector)
   , ("Unboxed Vector", myLaws pUnboxedVector)
   , ("Map", myLaws pMap)
-  , ("Free", myLaws pFree)
   , ("Predicate", myLaws pPredicate)
   , ("Equivalence", myLaws pEquivalence)
   , ("Op", myLaws pOp)
@@ -126,12 +124,6 @@ pAp = p @(Ap Identity Int)
 pPredicate = p @(Predicate Int)
 pEquivalence = p @(Equivalence Int)
 pOp = p @(Op Int Int)
-
-instance (Arbitrary a, Ord a, Num.Num a) => Arbitrary (Free a) where
-  arbitrary =
-    let n = suchThat (arbitrary :: Gen Natural) (\t -> t > 0 && t < 20)
-        s = arbitrary :: Gen (Identity a)
-    in Free <$> (liftA2 Map.singleton s n)
 
 deriving instance Arbitrary a => Arbitrary (Down a)
 
@@ -219,5 +211,4 @@ pMap = p @(Map (Sum Int) Int)
 pHashMap = p @(HashMap (Sum Int) Int)
 pConst = p @(Const Int Int)
 pAlt = p @(Alt Maybe Int)
-pFree = p @(Free (Sum Int))
 
