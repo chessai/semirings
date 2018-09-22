@@ -1,6 +1,5 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
-{-# LANGUAGE DefaultSignatures          #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
@@ -50,7 +49,7 @@ import           Control.Applicative (Applicative(..), Const(..), liftA2)
 import           Data.Bool (Bool(..), (||), (&&), otherwise, not)
 import           Data.Complex (Complex(..))
 import           Data.Eq (Eq(..))
-import           Data.Fixed (Fixed, HasResolution)
+import           Data.Fixed (Fixed(MkFixed), HasResolution)
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
 import           Data.Function ((.), const, flip, id)
@@ -85,7 +84,7 @@ import           Data.Ord (Ord(..), Ordering(..), compare)
 import           Data.Ord (Down(..))
 #endif
 import           Data.Proxy (Proxy(..))
-import           Data.Ratio (Ratio)
+import           Data.Ratio (Ratio, Rational, (%))
 import           Data.Semigroup (Semigroup(..),Max(..), Min(..))
 #if defined(VERSION_containers)
 import           Data.Set (Set)
@@ -329,16 +328,6 @@ class Semiring a where
   times :: a -> a -> a -- ^ Associative Operation
   one   :: a           -- ^ Associative Unit
 
-  -- useful for defining semirings over ground types
-  default zero  :: Num.Num a => a -- ^ 0
-  default one   :: Num.Num a => a -- ^ 1
-  default plus  :: Num.Num a => a -> a -> a -- ^ '(Prelude.+)'
-  default times :: Num.Num a => a -> a -> a -- ^ '(Prelude.*)'
-  zero  = 0
-  one   = 1
-  plus  = (Num.+)
-  times = (Num.*)
-
 -- | The class of semirings with an additive inverse.
 --
 --     @'negate' a '+' a = 'zero'@
@@ -348,9 +337,6 @@ class Semiring a => Ring a where
   {-# MINIMAL negate #-}
 #endif
   negate :: a -> a
-
-  default negate :: Num.Num a => a -> a
-  negate = Num.negate
 
 -- | Substract two 'Ring' values. For any type 'R' with
 -- a 'Prelude.Num' instance, this is the same as '(Prelude.-)'.
@@ -536,65 +522,81 @@ deriving instance Semiring a => Semiring (Op a b)
 deriving instance Ring a => Ring (Op a b)
 #endif
 
-instance Semiring Int
-instance Semiring Int8
-instance Semiring Int16
-instance Semiring Int32
-instance Semiring Int64
-instance Semiring Integer
-instance Semiring Word
-instance Semiring Word8
-instance Semiring Word16
-instance Semiring Word32
-instance Semiring Word64
--- | This instance can suffer due to floating point arithmetic.
-instance Semiring Float
--- | This instance can suffer due to floating point arithmetic.
-instance Semiring Double
-instance Semiring CUIntMax
-instance Semiring CIntMax
-instance Semiring CUIntPtr
-instance Semiring CIntPtr
-instance Semiring CSUSeconds
-instance Semiring CUSeconds
-instance Semiring CTime
-instance Semiring CClock
-instance Semiring CSigAtomic
-instance Semiring CWchar
-instance Semiring CSize
-instance Semiring CPtrdiff
-instance Semiring CDouble
-instance Semiring CFloat
-instance Semiring CULLong
-instance Semiring CLLong
-instance Semiring CULong
-instance Semiring CLong
-instance Semiring CUInt
-instance Semiring CInt
-instance Semiring CUShort
-instance Semiring CShort
-instance Semiring CUChar
-instance Semiring CSChar
-instance Semiring CChar
-instance Semiring IntPtr
-instance Semiring WordPtr
-instance Semiring Fd
-instance Semiring CRLim
-instance Semiring CTcflag
-instance Semiring CSpeed
-instance Semiring CCc
-instance Semiring CUid
-instance Semiring CNlink
-instance Semiring CGid
-instance Semiring CSsize
-instance Semiring CPid
-instance Semiring COff
-instance Semiring CMode
-instance Semiring CIno
-instance Semiring CDev
-instance Semiring Natural
--- | Non-negative rational numbers form a semiring.
-instance Integral a => Semiring (Ratio a)
+#define deriveSemiring(ty)        \
+instance Semiring (ty) where {    \
+   zero  = 0                      \
+;  one   = 1                      \
+;  plus  x y = (Num.+) x y        \
+;  times x y = (Num.*) x y        \
+}
+
+deriveSemiring(Int)
+deriveSemiring(Int8)
+deriveSemiring(Int16)
+deriveSemiring(Int32)
+deriveSemiring(Int64)
+deriveSemiring(Integer)
+deriveSemiring(Word)
+deriveSemiring(Word8)
+deriveSemiring(Word16)
+deriveSemiring(Word32)
+deriveSemiring(Word64)
+deriveSemiring(Float)
+deriveSemiring(Double)
+deriveSemiring(CUIntMax)
+deriveSemiring(CIntMax)
+deriveSemiring(CUIntPtr)
+deriveSemiring(CIntPtr)
+deriveSemiring(CSUSeconds)
+deriveSemiring(CUSeconds)
+deriveSemiring(CTime)
+deriveSemiring(CClock)
+deriveSemiring(CSigAtomic)
+deriveSemiring(CWchar)
+deriveSemiring(CSize)
+deriveSemiring(CPtrdiff)
+deriveSemiring(CDouble)
+deriveSemiring(CFloat)
+deriveSemiring(CULLong)
+deriveSemiring(CLLong)
+deriveSemiring(CULong)
+deriveSemiring(CLong)
+deriveSemiring(CUInt)
+deriveSemiring(CInt)
+deriveSemiring(CUShort)
+deriveSemiring(CShort)
+deriveSemiring(CUChar)
+deriveSemiring(CSChar)
+deriveSemiring(CChar)
+deriveSemiring(IntPtr)
+deriveSemiring(WordPtr)
+deriveSemiring(Fd)
+deriveSemiring(CRLim)
+deriveSemiring(CTcflag)
+deriveSemiring(CSpeed)
+deriveSemiring(CCc)
+deriveSemiring(CUid)
+deriveSemiring(CNlink)
+deriveSemiring(CGid)
+deriveSemiring(CSsize)
+deriveSemiring(CPid)
+deriveSemiring(COff)
+deriveSemiring(CMode)
+deriveSemiring(CIno)
+deriveSemiring(CDev)
+deriveSemiring(Natural)
+instance Integral a => Semiring (Ratio a) where
+  {-# SPECIALIZE instance Semiring Rational #-} 
+  zero  = 0 % 1
+  one   = 1 % 1
+  plus  = (Num.+)
+  times = (Num.*)
+  {-# INLINE zero  #-}
+  {-# INLINE one   #-}
+  {-# INLINE plus  #-}
+  {-# INLINE times #-}
+
+
 deriving instance Semiring a => Semiring (Product a)
 deriving instance Semiring a => Semiring (Sum a)
 deriving instance Semiring a => Semiring (Identity a)
@@ -603,64 +605,80 @@ deriving instance Semiring a => Semiring (Down a)
 #endif
 deriving instance Semiring a => Semiring (Max a)
 deriving instance Semiring a => Semiring (Min a)
-instance HasResolution a => Semiring (Fixed a)
+instance HasResolution a => Semiring (Fixed a) where
+  zero  = MkFixed 0
+  one   = MkFixed 1
+  plus  = (Num.+)
+  times = (Num.*)
+  {-# INLINE zero  #-}
+  {-# INLINE one   #-}
+  {-# INLINE plus  #-}
+  {-# INLINE times #-}
 
-instance Ring Int
-instance Ring Int8
-instance Ring Int16
-instance Ring Int32
-instance Ring Int64
-instance Ring Integer
-instance Ring Word
-instance Ring Word8
-instance Ring Word16
-instance Ring Word32
-instance Ring Word64
-instance Ring Float
-instance Ring Double
-instance Ring CUIntMax
-instance Ring CIntMax
-instance Ring CUIntPtr
-instance Ring CIntPtr
-instance Ring CSUSeconds
-instance Ring CUSeconds
-instance Ring CTime
-instance Ring CClock
-instance Ring CSigAtomic
-instance Ring CWchar
-instance Ring CSize
-instance Ring CPtrdiff
-instance Ring CDouble
-instance Ring CFloat
-instance Ring CULLong
-instance Ring CLLong
-instance Ring CULong
-instance Ring CLong
-instance Ring CUInt
-instance Ring CInt
-instance Ring CUShort
-instance Ring CShort
-instance Ring CUChar
-instance Ring CSChar
-instance Ring CChar
-instance Ring IntPtr
-instance Ring WordPtr
-instance Ring Fd
-instance Ring CRLim
-instance Ring CTcflag
-instance Ring CSpeed
-instance Ring CCc
-instance Ring CUid
-instance Ring CNlink
-instance Ring CGid
-instance Ring CSsize
-instance Ring CPid
-instance Ring COff
-instance Ring CMode
-instance Ring CIno
-instance Ring CDev
-instance Ring Natural
-instance Integral a => Ring (Ratio a)
+#define deriveRing(ty)          \
+instance Ring (ty) where {      \
+  negate = Num.negate           \
+}
+
+deriveRing(Int)
+deriveRing(Int8)
+deriveRing(Int16)
+deriveRing(Int32)
+deriveRing(Int64)
+deriveRing(Integer)
+deriveRing(Word)
+deriveRing(Word8)
+deriveRing(Word16)
+deriveRing(Word32)
+deriveRing(Word64)
+deriveRing(Float)
+deriveRing(Double)
+deriveRing(CUIntMax)
+deriveRing(CIntMax)
+deriveRing(CUIntPtr)
+deriveRing(CIntPtr)
+deriveRing(CSUSeconds)
+deriveRing(CUSeconds)
+deriveRing(CTime)
+deriveRing(CClock)
+deriveRing(CSigAtomic)
+deriveRing(CWchar)
+deriveRing(CSize)
+deriveRing(CPtrdiff)
+deriveRing(CDouble)
+deriveRing(CFloat)
+deriveRing(CULLong)
+deriveRing(CLLong)
+deriveRing(CULong)
+deriveRing(CLong)
+deriveRing(CUInt)
+deriveRing(CInt)
+deriveRing(CUShort)
+deriveRing(CShort)
+deriveRing(CUChar)
+deriveRing(CSChar)
+deriveRing(CChar)
+deriveRing(IntPtr)
+deriveRing(WordPtr)
+deriveRing(Fd)
+deriveRing(CRLim)
+deriveRing(CTcflag)
+deriveRing(CSpeed)
+deriveRing(CCc)
+deriveRing(CUid)
+deriveRing(CNlink)
+deriveRing(CGid)
+deriveRing(CSsize)
+deriveRing(CPid)
+deriveRing(COff)
+deriveRing(CMode)
+deriveRing(CIno)
+deriveRing(CDev)
+deriveRing(Natural)
+instance Integral a => Ring (Ratio a) where
+  negate = Num.negate
+  {-# INLINE negate #-}
+
 #if MIN_VERSION_base(4,6,0)
 deriving instance Ring a => Ring (Down a)
 #endif
@@ -669,7 +687,9 @@ deriving instance Ring a => Ring (Sum a)
 deriving instance Ring a => Ring (Identity a)
 deriving instance Ring a => Ring (Max a)
 deriving instance Ring a => Ring (Min a)
-instance HasResolution a => Ring (Fixed a)
+instance HasResolution a => Ring (Fixed a) where
+  negate = Num.negate
+  {-# INLINE negate #-}
 
 {--------------------------------------------------------------------
   Instances (containers)
