@@ -94,7 +94,6 @@ library
   if impl(ghc >= 7.2)
     exposed-modules:
       Data.Semiring
-      Data.Semiring.Free
       Data.Star
   if impl(ghc >= 7.6.1)
     exposed-modules:
