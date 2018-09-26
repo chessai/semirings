@@ -13,9 +13,6 @@
 
 {-# OPTIONS_GHC -Wall #-}
 
--- this is here because of -XDefaultSignatures
-{-# OPTIONS_GHC -fno-warn-missing-methods #-}
-
 -----------------------------------------------------------------------------
 -- |
 -- A class for semirings (types with two binary operations, one commutative and one associative, and two respective identites), with various general-purpose instances.
@@ -595,8 +592,6 @@ instance Integral a => Semiring (Ratio a) where
   {-# INLINE one   #-}
   {-# INLINE plus  #-}
   {-# INLINE times #-}
-
-
 deriving instance Semiring a => Semiring (Product a)
 deriving instance Semiring a => Semiring (Sum a)
 deriving instance Semiring a => Semiring (Identity a)

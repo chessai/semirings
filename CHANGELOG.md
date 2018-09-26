@@ -1,3 +1,8 @@
+0.2.1.0: [2018.09.26]
+---------------------
+* Removed use of DefaultSignatures
+* Removed free semiring
+
 0.2.0.1: [2018.07.28]
 ---------------------
 * Add instances for `Op`, `Equivalence`, `Comparison`, and `Predicate` from Data.Functor.Contravariant (upcoming base 4.12.0.0)
