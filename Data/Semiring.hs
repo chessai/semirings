@@ -46,13 +46,13 @@ import           Control.Applicative (Applicative(..), Const(..), liftA2)
 import           Data.Bool (Bool(..), (||), (&&), otherwise, not)
 import           Data.Complex (Complex(..))
 import           Data.Eq (Eq(..))
-import           Data.Fixed (Fixed(MkFixed), HasResolution)
+import           Data.Fixed (Fixed, HasResolution)
 import           Data.Foldable (Foldable)
 import qualified Data.Foldable as Foldable
 import           Data.Function ((.), const, flip, id)
 import           Data.Functor (Functor(..))
 #if MIN_VERSION_base(4,12,0)
-import           Data.Functor.Contravariant (Predicate(..), Comparison(..), Equivalence(..), Op(..))
+import           Data.Functor.Contravariant (Predicate(..), Equivalence(..), Op(..))
 #endif
 import           Data.Functor.Identity (Identity(..))
 #if defined(VERSION_unordered_containers)
@@ -601,8 +601,8 @@ deriving instance Semiring a => Semiring (Down a)
 deriving instance Semiring a => Semiring (Max a)
 deriving instance Semiring a => Semiring (Min a)
 instance HasResolution a => Semiring (Fixed a) where
-  zero  = MkFixed 0
-  one   = MkFixed 1
+  zero  = 0
+  one   = 1
   plus  = (Num.+)
   times = (Num.*)
   {-# INLINE zero  #-}
