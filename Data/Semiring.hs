@@ -64,6 +64,7 @@ import           Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
 #endif
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
+import qualified Data.List as List
 import           Data.Maybe (Maybe(..))
 #if MIN_VERSION_base(4,12,0)
 import           Data.Monoid (Ap(..))
