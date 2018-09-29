@@ -35,6 +35,7 @@ module Data.Semiring
     -- * Types
   , Add(..)
   , Mul(..)
+  , WrappedNum(..)
 
     -- * Ring typeclass 
   , Ring(..)
@@ -272,6 +273,39 @@ instance Semiring a => Monoid (Mul a) where
   mappend = (<>)
   {-# INLINE mempty #-}
   {-# INLINE mappend #-}
+
+-- | Provide Semiring and Ring for an arbitrary Num. It is useful with GHC 8.6+'s DerivingVia extension.
+newtype WrappedNum a = WrapNum { unwrapNum :: a }
+  deriving
+    ( Bounded
+    , Enum
+    , Eq
+    , Foldable
+    , Fractional
+    , Functor
+#if MIN_VERSION_base(4,6,1)
+    , Generic
+    , Generic1
+#endif
+    , Num.Num
+    , Ord
+    , Read
+    , Real
+    , RealFrac
+    , Show
+    , Storable
+    , Traversable
+    , Typeable
+    )
+
+instance Num.Num a => Semiring (WrappedNum a) where
+  plus  = (Num.+)
+  zero  = 0
+  times = (Num.*)
+  one   = 1
+
+instance Num.Num a => Ring (WrappedNum a) where
+  negate = Num.negate
 
 {--------------------------------------------------------------------
   Classes
