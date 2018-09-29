@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -64,7 +65,7 @@ namedTests =
   , ("Word32", myLaws pWord32)
   , ("Word64", myLaws pWord64)
   , ("()", myLaws pUnit)
-  , ("[]", myLaws pInt)
+  , ("[]", myLaws pList)
   , ("Maybe", myLaws pMaybe)
   , ("PosRatio", myLaws pPosRatio)
   , ("IO", myLaws pIO)
@@ -93,6 +94,7 @@ namedTests =
   , ("Ap", myLaws pAp)
   ]
 
+#if !(MIN_VERSION_base(4,12,0))
 newtype Ap f a = Ap { getAp :: f a }
   deriving (Eq, Functor, Applicative, Show)
 instance (Semiring a, Applicative f) => Semiring (Ap f a) where
@@ -100,6 +102,7 @@ instance (Semiring a, Applicative f) => Semiring (Ap f a) where
   one = pure one
   plus = liftA2 plus
   times = liftA2 times
+#endif
 deriving instance (Arbitrary (f a)) => Arbitrary (Ap f a)
 
 newtype Predicate a = Predicate (a -> Bool)

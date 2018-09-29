@@ -941,10 +941,12 @@ listAdd xs [] = xs
 listAdd (x:xs) (y:ys) = (x + y) : listAdd xs ys
 {-# NOINLINE [0] listAdd #-}
 
-listTimes [] (_:xs) = zero : listTimes [] xs
-listTimes (_:xs) [] = zero : listTimes xs []
-listTimes [] [] = []
-listTimes (x:xs) (y:ys) = (x * y) : listTimes xs ys
+listTimes _  [] = []
+listTimes xs ys = List.foldr f [] xs
+  where
+    f x zs = List.foldr (g x) id ys (zero : zs)
+    g x y a []     = x `times` y : a []
+    g x y a (z:zs) = x `times` y `plus` z : a zs
 {-# NOINLINE [0] listTimes #-}
 
 type ListBuilder a = forall b. (a -> b -> b) -> b -> b

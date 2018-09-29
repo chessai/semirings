@@ -19,14 +19,14 @@ test-suite test
   hs-source-dirs: .
   main-is: main.hs
   type: exitcode-stdio-1.0
-  build-depends: base >= 4.5 && < 4.12
+  build-depends: base >= 4.5 && < 4.13
                , QuickCheck 
                , base-orphans
                , containers
                , hashable
                , quickcheck-classes >= 0.4.14.3
                , quickcheck-instances 
-               , semirings
+               , semirings >= 0.2.1.1
                , tasty
                , tasty-quickcheck
                , unordered-containers
