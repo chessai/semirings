@@ -128,6 +128,7 @@ import           System.Posix.Types
   (CCc, CDev, CGid, CIno, CMode, CNlink,
    COff, CPid, CRLim, CSpeed, CSsize,
    CTcflag, CUid, Fd)
+import qualified Prelude as Prelude
 
 infixl 7 *, `times`
 infixl 6 +, `plus`, -, `minus`
@@ -489,12 +490,21 @@ instance Ring Bool where
   negate = not
   {-# INLINE negate #-}
 
--- See Section: List fusion
+-- | The 'Semiring' instance for '[a]' can be interpreted as
+--   treating each element of the list as coefficients to a
+--   polynomial in one variable.
+--
+-- ==== __Examples__
+--
+-- @poly1 = [1,2,3] :: [Int]@
+-- @poly2 = [  2,1] :: [Int]@
+-- @poly1 * poly2 = [2,5,8,3]@
+-- fromList [2,5,8,3]
 instance Semiring a => Semiring [a] where
   zero = []
   one  = [one]
-  plus  = listAdd
-  times = listTimes
+  plus  = listAdd -- See Section: List fusion
+  times = listTimes -- See Section: List fusion
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
@@ -615,6 +625,10 @@ instance Semiring (ty) where {    \
 ;  one   = 1                      \
 ;  plus  x y = (Num.+) x y        \
 ;  times x y = (Num.*) x y        \
+;  {-# INLINE zero #-}            \
+;  {-# INLINE one  #-}            \
+;  {-# INLINE plus #-}            \
+;  {-# INLINE times #-}           \
 }
 
 deriveSemiring(Int)
@@ -703,6 +717,7 @@ instance HasResolution a => Semiring (Fixed a) where
 #define deriveRing(ty)          \
 instance Ring (ty) where {      \
   negate = Num.negate           \
+; {-# INLINE negate #-}         \
 }
 
 deriveRing(Int)
@@ -918,6 +933,16 @@ instance (Eq k, Hashable k, Monoid k, Semiring v) => Semiring (HashMap k v) wher
 --------------------------------------------------------------------}
 
 #if defined(VERSION_vector)
+-- | The 'Semiring' instance for 'Vector a' can be interpreted as
+--   treating each element of the list as coefficients to a
+--   polynomial in one variable.
+--
+-- ==== __Examples__
+--
+-- @poly1 = Vector.fromList [1,2,3 :: Int]@
+-- @poly2 = Vector.fromList [  2,1 :: Int]@
+-- @poly1 * poly2@
+-- fromList [2,5,8,3]
 instance Semiring a => Semiring (Vector a) where
   zero  = Vector.empty
   one   = Vector.singleton one
