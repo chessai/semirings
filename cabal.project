@@ -1,5 +1,4 @@
 packages: .
           ./test
-          ../quickcheck-classes
 package semirings-test
   ghc-options: -Wall

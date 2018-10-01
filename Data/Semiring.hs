@@ -139,6 +139,11 @@ infixr 8 ^
 
 -- | Raise a number to a non-negative integral power.
 -- If the power is negative, this will return 'zero'.
+{-# SPECIALISE [1] (^) ::
+        Integer -> Integer -> Integer,
+        Integer -> Int -> Integer,
+        Int -> Int -> Int #-}
+{-# INLINABLE [1] (^) #-} -- See note [Inlining (^)]
 (^) :: (Semiring a, Integral b) => a -> b -> a
 x0 ^ y0 | y0 < 0  = zero
         | y0 == 0 = one
@@ -146,11 +151,61 @@ x0 ^ y0 | y0 < 0  = zero
   where
     f x y | even y = f (x * x) (y `quot` 2)
           | y == 1 = x
-          | otherwise = g (x * x) (y `quot` 2) x
+          | otherwise = g (x * x) (y `quot` 2) x -- See Note [Half of y - 1]
     g x y z | even y = g (x * x) (y `quot` 2) z
             | y == 1 = x * z
-            | otherwise = g (x * x) (y `quot` 2) (x * z)
-{-# INLINE (^) #-}
+            | otherwise = g (x * x) (y `quot` 2) (x * z) -- See Note [Half of y - 1]
+
+{- Note [Half of y - 1]
+   ~~~~~~~~~~~~~~~~~~~~
+   Since y is guaranteed to be odd and positive here,
+   half of y - 1 can be computed as y `quot` 2, optimising subtraction away.
+-}
+
+{- Note [Inlining (^)]
+   ~~~~~~~~~~~~~~~~~~~
+   The INLINABLE pragma allows (^) to be specialised at its call sites.
+   If it is called repeatedly at the same type, that can make a huge
+   difference, because of those constants which can be repeatedly
+   calculated.
+
+   Currently the fromInteger calls are not floated because we get
+             \d1 d2 x y -> blah
+   after the gentle round of simplification.
+-}
+
+{- Rules for powers with known small exponent
+    see Trac #5237
+    For small exponents, (^) is inefficient compared to manually
+    expanding the multiplication tree.
+    Here, rules for the most common exponent types are given.
+    The range of exponents for which rules are given is quite
+    arbitrary and kept small to not unduly increase the number of rules.
+    It might be desirable to have corresponding rules also for
+    exponents of other types (e.g., Word), but it's doubtful they
+    would fire, since the exponents of other types tend to get
+    floated out before the rule has a chance to fire. (Why?)
+
+    Note: Trying to save multiplication by sharing the square for
+    exponents 4 and 5 does not save time, indeed, for Double, it is
+    up to twice slower, so the rules contain flat sequences of
+    multiplications.
+-}
+
+{-# RULES
+"^0/Int" forall x. x ^ (0 :: Int) = one
+"^1/Int" forall x. x ^ (1 :: Int) = let u = x in u
+"^2/Int" forall x. x ^ (2 :: Int) = let u = x in u*u
+"^3/Int" forall x. x ^ (3 :: Int) = let u = x in u*u*u
+"^4/Int" forall x. x ^ (4 :: Int) = let u = x in u*u*u*u
+"^5/Int" forall x. x ^ (5 :: Int) = let u = x in u*u*u*u*u
+"^0/Integer" forall x. x ^ (0 :: Integer) = one
+"^1/Integer" forall x. x ^ (1 :: Integer) = let u = x in u
+"^2/Integer" forall x. x ^ (2 :: Integer) = let u = x in u*u
+"^3/Integer" forall x. x ^ (3 :: Integer) = let u = x in u*u*u
+"^4/Integer" forall x. x ^ (4 :: Integer) = let u = x in u*u*u*u
+"^5/Integer" forall x. x ^ (5 :: Integer) = let u = x in u*u*u*u*u
+  #-}
 
 -- | Infix shorthand for 'plus'.
 (+) :: Semiring a => a -> a -> a
