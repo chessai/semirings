@@ -15,7 +15,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- A class for semirings (types with two binary operations, one commutative and one associative, and two respective identites), with various general-purpose instances.
+-- A class for semirings (types with two binary operations, one commutative and one associative, and two respective identities), with various general-purpose instances.
 --
 -----------------------------------------------------------------------------
 
@@ -37,11 +37,11 @@ module Data.Semiring
   , Mul(..)
   , WrappedNum(..)
 
-    -- * Ring typeclass 
+    -- * Ring typeclass
   , Ring(..)
   , (-)
-  , minus 
-  ) where 
+  , minus
+  ) where
 
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
 import           Data.Bool (Bool(..), (||), (&&), otherwise, not)
@@ -379,25 +379,25 @@ instance Num.Num a => Ring (WrappedNum a) where
 -- Instances should satisfy the following laws:
 --
 -- [/additive identity/]
--- 
+--
 --     @x '+' 'zero' = 'zero' '+' x = x@
--- 
+--
 -- [/additive associativity/]
--- 
+--
 --     @x '+' (y '+' z) = (x '+' y) '+' z@
 --
 -- [/additive commutativity/]
---     
+--
 --     @x '+' y = y '+' x@
 --
 -- [/multiplicative identity/]
--- 
+--
 --     @x '*' 'one' = 'one' '*' x = x@
 --
 -- [/multiplicative associativity/]
 --
 --     @x '*' (y '*' z) = (x '*' y) '*' z@
--- 
+--
 -- [/left- and right-distributivity of '*' over '+'/]
 --
 --     @x '*' (y '+' z) = (x '*' y) '+' (x '*' z)@
@@ -426,7 +426,7 @@ class Semiring a => Ring a where
 #endif
   negate :: a -> a
 
--- | Substract two 'Ring' values. For any type 'R' with
+-- | Subtract two 'Ring' values. For any type 'R' with
 -- a 'Prelude.Num' instance, this is the same as '(Prelude.-)'.
 --
 --     @x `minus` y = x '+' 'negate' y@
@@ -687,7 +687,7 @@ deriveSemiring(CIno)
 deriveSemiring(CDev)
 deriveSemiring(Natural)
 instance Integral a => Semiring (Ratio a) where
-  {-# SPECIALIZE instance Semiring Rational #-} 
+  {-# SPECIALIZE instance Semiring Rational #-}
   zero  = 0 % 1
   one   = 1 % 1
   plus  = (Num.+)
@@ -799,7 +799,7 @@ instance HasResolution a => Ring (Fixed a) where
 
 -- | The multiplication laws are satisfied for
 --   any underlying 'Monoid', so we require a
---   'Monoid' contraint instead of a 'Semiring'
+--   'Monoid' constraint instead of a 'Semiring'
 --   constraint since 'times' can use
 --   the context of either.
 instance (Ord a, Monoid a) => Semiring (Set a) where
@@ -814,7 +814,7 @@ instance (Ord a, Monoid a) => Semiring (Set a) where
 
 -- | The multiplication laws are satisfied for
 --   any underlying 'Monoid' as the key type,
---   so we require a 'Monoid' contraint instead of
+--   so we require a 'Monoid' constraint instead of
 --   a 'Semiring' constraint since 'times' can use
 --   the context of either.
 instance (Ord k, Monoid k, Semiring v) => Semiring (Map k v) where
@@ -871,7 +871,7 @@ instance (Ord k, Monoid k, Semiring v) => Semiring (Map k v) where
 
 -- | The multiplication laws are satisfied for
 --   any underlying 'Monoid', so we require a
---   'Monoid' contraint instead of a 'Semiring'
+--   'Monoid' constraint instead of a 'Semiring'
 --   constraint since 'times' can use
 --   the context of either.
 instance (Eq a, Hashable a, Monoid a) => Semiring (HashSet a) where
@@ -886,7 +886,7 @@ instance (Eq a, Hashable a, Monoid a) => Semiring (HashSet a) where
 
 -- | The multiplication laws are satisfied for
 --   any underlying 'Monoid' as the key type,
---   so we require a 'Monoid' contraint instead of
+--   so we require a 'Monoid' constraint instead of
 --   a 'Semiring' constraint since 'times' can use
 --   the context of either.
 instance (Eq k, Hashable k, Monoid k, Semiring v) => Semiring (HashMap k v) where
@@ -912,7 +912,7 @@ instance (Eq k, Hashable k, Monoid k, Semiring v) => Semiring (HashMap k v) wher
 #if defined(VERSION_primitive)
 -- | The multiplication laws are satisfied for
 --   any underlying 'Monoid', so we require a
---   'Monoid' contraint instead of a 'Semiring'
+--   'Monoid' constraint instead of a 'Semiring'
 --   constraint since 'times' can use
 --   the context of either.
 -- instance (Monoid a) => Semiring (Array a) where
@@ -1006,7 +1006,7 @@ instance (UV.Unbox a, Semiring a) => Semiring (UV.Vector a) where
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
- 
+
 instance (UV.Unbox a, Ring a) => Ring (UV.Vector a) where
   negate = UV.map negate
   {-# INLINE negate #-}
@@ -1042,7 +1042,7 @@ instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
-  
+
 instance (SV.Storable a, Ring a) => Ring (SV.Vector a) where
   negate = SV.map negate
   {-# INLINE negate #-}
@@ -1066,7 +1066,7 @@ listTimes xs ys = List.foldr f [] xs
 
 type ListBuilder a = forall b. (a -> b -> b) -> b -> b
 
-{-# RULES 
+{-# RULES
 "listAddFB/left"  forall    (g :: ListBuilder a). listAdd    (build g) = listAddFBL g
 "listAddFB/right" forall xs (g :: ListBuilder a). listAdd xs (build g) = listAddFBR xs g
   #-}
