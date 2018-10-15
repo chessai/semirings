@@ -121,14 +121,13 @@ import           GHC.IO (IO)
 import           GHC.Integer (Integer)
 import qualified GHC.Num as Num
 import           GHC.Read (Read)
-import           GHC.Real (Integral, Fractional, Real, RealFrac, quot, even)
+import           GHC.Real (Integral, Fractional, Real, RealFrac)
 import           GHC.Show (Show)
 import           Numeric.Natural (Natural)
 import           System.Posix.Types
   (CCc, CDev, CGid, CIno, CMode, CNlink,
    COff, CPid, CRLim, CSpeed, CSsize,
    CTcflag, CUid, Fd)
-import qualified Prelude as Prelude
 
 infixl 7 *, `times`
 infixl 6 +, `plus`, -, `minus`
@@ -146,22 +145,7 @@ infixr 8 ^
         Int -> Int -> Int #-}
 {-# INLINABLE [1] (^) #-} -- See note [Inlining (^)]
 (^) :: (Semiring a, Integral b) => a -> b -> a
-x0 ^ y0 | y0 < 0  = zero
-        | y0 == 0 = one
-        | otherwise = f x0 y0
-  where
-    f x y | even y = f (x * x) (y `quot` 2)
-          | y == 1 = x
-          | otherwise = g (x * x) (y `quot` 2) x -- See Note [Half of y - 1]
-    g x y z | even y = g (x * x) (y `quot` 2) z
-            | y == 1 = x * z
-            | otherwise = g (x * x) (y `quot` 2) (x * z) -- See Note [Half of y - 1]
-
-{- Note [Half of y - 1]
-   ~~~~~~~~~~~~~~~~~~~~
-   Since y is guaranteed to be odd and positive here,
-   half of y - 1 can be computed as y `quot` 2, optimising subtraction away.
--}
+x ^ y = getMul (stimes y (Mul x))
 
 {- Note [Inlining (^)]
    ~~~~~~~~~~~~~~~~~~~
