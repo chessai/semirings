@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP              #-}
 #if MIN_VERSION_base(4,6,0)
+{-# LANGUAGE DeriveGeneric    #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators    #-}
 #endif
@@ -34,6 +35,7 @@ module Data.Semiring.Generic
   , gtimes
   , GRing(..)
   , gnegate
+  , GenericSemiring(..)
 #endif
   ) where 
 
@@ -42,6 +44,13 @@ import           Data.Semiring
 import           GHC.Generics
 
 import Prelude hiding (Num(..))
+
+-- | An Identity-style wrapper with a 'Generic' interface
+--   to be used with '-XDerivingVia'.
+newtype GenericSemiring a = GenericSemiring a
+  deriving (Generic)
+instance (Semiring a) => Semiring (GenericSemiring a) where
+  zero = gzero; one = gone; plus = gplus; times = gtimes; 
 
 instance (Semiring a, Semiring b) => Semiring (a,b) where
   zero = gzero; one = gone; plus = gplus; times = gtimes; 
@@ -83,6 +92,8 @@ instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f, Ring g) => Ring (a,b,c
   Generics
 --------------------------------------------------------------------}
 
+-- | Generic 'Semiring' class, used to implement 'plus', 'times', 'zero',
+--   and 'one' for product-like types implementing 'Generic'.
 class GSemiring f where
   {-# MINIMAL gplus', gzero', gtimes', gone' #-} 
   gzero'  :: f a
@@ -90,6 +101,8 @@ class GSemiring f where
   gplus'  :: f a -> f a -> f a
   gtimes' :: f a -> f a -> f a
 
+-- | Generic 'Ring' class, used to implement 'negate' for product-like
+--   types implementing 'Generic'.
 class GRing f where
   {-# MINIMAL gnegate' #-}
   gnegate' :: f a -> f a

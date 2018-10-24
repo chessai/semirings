@@ -3,6 +3,8 @@
 * Rename the test suite to make `stack` happy.
 * Clarified documentation. See #26.
 * Simplify implementation of `^`. See #24.
+* Add 'GenericSemiring', a newtype wrapper meant to be used with `-XDerivingVia`,
+  helping avoid '-XDefaultSignatures'.
 
 0.2.1.1: [2018.10.01]
 ---------------------
