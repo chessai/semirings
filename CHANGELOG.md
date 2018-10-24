@@ -1,11 +1,17 @@
 0.2.1.2: [2018.XX.XX]
 ---------------------
+* Rename the test suite to make `stack` happy.
 * Clarified documentation. See #26.
+* Simplify implementation of `^`. See #24.
 
 0.2.1.1: [2018.10.01]
 ---------------------
 * Fixed build on GHC-7.4
 * Provide `Semiring` and `Ring` for an arbitrary `Num` via `WrappedNum` newtype.
+* Make note of `Semiring` semantics for `Vector` and `[]` in the documentation.
+* Require build script to ensure `semirings` builds with GHC-8.4.3 and GHC-8.6.1
+* Fixed unlawful behaviour of `[]` `Semiring` instance.
+* Improve performance of `^`.
 
 0.2.1.0: [2018.09.26]
 ---------------------
@@ -15,7 +21,7 @@
 0.2.0.1: [2018.07.28]
 ---------------------
 * Add instances for `Op`, `Equivalence`, `Comparison`, and `Predicate` from Data.Functor.Contravariant (upcoming base 4.12.0.0)
-* docfix for (prod -> product, prod' -> product')
+* docfix for (prod -> product, prod' -> product') change that occured in version 0.2.0.0.
 
 0.2.0.0: [2018.07.23]
 ---------------------
