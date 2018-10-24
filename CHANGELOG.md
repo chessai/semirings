@@ -1,4 +1,8 @@
-0.2.1.1: [2018.XX.XX]
+0.2.1.2: [2018.XX.XX]
+---------------------
+* Clarified documentation. See #26.
+
+0.2.1.1: [2018.10.01]
 ---------------------
 * Fixed build on GHC-7.4
 * Provide `Semiring` and `Ring` for an arbitrary `Num` via `WrappedNum` newtype.
