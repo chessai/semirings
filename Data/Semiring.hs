@@ -355,40 +355,38 @@ instance Num.Num a => Ring (WrappedNum a) where
 -- | The class of semirings (types with two binary
 -- operations and two respective identities). One
 -- can think of a semiring as two monoids of the same
--- underlying type: A commutative monoid and an
--- associative monoid. For any type R with a 'Prelude.Num'
--- instance, the commutative monoid is (R, '(Prelude.+)', 0)
--- and the associative monoid is (R, '(Prelude.*)', 1).
+-- underlying type, with the first being commutative.
+-- In the documentation, you will often see the first
+-- monoid being referred to as 'additive', and the second
+-- monoid being referred to as 'multiplicative', a typical
+-- convention when talking about semirings.
+-- 
+-- For any type R with a 'Prelude.Num'
+-- instance, the additive monoid is (R, '(Prelude.+)', 0)
+-- and the multiplicative monoid is (R, '(Prelude.*)', 1).
+--
+-- For 'Prelude.Bool', the additive monoid is ('Prelude.Bool', 'Prelude.||', 'Prelude.False')
+-- and the multiplicative monoid is ('Prelude.Bool', 'Prelude.&&', 'Prelude.True').
+--
+-- For something like 'Data.Set.Set', the additive monoid is ('Data.Set.Set, 'Data.Set.union', 'Data.Set.empty')
+-- and the multiplicative monoid is ('Data.Set.Set', 'Data.Set.intersection', 'Data.Set.singleton' 'one').
 --
 -- Instances should satisfy the following laws:
 --
 -- [/additive identity/]
---
 --     @x '+' 'zero' = 'zero' '+' x = x@
---
 -- [/additive associativity/]
---
 --     @x '+' (y '+' z) = (x '+' y) '+' z@
---
 -- [/additive commutativity/]
---
 --     @x '+' y = y '+' x@
---
 -- [/multiplicative identity/]
---
 --     @x '*' 'one' = 'one' '*' x = x@
---
 -- [/multiplicative associativity/]
---
 --     @x '*' (y '*' z) = (x '*' y) '*' z@
---
 -- [/left- and right-distributivity of '*' over '+'/]
---
 --     @x '*' (y '+' z) = (x '*' y) '+' (x '*' z)@
 --     @(x '+' y) '*' z = (x '*' z) '+' (y '*' z)@
---
 -- [/annihilation/]
---
 --     @'zero' '*' x = x '*' 'zero' = 'zero'@
 
 class Semiring a where

@@ -39,9 +39,36 @@ As such, a minimal instance of the typeclass 'Star' requires only 'star' or 'apl
 use cases
 =========
 
-semirings themselves are useful as a way to express that a type is both a commutative and associative monoid.
+semirings themselves are useful as a way to express that a type that supports a commutative and associative operation.
+Some examples:
 
-*-semirings are useful in a number of applications; such as matrix algebra, regular expressions, kleene algebras, graph theory, tropical algebra, dataflow analysis, power series, linear recurrence relations.
+- Numbers {Int, Integer, Word, Double, etc.}:
+  - 'plus' is 'Prelude.+'
+  - 'times' is 'Prelude.*'
+  - 'zero' is 0.
+  - 'one' is 1.
+- Booleans:
+  - 'plus' is '||'
+  - 'times' is '&&'
+  - 'zero' is 'False'
+  - 'one' is 'True'
+- Set:
+  - 'plus' is 'union'
+  - 'times' is 'intersection'
+  - 'zero' is the empty Set.
+  - 'one' is the singleton Set containing the 'one' element of the underlying type.
+- NFA:
+  - 'plus' unions two NFAs.
+  - 'times' appends two NFAs.
+  - 'zero' is the NFA that acceptings nothing.
+  - 'one' is the empty NFA.
+- DFA:
+  - 'plus' unions two DFAs.
+  - 'times' intersects two DFAs.
+  - 'zero' is the DFA that accepts nothing.
+  - 'one' is the DFA that accepts everything.
+
+*-semirings are useful in a number of applications; such as matrix algebra, regular expressions, kleene algebras, graph theory, tropical algebra, dataflow analysis, power series, and linear recurrence relations.
 
 Some relevant (informal) reading material:
 
