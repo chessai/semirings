@@ -45,10 +45,13 @@ module Data.Semiring
 
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
 import           Data.Bool (Bool(..), (||), (&&), otherwise, not)
+#if MIN_VERSION_base(4,7,0)
+import           Data.Coerce (Coercible, coerce)
+#endif
 import           Data.Complex (Complex(..))
 import           Data.Eq (Eq(..))
 import           Data.Fixed (Fixed, HasResolution)
-import           Data.Foldable (Foldable)
+import           Data.Foldable (Foldable(foldMap))
 import qualified Data.Foldable as Foldable
 import           Data.Function ((.), const, flip, id)
 import           Data.Functor (Functor(..))
@@ -219,17 +222,38 @@ foldMapT :: (Foldable t, Semiring s) => (a -> s) -> t a -> s
 foldMapT f = Foldable.foldr (times . f) one
 {-# INLINE foldMapT #-}
 
+#if MIN_VERSION_base(4,7,0)
+infixr 9 #.
+(#.) :: Coercible b c => (b -> c) -> (a -> b) -> a -> c
+(#.) _ = coerce
+
 -- | The 'sum' function computes the additive sum of the elements in a structure.
 --   This function is lazy. For a strict version, see 'sum''.
-sum  :: (Foldable t, Semiring a) => t a -> a
-sum  = Foldable.foldr plus zero
+sum :: (Foldable t, Semiring a) => t a -> a
+sum = getAdd #. foldMap Add
 {-# INLINE sum #-}
 
 -- | The 'product' function computes the product of the elements in a structure.
 --   This function is lazy. for a strict version, see 'product''.
 product :: (Foldable t, Semiring a) => t a -> a
-product = Foldable.foldr times one
+product = getMul #. foldMap Mul
 {-# INLINE product #-}
+
+#else
+
+-- | The 'sum' function computes the additive sum of the elements in a structure.
+--   This function is lazy. For a strict version, see 'sum''.
+sum :: (Foldable t, Semiring a) => t a -> a
+sum = getAdd . foldMap Add
+{-# INLINE sum #-}
+
+-- | The 'product' function computes the product of the elements in a structure.
+--   This function is lazy. for a strict version, see 'product''.
+product :: (Foldable t, Semiring a) => t a -> a
+product = getMul . foldMap Mul
+{-# INLINE product #-}
+
+#endif
 
 -- | The 'sum'' function computes the additive sum of the elements in a structure.
 --   This function is strict. For a lazy version, see 'sum'.
