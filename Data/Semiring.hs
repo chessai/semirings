@@ -392,9 +392,6 @@ instance Num.Num a => Ring (WrappedNum a) where
 -- For 'Prelude.Bool', the additive monoid is ('Prelude.Bool', 'Prelude.||', 'Prelude.False')
 -- and the multiplicative monoid is ('Prelude.Bool', 'Prelude.&&', 'Prelude.True').
 --
--- For something like 'Data.Set.Set', the additive monoid is ('Data.Set.Set', 'Data.Set.union', 'Data.Set.empty')
--- and the multiplicative monoid is ('Data.Set.Set', 'Data.Set.intersection', 'Data.Set.singleton' 'one').
---
 -- Instances should satisfy the following laws:
 --
 -- [/additive identity/]
