@@ -70,13 +70,9 @@ namedTests =
   , ("PosRatio", myLaws pPosRatio)
   , ("IO", myLaws pIO)
   , ("Fixed", myLaws pFixed)
-  , ("Min", myLaws pMin)
-  , ("Max", myLaws pMax)
   , ("Identity", myLaws pIdentity)
   , ("Dual", myLaws pDual)
   , ("(->)", myLaws pFunction)
-  , ("Sum", myLaws pSum)
-  , ("Product", myLaws pProduct)
   , ("Down", myLaws pDown)
   , ("Const", myLaws pConst)
 --  , ("IntMap", myLaws pIntMap) -- needs newtypes

@@ -80,14 +80,14 @@ import           Data.Monoid (Ap(..))
 import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
-import           Data.Monoid (Monoid(..),Dual(..), Product(..), Sum(..))
+import           Data.Monoid (Monoid(..), Dual(..))
 import           Data.Ord (Ord(..), Ordering(..), compare)
 #if MIN_VERSION_base(4,6,0)
 import           Data.Ord (Down(..))
 #endif
 import           Data.Proxy (Proxy(..))
 import           Data.Ratio (Ratio, Rational, (%))
-import           Data.Semigroup (Semigroup(..),Max(..), Min(..))
+import           Data.Semigroup (Semigroup(..))
 #if defined(VERSION_containers)
 import           Data.Set (Set)
 import qualified Data.Set as Set
@@ -286,7 +286,6 @@ newtype Add a = Add { getAdd :: a }
     , Read
     , Real
     , RealFrac
-    , Semiring
     , Show
     , Storable
     , Traversable
@@ -294,7 +293,7 @@ newtype Add a = Add { getAdd :: a }
     )
 
 instance Semiring a => Semigroup (Add a) where
-  (<>) = (+)
+  Add a <> Add b = Add (a + b)
   {-# INLINE (<>) #-}
 
 instance Semiring a => Monoid (Add a) where
@@ -322,7 +321,6 @@ newtype Mul a = Mul { getMul :: a }
     , Read
     , Real
     , RealFrac
-    , Semiring
     , Show
     , Storable
     , Traversable
@@ -330,7 +328,7 @@ newtype Mul a = Mul { getMul :: a }
     )
 
 instance Semiring a => Semigroup (Mul a) where
-  (<>) = (*)
+  Mul a <> Mul b = Mul (a * b)
   {-# INLINE (<>) #-}
 
 instance Semiring a => Monoid (Mul a) where
@@ -384,7 +382,7 @@ instance Num.Num a => Ring (WrappedNum a) where
 -- monoid being referred to as 'additive', and the second
 -- monoid being referred to as 'multiplicative', a typical
 -- convention when talking about semirings.
--- 
+--
 -- For any type R with a 'Prelude.Num'
 -- instance, the additive monoid is (R, '(Prelude.+)', 0)
 -- and the multiplicative monoid is (R, '(Prelude.*)', 1).
@@ -699,14 +697,10 @@ instance Integral a => Semiring (Ratio a) where
   {-# INLINE one   #-}
   {-# INLINE plus  #-}
   {-# INLINE times #-}
-deriving instance Semiring a => Semiring (Product a)
-deriving instance Semiring a => Semiring (Sum a)
 deriving instance Semiring a => Semiring (Identity a)
 #if MIN_VERSION_base(4,6,0)
 deriving instance Semiring a => Semiring (Down a)
 #endif
-deriving instance Semiring a => Semiring (Max a)
-deriving instance Semiring a => Semiring (Min a)
 instance HasResolution a => Semiring (Fixed a) where
   zero  = 0
   one   = 1
@@ -785,11 +779,7 @@ instance Integral a => Ring (Ratio a) where
 #if MIN_VERSION_base(4,6,0)
 deriving instance Ring a => Ring (Down a)
 #endif
-deriving instance Ring a => Ring (Product a)
-deriving instance Ring a => Ring (Sum a)
 deriving instance Ring a => Ring (Identity a)
-deriving instance Ring a => Ring (Max a)
-deriving instance Ring a => Ring (Min a)
 instance HasResolution a => Ring (Fixed a) where
   negate = Num.negate
   {-# INLINE negate #-}
