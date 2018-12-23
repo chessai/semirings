@@ -88,6 +88,16 @@ namedTests =
   , ("Equivalence", myLaws pEquivalence)
   , ("Op", myLaws pOp)
   , ("Ap", myLaws pAp)
+
+  , ("IntSet Sum", myLaws pIntSetSum)
+  , ("IntSet Product", myLaws pIntSetProduct)
+  , ("IntSet Min", myLaws pIntSetMin)
+  , ("IntSet Max", myLaws pIntSetMax)
+
+  , ("IntMap Sum", myLaws pIntMapSum)
+  , ("IntMap Product", myLaws pIntMapProduct)
+  , ("IntMap Min", myLaws pIntMapMin)
+  , ("IntMap Max", myLaws pIntMapMax)
   ]
 
 #if !(MIN_VERSION_base(4,12,0))
@@ -167,6 +177,9 @@ instance Arbitrary a => Arbitrary (IO a) where
 
 deriving instance Hashable a => Hashable (Sum a)
 
+deriving instance Arbitrary (IntSetOf a)
+deriving instance Arbitrary v => Arbitrary (IntMapOf k v)
+
 pBool = p @Bool
 pDouble = p @Double
 pFloat = p @Float
@@ -197,10 +210,8 @@ pEndo = p @(Endo (Sum Int))
 pSum  = p @(Sum Int)
 pProduct = p @(Product Int)
 pDown = p @(Down Int)
-pIntMap = p @(IntMap Int)
 pSeq = p @(Seq Int)
 pSet = p @(Set (Sum Int))
-pIntSet = p @(IntSet)
 pHashSet = p @(HashSet (Sum Int))
 pFunction = p @(Int -> Int)
 pVector = p @(Vector Int)
@@ -211,3 +222,12 @@ pHashMap = p @(HashMap (Sum Int) Int)
 pConst = p @(Const Int Int)
 pAlt = p @(Alt Maybe Int)
 
+pIntSetSum = p @(IntSetOf (Sum Int))
+pIntSetProduct = p @(IntSetOf (Product Int))
+pIntSetMin = p @(IntSetOf (Min Int))
+pIntSetMax = p @(IntSetOf (Max Int))
+
+pIntMapSum = p @(IntMapOf (Sum Int) Int)
+pIntMapProduct = p @(IntMapOf (Product Int) Int)
+pIntMapMin = p @(IntMapOf (Min Int) Int)
+pIntMapMax = p @(IntMapOf (Max Int) Int)

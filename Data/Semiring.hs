@@ -5,6 +5,7 @@
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE Rank2Types                 #-}
@@ -36,6 +37,8 @@ module Data.Semiring
   , Add(..)
   , Mul(..)
   , WrappedNum(..)
+  , IntSetOf(..)
+  , IntMapOf(..)
 
     -- * Ring typeclass
   , Ring(..)
@@ -73,10 +76,10 @@ import           Data.Maybe (Maybe(..))
 import           Data.Monoid (Ap(..))
 #endif
 #if defined(VERSION_containers)
---import           Data.IntMap (IntMap)
---import qualified Data.IntMap as IntMap
---import           Data.IntSet (IntSet)
---import qualified Data.IntSet as IntSet
+import           Data.IntMap (IntMap)
+import qualified Data.IntMap as IntMap
+import           Data.IntSet (IntSet)
+import qualified Data.IntSet as IntSet
 import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
@@ -805,6 +808,41 @@ instance (Ord a, Monoid a) => Semiring (Set a) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
 
+-- | Wrapper to mimic 'Set' ('Data.Semigroup.Sum' 'Int'),
+-- 'Set' ('Data.Semigroup.Product' 'Int'), etc.,
+-- while having a more efficient underlying representation.
+newtype IntSetOf a = IntSetOf { getIntSet :: IntSet }
+  deriving
+    ( Eq
+#if MIN_VERSION_base(4,6,1)
+    , Generic
+    , Generic1
+#endif
+    , Ord
+    , Read
+    , Show
+    , Typeable
+    , Semigroup
+    , Monoid
+    )
+
+#if MIN_VERSION_base(4,7,0)
+instance (Coercible Int a, Monoid a) => Semiring (IntSetOf a) where
+  zero  = coerce IntSet.empty
+  one   = coerce IntSet.singleton (mempty :: a)
+  plus  = coerce IntSet.union
+  xs `times` ys
+    = coerce IntSet.fromList
+        [ mappend k l
+        | k :: a <- coerce IntSet.toList xs
+        , l :: a <- coerce IntSet.toList ys
+        ]
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
+#endif
+
 -- | The multiplication laws are satisfied for
 --   any underlying 'Monoid' as the key type,
 --   so we require a 'Monoid' constraint instead of
@@ -825,35 +863,41 @@ instance (Ord k, Monoid k, Semiring v) => Semiring (Map k v) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
 
---newtype IntSetP = IntSetP { intSetP :: IntSet }
---newtype IntSetT = IntSetT { intSetT :: IntSet }
---
---instance Semiring IntSetP where
---  zero = IntSetP (IntSet.empty)
---  one  = IntSetP (IntSet.singleton zero)
---  plus (IntSetP x) (IntSetP y) = IntSetP (IntSet.union x y)
---  times (IntSetP xs) (IntSetP ys) = IntSetP (foldMapIntSet (flip IntSet.map ys . plus) xs)
---
---instance Semiring IntSetT where
---  zero = IntSetT IntSet.empty
---  one  = IntSetT (IntSet.singleton one)
---  plus (IntSetT x) (IntSetT y) = IntSetT (IntSet.union x y)
---  times (IntSetT xs) (IntSetT ys) = IntSetT (foldMapIntSet (flip IntSet.map ys . times) xs)
---
---foldMapIntSet :: Monoid m => (Int -> m) -> IntSet -> m
---foldMapIntSet f = IntSet.foldl' (flip (mappend . f)) mempty
---{-# INLINE foldMapIntSet #-}
+-- | Wrapper to mimic 'Map' ('Data.Semigroup.Sum' 'Int') v,
+-- 'Map' ('Data.Semigroup.Product' 'Int') v, etc.,
+-- while having a more efficient underlying representation.
+newtype IntMapOf k v = IntMapOf { getIntMap :: IntMap v }
+  deriving
+    ( Eq
+#if MIN_VERSION_base(4,6,1)
+    , Generic
+    , Generic1
+#endif
+    , Ord
+    , Read
+    , Show
+    , Typeable
+    , Semigroup
+    , Monoid
+    )
 
---instance (Semiring a) => Semiring (IntMap a) where
---  zero = IntMap.empty
---  one  = IntMap.singleton zero one
---  plus = IntMap.unionWith (+)
---  xs `times` ys
---    = IntMap.fromListWith (+)
---        [ (plus k l, v * u)
---        | (k,v) <- IntMap.toList xs
---        , (l,u) <- IntMap.toList ys
---        ]
+#if MIN_VERSION_base(4,7,0)
+instance (Coercible Int k, Monoid k, Semiring v) => Semiring (IntMapOf k v) where
+  zero = coerce (IntMap.empty :: IntMap v)
+  one  = coerce (IntMap.singleton :: Int -> v -> IntMap v) (mempty :: k) (one :: v)
+  plus = coerce (IntMap.unionWith (+) :: IntMap v -> IntMap v -> IntMap v)
+  xs `times` ys
+    = coerce (IntMap.fromListWith (+) :: [(Int, v)] -> IntMap v)
+        [ (mappend k l, v * u)
+        | (k :: k, v :: v) <- coerce (IntMap.toList :: IntMap v -> [(Int, v)]) xs
+        , (l :: k, u :: v) <- coerce (IntMap.toList :: IntMap v -> [(Int, v)]) ys
+        ]
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
+#endif
+
 #endif
 
 {--------------------------------------------------------------------
