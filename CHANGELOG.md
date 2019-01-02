@@ -1,10 +1,13 @@
-0.2.1.2: [2018.XX.XX]
+0.3.0.0: [2019.01.01]
 ---------------------
 * Rename the test suite to make `stack` happy.
 * Clarified documentation. See #26.
 * Simplify implementation of `^`. See #24.
 * Add 'GenericSemiring', a newtype wrapper meant to be used with `-XDerivingVia`,
   helping avoid '-XDefaultSignatures'.
+* Add newtypes for `IntSet` and `IntMap`.
+* Remove `Semiring` and `Ring` instances for `Product` and `Sum`.
+* Make `sum` and `product` more efficient for base>=4.7
 
 0.2.1.1: [2018.10.01]
 ---------------------
