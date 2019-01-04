@@ -4,7 +4,9 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DataKinds #-}
 
+import Data.Semiring.Tropical
 import Control.Applicative (liftA2)
 import Data.Complex
 import Data.Fixed
@@ -44,6 +46,41 @@ import qualified GHC.Num as Num
 import qualified Test.QuickCheck.Classes as QCC
 
 type Laws = QCC.Laws
+
+instance (Arbitrary a) => Arbitrary (Tropical e a) where
+  arbitrary = frequency [(1, pure Infinity), (4, Tropical <$> arbitrary)]
+
+tropicalMinLaws :: [Laws]
+tropicalMinLaws =
+  fmap ($ (Proxy :: Proxy (Tropical 'Minima Int)))
+    [ QCC.eqLaws
+    , QCC.ordLaws
+    , QCC.semiringLaws
+    ]
+  <>
+  fmap ($ (Proxy :: Proxy (Tropical 'Minima)))
+    [ QCC.functorLaws
+    , QCC.applicativeLaws
+    , QCC.monadLaws
+    , QCC.foldableLaws
+    , QCC.traversableLaws
+    ]
+
+tropicalMaxLaws :: [Laws]
+tropicalMaxLaws =
+  fmap ($ (Proxy :: Proxy (Tropical 'Maxima Int)))
+    [ QCC.eqLaws
+    , QCC.ordLaws
+    , QCC.semiringLaws
+    ]
+  <>
+  fmap ($ (Proxy :: Proxy (Tropical 'Maxima)))
+    [ QCC.functorLaws
+    , QCC.applicativeLaws
+    , QCC.monadLaws
+    , QCC.foldableLaws
+    , QCC.traversableLaws
+    ]   
 
 myLaws :: (Arbitrary a, Show a, Eq a, Semiring a) => Proxy a -> [Laws]
 myLaws p = [QCC.semiringLaws p]
@@ -98,6 +135,9 @@ namedTests =
   , ("IntMap Product", myLaws pIntMapProduct)
   , ("IntMap Min", myLaws pIntMapMin)
   , ("IntMap Max", myLaws pIntMapMax)
+  
+  , ("Tropical 'Minima", tropicalMinLaws)
+  , ("Tropical 'Maxima", tropicalMaxLaws)
   ]
 
 #if !(MIN_VERSION_base(4,12,0))

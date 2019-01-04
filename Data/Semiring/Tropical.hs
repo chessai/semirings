@@ -211,7 +211,7 @@ instance MonadPlus (Tropical e) where
 
 instance forall e a. (Ord a, Semiring a, Extremum e) => Semiring (Tropical e a) where
   zero = Infinity
-  one  = Tropical one
+  one  = Tropical zero
   plus Infinity y = y
   plus x Infinity = x
   plus (Tropical x) (Tropical y) = Tropical
