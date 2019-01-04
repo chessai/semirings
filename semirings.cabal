@@ -1,6 +1,6 @@
 name:          semirings
 category:      Algebra, Data, Data Structures, Math, Maths, Mathematics
-version:       0.2.1.1
+version:       0.3.0.0
 license:       BSD3
 cabal-version: >= 1.10
 license-file:  LICENSE

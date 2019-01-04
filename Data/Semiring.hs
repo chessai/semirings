@@ -5,6 +5,7 @@
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE Rank2Types                 #-}
@@ -36,6 +37,8 @@ module Data.Semiring
   , Add(..)
   , Mul(..)
   , WrappedNum(..)
+  , IntSetOf(..)
+  , IntMapOf(..)
 
     -- * Ring typeclass
   , Ring(..)
@@ -76,10 +79,10 @@ import           Data.Maybe (Maybe(..))
 import           Data.Monoid (Ap(..))
 #endif
 #if defined(VERSION_containers)
---import           Data.IntMap (IntMap)
---import qualified Data.IntMap as IntMap
---import           Data.IntSet (IntSet)
---import qualified Data.IntSet as IntSet
+import           Data.IntMap (IntMap)
+import qualified Data.IntMap as IntMap
+import           Data.IntSet (IntSet)
+import qualified Data.IntSet as IntSet
 import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
@@ -90,7 +93,7 @@ import           Data.Ord (Down(..))
 #endif
 import           Data.Proxy (Proxy(..))
 import           Data.Ratio (Ratio, Rational, (%))
-import           Data.Semigroup (Semigroup(..),Max(..), Min(..))
+import           Data.Semigroup (Semigroup(..))
 #if defined(VERSION_containers)
 import           Data.Set (Set)
 import qualified Data.Set as Set
@@ -291,7 +294,6 @@ newtype Add a = Add { getAdd :: a }
     , Read
     , Real
     , RealFrac
-    , Semiring
     , Show
     , Storable
     , Traversable
@@ -299,7 +301,7 @@ newtype Add a = Add { getAdd :: a }
     )
 
 instance Semiring a => Semigroup (Add a) where
-  (<>) = (+)
+  Add a <> Add b = Add (a + b)
   {-# INLINE (<>) #-}
 
 instance Semiring a => Monoid (Add a) where
@@ -327,7 +329,6 @@ newtype Mul a = Mul { getMul :: a }
     , Read
     , Real
     , RealFrac
-    , Semiring
     , Show
     , Storable
     , Traversable
@@ -335,7 +336,7 @@ newtype Mul a = Mul { getMul :: a }
     )
 
 instance Semiring a => Semigroup (Mul a) where
-  (<>) = (*)
+  Mul a <> Mul b = Mul (a * b)
   {-# INLINE (<>) #-}
 
 instance Semiring a => Monoid (Mul a) where
@@ -389,7 +390,7 @@ instance Num.Num a => Ring (WrappedNum a) where
 -- monoid being referred to as 'additive', and the second
 -- monoid being referred to as 'multiplicative', a typical
 -- convention when talking about semirings.
--- 
+--
 -- For any type R with a 'Prelude.Num'
 -- instance, the additive monoid is (R, '(Prelude.+)', 0)
 -- and the multiplicative monoid is (R, '(Prelude.*)', 1).
@@ -704,14 +705,10 @@ instance Integral a => Semiring (Ratio a) where
   {-# INLINE one   #-}
   {-# INLINE plus  #-}
   {-# INLINE times #-}
-deriving instance Semiring a => Semiring (Product a)
-deriving instance Semiring a => Semiring (Sum a)
 deriving instance Semiring a => Semiring (Identity a)
 #if MIN_VERSION_base(4,6,0)
 deriving instance Semiring a => Semiring (Down a)
 #endif
-deriving instance Semiring a => Semiring (Max a)
-deriving instance Semiring a => Semiring (Min a)
 instance HasResolution a => Semiring (Fixed a) where
   zero  = 0
   one   = 1
@@ -790,11 +787,7 @@ instance Integral a => Ring (Ratio a) where
 #if MIN_VERSION_base(4,6,0)
 deriving instance Ring a => Ring (Down a)
 #endif
-deriving instance Ring a => Ring (Product a)
-deriving instance Ring a => Ring (Sum a)
 deriving instance Ring a => Ring (Identity a)
-deriving instance Ring a => Ring (Max a)
-deriving instance Ring a => Ring (Min a)
 instance HasResolution a => Ring (Fixed a) where
   negate = Num.negate
   {-# INLINE negate #-}
@@ -820,6 +813,41 @@ instance (Ord a, Monoid a) => Semiring (Set a) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
 
+-- | Wrapper to mimic 'Set' ('Data.Semigroup.Sum' 'Int'),
+-- 'Set' ('Data.Semigroup.Product' 'Int'), etc.,
+-- while having a more efficient underlying representation.
+newtype IntSetOf a = IntSetOf { getIntSet :: IntSet }
+  deriving
+    ( Eq
+#if MIN_VERSION_base(4,6,1)
+    , Generic
+    , Generic1
+#endif
+    , Ord
+    , Read
+    , Show
+    , Typeable
+    , Semigroup
+    , Monoid
+    )
+
+#if MIN_VERSION_base(4,7,0)
+instance (Coercible Int a, Monoid a) => Semiring (IntSetOf a) where
+  zero  = coerce IntSet.empty
+  one   = coerce IntSet.singleton (mempty :: a)
+  plus  = coerce IntSet.union
+  xs `times` ys
+    = coerce IntSet.fromList
+        [ mappend k l
+        | k :: a <- coerce IntSet.toList xs
+        , l :: a <- coerce IntSet.toList ys
+        ]
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
+#endif
+
 -- | The multiplication laws are satisfied for
 --   any underlying 'Monoid' as the key type,
 --   so we require a 'Monoid' constraint instead of
@@ -840,35 +868,41 @@ instance (Ord k, Monoid k, Semiring v) => Semiring (Map k v) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
 
---newtype IntSetP = IntSetP { intSetP :: IntSet }
---newtype IntSetT = IntSetT { intSetT :: IntSet }
---
---instance Semiring IntSetP where
---  zero = IntSetP (IntSet.empty)
---  one  = IntSetP (IntSet.singleton zero)
---  plus (IntSetP x) (IntSetP y) = IntSetP (IntSet.union x y)
---  times (IntSetP xs) (IntSetP ys) = IntSetP (foldMapIntSet (flip IntSet.map ys . plus) xs)
---
---instance Semiring IntSetT where
---  zero = IntSetT IntSet.empty
---  one  = IntSetT (IntSet.singleton one)
---  plus (IntSetT x) (IntSetT y) = IntSetT (IntSet.union x y)
---  times (IntSetT xs) (IntSetT ys) = IntSetT (foldMapIntSet (flip IntSet.map ys . times) xs)
---
---foldMapIntSet :: Monoid m => (Int -> m) -> IntSet -> m
---foldMapIntSet f = IntSet.foldl' (flip (mappend . f)) mempty
---{-# INLINE foldMapIntSet #-}
+-- | Wrapper to mimic 'Map' ('Data.Semigroup.Sum' 'Int') v,
+-- 'Map' ('Data.Semigroup.Product' 'Int') v, etc.,
+-- while having a more efficient underlying representation.
+newtype IntMapOf k v = IntMapOf { getIntMap :: IntMap v }
+  deriving
+    ( Eq
+#if MIN_VERSION_base(4,6,1)
+    , Generic
+    , Generic1
+#endif
+    , Ord
+    , Read
+    , Show
+    , Typeable
+    , Semigroup
+    , Monoid
+    )
 
---instance (Semiring a) => Semiring (IntMap a) where
---  zero = IntMap.empty
---  one  = IntMap.singleton zero one
---  plus = IntMap.unionWith (+)
---  xs `times` ys
---    = IntMap.fromListWith (+)
---        [ (plus k l, v * u)
---        | (k,v) <- IntMap.toList xs
---        , (l,u) <- IntMap.toList ys
---        ]
+#if MIN_VERSION_base(4,7,0)
+instance (Coercible Int k, Monoid k, Semiring v) => Semiring (IntMapOf k v) where
+  zero = coerce (IntMap.empty :: IntMap v)
+  one  = coerce (IntMap.singleton :: Int -> v -> IntMap v) (mempty :: k) (one :: v)
+  plus = coerce (IntMap.unionWith (+) :: IntMap v -> IntMap v -> IntMap v)
+  xs `times` ys
+    = coerce (IntMap.fromListWith (+) :: [(Int, v)] -> IntMap v)
+        [ (mappend k l, v * u)
+        | (k :: k, v :: v) <- coerce (IntMap.toList :: IntMap v -> [(Int, v)]) xs
+        , (l :: k, u :: v) <- coerce (IntMap.toList :: IntMap v -> [(Int, v)]) ys
+        ]
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
+#endif
+
 #endif
 
 {--------------------------------------------------------------------
