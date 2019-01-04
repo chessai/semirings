@@ -11,6 +11,9 @@
 {-# LANGUAGE Rank2Types                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+#if MIN_VERSION_base(4,7,0) && !MIN_VERSION_base(4,8,0)
+{-# LANGUAGE UndecidableInstances       #-}
+#endif
 
 {-# OPTIONS_GHC -Wall #-}
 
@@ -37,8 +40,10 @@ module Data.Semiring
   , Add(..)
   , Mul(..)
   , WrappedNum(..)
+#if MIN_VERSION_base(4,7,0)  
   , IntSetOf(..)
   , IntMapOf(..)
+#endif
 
     -- * Ring typeclass
   , Ring(..)
@@ -79,10 +84,12 @@ import           Data.Maybe (Maybe(..))
 import           Data.Monoid (Ap(..))
 #endif
 #if defined(VERSION_containers)
+#if MIN_VERSION_base(4,7,0)
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
 import           Data.IntSet (IntSet)
 import qualified Data.IntSet as IntSet
+#endif
 import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
@@ -813,6 +820,7 @@ instance (Ord a, Monoid a) => Semiring (Set a) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
 
+#if MIN_VERSION_base(4,7,0)
 -- | Wrapper to mimic 'Set' ('Data.Semigroup.Sum' 'Int'),
 -- 'Set' ('Data.Semigroup.Product' 'Int'), etc.,
 -- while having a more efficient underlying representation.
@@ -830,6 +838,7 @@ newtype IntSetOf a = IntSetOf { getIntSet :: IntSet }
     , Semigroup
     , Monoid
     )
+#endif
 
 #if MIN_VERSION_base(4,7,0)
 instance (Coercible Int a, Monoid a) => Semiring (IntSetOf a) where
@@ -868,6 +877,7 @@ instance (Ord k, Monoid k, Semiring v) => Semiring (Map k v) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
 
+#if MIN_VERSION_base(4,7,0)
 -- | Wrapper to mimic 'Map' ('Data.Semigroup.Sum' 'Int') v,
 -- 'Map' ('Data.Semigroup.Product' 'Int') v, etc.,
 -- while having a more efficient underlying representation.
@@ -885,6 +895,7 @@ newtype IntMapOf k v = IntMapOf { getIntMap :: IntMap v }
     , Semigroup
     , Monoid
     )
+#endif
 
 #if MIN_VERSION_base(4,7,0)
 instance (Coercible Int k, Monoid k, Semiring v) => Semiring (IntMapOf k v) where

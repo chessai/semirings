@@ -7,7 +7,6 @@
 {-# LANGUAGE GADTSyntax          #-}
 {-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE StandaloneDeriving  #-}
 
 -----------------------------------------------------------------------------
@@ -17,21 +16,17 @@
 --   The extended semiring is given positive or negative infinity as
 --   its 'zero' element, so that the following holds:
 --
---   @'plus' 'Infinity' y = y@
+--   @
+--     'plus' 'Infinity' y = y
+--     'plus' x 'Infinity' = x
+--   @
 --
---   @'plus' x 'Infinity' = x@
 --
---   i.e.,
---
---   In the max-plus tropical semiring (where 'plus' is 'max'),
+--   i.e., In the max-plus tropical semiring (where 'plus' is 'max'),
 --   'Infinity' unifies with the typical interpretation of negative infinity,
---   and thus it is the identity for the maximum.
---
---   and
---
---   In the min-plus tropical semiring (where 'plus' is 'min'),
---   'Infinity' unifies with the typical interpretation of positive infinity,
---   and thus it is the identity for the minimum.
+--   and thus it is the identity for the maximum, and in the min-plus tropical
+--   semiring (where 'plus' is 'min'), 'Infinity' unifies with the typical
+--   interpretation of positive infinity, and thus it is the identity for the minimum.
 --
 -----------------------------------------------------------------------------
 
@@ -59,14 +54,25 @@ import Control.Monad.Fix (MonadFix(mfix))
 #if MIN_VERSION_base(4,8,0)
 import Control.Monad.Zip (MonadZip(mzipWith))
 #endif
+#if MIN_VERSION_base(4,7,0)
 import Data.Data (Data)
+#endif
 #if !MIN_VERSION_base(4,8,0)
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
 #endif
+#if MIN_VERSION_base(4,6,0)
 import Data.Proxy (Proxy(Proxy))
+#endif
 import Data.Semiring (Semiring(..))
+#if MIN_VERSION_base(4,7,0)
 import Data.Typeable (Typeable)
+#endif
+
+#if !MIN_VERSION_base(4,6,0)
+-- | On older GHCs, 'Data.Proxy.Proxy' is not polykinded, so we provide our own proxy type for 'Extrema'.
+data EProxy (e :: Extrema) = EProxy
+#endif
 
 -- | A datatype to be used at the kind-level. Its only
 --   purpose is to decide the ordering for the tropical
@@ -80,7 +86,11 @@ data Extrema = Minima | Maxima
 class Extremum (e :: Extrema) where
   -- unfortunately this has to take a `Proxy` because
   -- we don't have visual type applications before GHC 8.0
+#if !MIN_VERSION_base(4,6,0)
+  extremum :: EProxy e -> Extrema
+#else
   extremum :: Proxy e -> Extrema
+#endif
 
 instance Extremum 'Minima where
   extremum _ = Minima
@@ -122,34 +132,37 @@ instance Extremum 'Maxima where
 data Tropical :: Extrema -> * -> * where
   Infinity :: Tropical e a
   Tropical :: a -> Tropical e a
+#if MIN_VERSION_base(4,7,0)  
   deriving (Typeable)
+#endif
 
-{-
-8.6 = 4.12
-8.4 = 4.11
-8.2 = 4.10
-8.0 = 4.9
-7.10 = 4.8
-7.8 = 4.7
--}
-
+#if MIN_VERSION_base(4,7,0)
 deriving instance (Typeable e, Data a) => Data (Tropical e a)
+#endif
 deriving instance Eq a => Eq (Tropical e a)
 deriving instance Foldable (Tropical e)
 deriving instance Functor (Tropical e)
 deriving instance Read a => Read (Tropical e a)
 deriving instance Show a => Show (Tropical e a)
 deriving instance Traversable (Tropical e)
---deriving instance Typeable (Tropical e a)
 
 instance forall e a. (Ord a, Extremum e) => Ord (Tropical e a) where
   compare Infinity Infinity         = EQ
+#if !MIN_VERSION_base(4,6,0)  
+  compare Infinity _                = case extremum (EProxy :: EProxy e) of
+    Minima -> LT
+    Maxima -> GT
+  compare _ Infinity                = case extremum (EProxy :: EProxy e) of
+    Minima -> GT
+    Maxima -> LT
+#else
   compare Infinity _                = case extremum (Proxy :: Proxy e) of
     Minima -> LT
     Maxima -> GT
   compare _ Infinity                = case extremum (Proxy :: Proxy e) of
     Minima -> GT
     Maxima -> LT
+#endif  
   compare (Tropical x) (Tropical y) = compare x y
 
 instance Applicative (Tropical e) where
@@ -214,11 +227,19 @@ instance forall e a. (Ord a, Semiring a, Extremum e) => Semiring (Tropical e a) 
   one  = Tropical zero
   plus Infinity y = y
   plus x Infinity = x
+#if !MIN_VERSION_base(4,6,0)
+  plus (Tropical x) (Tropical y) = Tropical
+    ( case extremum (EProxy :: EProxy e) of
+        Minima -> min x y
+        Maxima -> max x y
+    )
+#else
   plus (Tropical x) (Tropical y) = Tropical
     ( case extremum (Proxy :: Proxy e) of
         Minima -> min x y
         Maxima -> max x y
     )
+#endif
   times Infinity _ = Infinity
   times _ Infinity = Infinity
   times (Tropical x) (Tropical y) = Tropical (plus x y)

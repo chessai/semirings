@@ -109,12 +109,10 @@ library
     exposed-modules:
       Data.Semiring
       Data.Star 
+      Data.Semiring.Tropical
   if impl(ghc >= 7.6.1)
     exposed-modules:
       Data.Semiring.Generic
-  if impl(ghc >= 7.8.1)    
-    exposed-modules: 
-      Data.Semiring.Tropical
     
     if flag(containers)
       build-depends: containers >= 0.5.4 && < 0.6.1.0
