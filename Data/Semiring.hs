@@ -44,7 +44,7 @@ module Data.Semiring
   ) where
 
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
-import           Data.Bool (Bool(..), (||), (&&), otherwise, not)
+import           Data.Bool (Bool(..), (||), (&&), not)
 #if MIN_VERSION_base(4,7,0)
 import           Data.Coerce (Coercible, coerce)
 #endif
@@ -53,7 +53,10 @@ import           Data.Eq (Eq(..))
 import           Data.Fixed (Fixed, HasResolution)
 import           Data.Foldable (Foldable(foldMap))
 import qualified Data.Foldable as Foldable
-import           Data.Function ((.), const, flip, id)
+import           Data.Function ((.), const, id)
+#if defined(VERSION_unordered_containers) || defined(VERSION_containers)
+import           Data.Function (flip)
+#endif
 import           Data.Functor (Functor(..))
 #if MIN_VERSION_base(4,12,0)
 import           Data.Functor.Contravariant (Predicate(..), Equivalence(..), Op(..))
@@ -81,7 +84,7 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
 import           Data.Monoid (Monoid(..),Dual(..), Product(..), Sum(..))
-import           Data.Ord (Ord(..), Ordering(..), compare)
+import           Data.Ord (Ord)
 #if MIN_VERSION_base(4,6,0)
 import           Data.Ord (Down(..))
 #endif
@@ -99,6 +102,8 @@ import qualified Data.Set as Set
 import           Data.Traversable (Traversable)
 import           Data.Typeable (Typeable)
 #if defined(VERSION_vector)
+import           Data.Bool (otherwise)
+import           Data.Ord (Ordering(..), compare, min, max)
 import           Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import qualified Data.Vector.Storable as SV
