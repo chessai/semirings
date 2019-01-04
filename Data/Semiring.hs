@@ -86,7 +86,7 @@ import qualified Data.IntSet as IntSet
 import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
-import           Data.Monoid (Monoid(..),Dual(..), Product(..), Sum(..))
+import           Data.Monoid (Monoid(..),Dual(..))
 import           Data.Ord (Ord)
 #if MIN_VERSION_base(4,6,0)
 import           Data.Ord (Down(..))
