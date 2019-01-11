@@ -69,6 +69,9 @@ import Data.Semiring (Semiring(..))
 import Data.Typeable (Typeable)
 #endif
 
+import qualified Data.Monoid as Monoid
+import qualified GHC.Natural as Natural
+
 #if !MIN_VERSION_base(4,6,0)
 -- | On older GHCs, 'Data.Proxy.Proxy' is not polykinded, so we provide our own proxy type for 'Extrema'.
 data EProxy (e :: Extrema) = EProxy
@@ -94,20 +97,17 @@ class Extremum (e :: Extrema) where
 
 instance Extremum 'Minima where
   extremum _ = Minima
+  {-# INLINE extremum #-} -- just to be safe
 
 instance Extremum 'Maxima where
   extremum _ = Maxima
+  {-# INLINE extremum #-} -- just to be safe
 
--- | The tropical semiring.
---
---   @'Tropical' ''Minima' a@ is equivalent to the semiring
---   
+-- | The tropical semiring. @'Tropical' ''Minima' a@ is equivalent to the semiring
 --     \[
 --     (a \cup \{+\infty\}, \oplus, \otimes)
 --     \]
---
 --     where
---
 --     \[
 --     x \oplus y = min\{x,y\},
 --     \]
@@ -116,19 +116,27 @@ instance Extremum 'Maxima where
 --     \]
 --
 --   @'Tropical' ''Maxima' a@ is equivalent to the semiring
---
 --     \[
 --     (a \cup \{-\infty\}, \oplus, \otimes)
 --     \]
---
 --     where
---
 --     \[
 --     x \oplus y = max\{x,y\},
 --     \]
 --     \[
 --     x \otimes y = x + y.
 --     \]
+--
+-- In literature, the 'Semiring' instance of the 'Tropical' semiring lifts
+-- the underlying semiring's additive structure. One might ask why this lifting doesn't
+-- instead witness isn't 'Monoid', since we only lift 'zero' and 'plus' - the reason is
+-- that usually the additive structure of a semiring is monotonic, i.e.
+-- @a '+' ('min' b c) == 'min' (a '+' b) (a '+' c)@, but in general this is not true.
+-- For example, lifting 'Monoid.Product' 'Natural.Natural' or 'Monoid.Product' 'Word' into 'Tropical' is lawful,
+-- but 'Monoid.Product' 'Int' is not, lacking distributivity: @(-1) '*' ('min' 0 1) '/=' 'min' ((-1) '*' 0) ((-1) '*' 1)@.
+-- So, we deviate from literature and instead
+-- witness the lifting of a 'Monoid', so the user must take care to ensure
+-- that their implementation of 'mappend' is monotonic.
 data Tropical :: Extrema -> * -> * where
   Infinity :: Tropical e a
   Tropical :: a -> Tropical e a
@@ -222,9 +230,9 @@ instance MonadPlus (Tropical e) where
   mzero = empty
   mplus = (<|>)
 
-instance forall e a. (Ord a, Semiring a, Extremum e) => Semiring (Tropical e a) where
+instance forall e a. (Ord a, Monoid a, Extremum e) => Semiring (Tropical e a) where
   zero = Infinity
-  one  = Tropical zero
+  one  = Tropical mempty
   plus Infinity y = y
   plus x Infinity = x
 #if !MIN_VERSION_base(4,6,0)
@@ -242,4 +250,4 @@ instance forall e a. (Ord a, Semiring a, Extremum e) => Semiring (Tropical e a) 
 #endif
   times Infinity _ = Infinity
   times _ Infinity = Infinity
-  times (Tropical x) (Tropical y) = Tropical (plus x y)
+  times (Tropical x) (Tropical y) = Tropical (mappend x y)
