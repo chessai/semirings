@@ -4,7 +4,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators    #-}
 #endif
-{-# OPTIONS_GHC -Wall #-}
 
 -- below are safe orphan instances
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -49,6 +48,7 @@ import Prelude hiding (Num(..))
 --   to be used with '-XDerivingVia'.
 newtype GenericSemiring a = GenericSemiring a
   deriving (Generic)
+
 instance (Semiring a) => Semiring (GenericSemiring a) where
   zero = gzero; one = gone; plus = gplus; times = gtimes; 
 
@@ -95,7 +95,9 @@ instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f, Ring g) => Ring (a,b,c
 -- | Generic 'Semiring' class, used to implement 'plus', 'times', 'zero',
 --   and 'one' for product-like types implementing 'Generic'.
 class GSemiring f where
-  {-# MINIMAL gplus', gzero', gtimes', gone' #-} 
+#if __GLASGOW_HASKELL__ >= 708  
+  {-# MINIMAL gplus', gzero', gtimes', gone' #-}
+#endif
   gzero'  :: f a
   gone'   :: f a
   gplus'  :: f a -> f a -> f a
@@ -104,7 +106,9 @@ class GSemiring f where
 -- | Generic 'Ring' class, used to implement 'negate' for product-like
 --   types implementing 'Generic'.
 class GRing f where
+#if __GLASGOW_HASKELL__ >= 708  
   {-# MINIMAL gnegate' #-}
+#endif
   gnegate' :: f a -> f a
 
 -- | Generically generate a 'Semiring' 'zero' for any product-like type
