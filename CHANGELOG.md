@@ -1,3 +1,7 @@
+0.3.1.1: [2019.01.12]
+---------------------
+* Fix build error caused by disabling building with containers.
+
 0.3.1.0: [2019.01.12]
 ---------------------
 * Add Data.Semiring.Tropical

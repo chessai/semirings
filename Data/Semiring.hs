@@ -38,7 +38,7 @@ module Data.Semiring
   , Add(..)
   , Mul(..)
   , WrappedNum(..)
-#if MIN_VERSION_base(4,7,0) 
+#if defined(VERSION_containers) && MIN_VERSION_base(4,7,0) 
   , IntSetOf(..)
   , IntMapOf(..)
 #endif
