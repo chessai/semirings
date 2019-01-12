@@ -9,12 +9,11 @@
 --   A tropical semiring is an extension of another totally ordered
 --   semiring with the operations of minimum or maximum as addition.
 --   The extended semiring is given positive or negative infinity as
---   its 'zero' element, so that the following holds:
+--   its 'zero' element, so that the following hold:
 --
---   @
---     'plus' 'Infinity' y = y
---     'plus' x 'Infinity' = x
---   @
+-- @
+--'plus' 'Infinity' y = y
+--'plus' x 'Infinity' = x@
 --
 --
 --   i.e., In the max-plus tropical semiring (where 'plus' is 'max'),
@@ -69,29 +68,13 @@ instance Extremum 'Maxima where
   extremum _ = Maxima
   {-# INLINE extremum #-} -- just to be safe
 
--- | The tropical semiring. @'Tropical' ''Minima' a@ is equivalent to the semiring
---     \[
---     (a \cup \{+\infty\}, \oplus, \otimes)
---     \]
---     where
---     \[
---     x \oplus y = min\{x,y\},
---     \]
---     \[
---     x \otimes y = x + y.
---     \]
+-- | The tropical semiring.
+--
+--   @'Tropical' ''Minima' a@ is equivalent to the semiring
+--   \( (a \cup \{+\infty\}, \oplus, \otimes) \), where \( x \oplus y = min\{x,y\}\) and \(x \otimes y = x + y\).
 --
 --   @'Tropical' ''Maxima' a@ is equivalent to the semiring
---     \[
---     (a \cup \{-\infty\}, \oplus, \otimes)
---     \]
---     where
---     \[
---     x \oplus y = max\{x,y\},
---     \]
---     \[
---     x \otimes y = x + y.
---     \]
+--   \( (a \cup \{-\infty\}, \oplus, \otimes) \), where \( x \oplus y = max\{x,y\}\) and \(x \otimes y = x + y\).
 --
 -- In literature, the 'Semiring' instance of the 'Tropical' semiring lifts
 -- the underlying semiring's additive structure. One might ask why this lifting doesn't
