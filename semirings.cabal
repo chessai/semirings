@@ -109,6 +109,7 @@ library
     exposed-modules:
       Data.Semiring
       Data.Star
+      Data.Semiring.Tropical
   if impl(ghc >= 7.6.1)
     exposed-modules:
       Data.Semiring.Generic
