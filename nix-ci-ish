@@ -1,0 +1,21 @@
+set -e
+
+declare -a ghcs1709=("ghc742" "ghc763" "ghc784" "ghc7103" "ghc802")
+declare -a ghcs1809=("ghc822" "ghc844" "ghc863")
+
+ghcHead="ghcHEAD"
+
+for g in "${ghcs1709[@]}"
+do
+  nix-shell -I nixpkgs=https://github.com/nixos/nixpkgs-channels/archive/nixos-17.09.tar.gz -p haskell.compiler.$g --run "cabal new-build"
+  nix-shell -I nixpkgs=https://github.com/nixos/nixpkgs-channels/archive/nixos-17.09.tar.gz -p haskell.compiler.$g --run "cabal new-build -f-semigroupoids -f-aeson -f-semirings"
+done
+
+for g in "${ghcs1809[@]}"
+do
+  nix-shell -I nixpkgs=https://github.com/nixos/nixpkgs-channels/archive/nixos-18.09.tar.gz -p haskell.compiler.$g --run "cabal new-build"
+  nix-shell -I nixpkgs=https://github.com/nixos/nixpkgs-channels/archive/nixos-18.09.tar.gz -p haskell.compiler.$g --run "cabal new-build -f-semigroupoids -f-aeson -f-semirings"
+done
+
+# nix-shell -I nixpkgs=https://github.com/nixos/nixpkgs-channels/archive/nixos-18.09.tar.gz -p haskell.compiler.$ghcHead --run "cabal new-build" 
+# nix-shell -I nixpkgs=https://github.com/nixos/nixpkgs-channels/archive/nixos-18.09.tar.gz -p haskell.compiler.$ghcHead --run "cabal new-build -f-semigroupoids -f-aeson -fsemirings"
