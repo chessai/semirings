@@ -11,6 +11,9 @@
 {-# LANGUAGE Rank2Types                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+#if MIN_VERSION_base(4,7,0) && !MIN_VERSION_base(4,8,0)
+{-# LANGUAGE UndecidableInstances       #-} -- on GHC 7.8 the coercible constraint causes us to need this
+#endif
 
 {-# OPTIONS_GHC -Wall #-}
 
@@ -37,8 +40,10 @@ module Data.Semiring
   , Add(..)
   , Mul(..)
   , WrappedNum(..)
+#if MIN_VERSION_base(4,7,0) 
   , IntSetOf(..)
   , IntMapOf(..)
+#endif
 
     -- * Ring typeclass
   , Ring(..)
@@ -808,6 +813,7 @@ instance (Ord a, Monoid a) => Semiring (Set a) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
 
+#if MIN_VERSION_base(4,7,0)
 -- | Wrapper to mimic 'Set' ('Data.Semigroup.Sum' 'Int'),
 -- 'Set' ('Data.Semigroup.Product' 'Int'), etc.,
 -- while having a more efficient underlying representation.
@@ -826,7 +832,6 @@ newtype IntSetOf a = IntSetOf { getIntSet :: IntSet }
     , Monoid
     )
 
-#if MIN_VERSION_base(4,7,0)
 instance (Coercible Int a, Monoid a) => Semiring (IntSetOf a) where
   zero  = coerce IntSet.empty
   one   = coerce IntSet.singleton (mempty :: a)
@@ -863,6 +868,7 @@ instance (Ord k, Monoid k, Semiring v) => Semiring (Map k v) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
 
+#if MIN_VERSION_base(4,7,0)
 -- | Wrapper to mimic 'Map' ('Data.Semigroup.Sum' 'Int') v,
 -- 'Map' ('Data.Semigroup.Product' 'Int') v, etc.,
 -- while having a more efficient underlying representation.
@@ -881,7 +887,6 @@ newtype IntMapOf k v = IntMapOf { getIntMap :: IntMap v }
     , Monoid
     )
 
-#if MIN_VERSION_base(4,7,0)
 instance (Coercible Int k, Monoid k, Semiring v) => Semiring (IntMapOf k v) where
   zero = coerce (IntMap.empty :: IntMap v)
   one  = coerce (IntMap.singleton :: Int -> v -> IntMap v) (mempty :: k) (one :: v)
