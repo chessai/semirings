@@ -35,6 +35,7 @@ module Data.Semiring.Tropical
 import Data.Data (Data)
 #endif
 import Data.Semiring (Semiring(..))
+import Data.Star (Star(..))
 #if MIN_VERSION_base(4,7,0)
 import Data.Typeable (Typeable)
 #endif
@@ -122,3 +123,6 @@ instance forall e a. (Ord a, Monoid.Monoid a, Extremum e) => Semiring (Tropical 
   times Infinity _ = Infinity
   times _ Infinity = Infinity
   times (Tropical x) (Tropical y) = Tropical (Monoid.mappend x y)
+
+instance forall e a. (Ord a, Monoid.Monoid a, Extremum e) => Star (Tropical e a) where
+  star _ = one
