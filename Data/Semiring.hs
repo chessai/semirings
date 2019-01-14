@@ -405,18 +405,23 @@ instance Num.Num a => Ring (WrappedNum a) where
 --
 -- Instances should satisfy the following laws:
 --
--- [/additive identity/]
---     @x '+' 'zero' = 'zero' '+' x = x@
+-- [/additive left identity/]
+--     @x '+' 'zero' = x@
+-- [/additive right identity/]
+--     @x = x '+' 'zero'@
 -- [/additive associativity/]
 --     @x '+' (y '+' z) = (x '+' y) '+' z@
 -- [/additive commutativity/]
 --     @x '+' y = y '+' x@
--- [/multiplicative identity/]
---     @x '*' 'one' = 'one' '*' x = x@
+-- [/multiplicative left identity/]
+--     @x '*' 'one' = x@    
+-- [/multiplicative right identity/]
+--     @x = x '*' 'one'@ 
 -- [/multiplicative associativity/]
 --     @x '*' (y '*' z) = (x '*' y) '*' z@
--- [/left- and right-distributivity of '*' over '+'/]
+-- [/left-distributivity of '*' over '+'/]
 --     @x '*' (y '+' z) = (x '*' y) '+' (x '*' z)@
+-- [/right-distributivity of '*' over '+'/]   
 --     @(x '+' y) '*' z = (x '*' z) '+' (y '*' z)@
 -- [/annihilation/]
 --     @'zero' '*' x = x '*' 'zero' = 'zero'@
