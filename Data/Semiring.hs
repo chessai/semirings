@@ -387,8 +387,8 @@ instance Num.Num a => Ring (WrappedNum a) where
 -- convention when talking about semirings.
 --
 -- For any type R with a 'Prelude.Num'
--- instance, the additive monoid is (R, '(Prelude.+)', 0)
--- and the multiplicative monoid is (R, '(Prelude.*)', 1).
+-- instance, the additive monoid is (R, 'Prelude.+', 0)
+-- and the multiplicative monoid is (R, 'Prelude.*', 1).
 --
 -- For 'Prelude.Bool', the additive monoid is ('Prelude.Bool', 'Prelude.||', 'Prelude.False')
 -- and the multiplicative monoid is ('Prelude.Bool', 'Prelude.&&', 'Prelude.True').
