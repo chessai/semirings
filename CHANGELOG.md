@@ -1,3 +1,13 @@
+0.3.1.1: [2019.01.12]
+---------------------
+* Fix build error caused by disabling building with containers.
+
+0.3.1.0: [2019.01.12]
+---------------------
+* Add Data.Semiring.Tropical
+* Fix build problem on GHC 7.4 caused by introduction of IntSetOf/IntMapOf
+* Make sure there are no warnings when building with -Wall, for any GHC
+
 0.3.0.0: [2019.01.01]
 ---------------------
 * Rename the test suite to make `stack` happy.

@@ -1,6 +1,6 @@
 name:          semirings
 category:      Algebra, Data, Data Structures, Math, Maths, Mathematics
-version:       0.3.0.0
+version:       0.3.1.1
 license:       BSD3
 cabal-version: >= 1.10
 license-file:  LICENSE
@@ -109,6 +109,7 @@ library
     exposed-modules:
       Data.Semiring
       Data.Star
+      Data.Semiring.Tropical
   if impl(ghc >= 7.6.1)
     exposed-modules:
       Data.Semiring.Generic

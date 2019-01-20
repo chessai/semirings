@@ -11,8 +11,9 @@
 {-# LANGUAGE Rank2Types                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
-
-{-# OPTIONS_GHC -Wall #-}
+#if MIN_VERSION_base(4,7,0) && !MIN_VERSION_base(4,8,0)
+{-# LANGUAGE UndecidableInstances       #-} -- on GHC 7.8 the coercible constraint causes us to need this
+#endif
 
 -----------------------------------------------------------------------------
 -- |
@@ -37,8 +38,10 @@ module Data.Semiring
   , Add(..)
   , Mul(..)
   , WrappedNum(..)
+#if defined(VERSION_containers) && MIN_VERSION_base(4,7,0) 
   , IntSetOf(..)
   , IntMapOf(..)
+#endif
 
     -- * Ring typeclass
   , Ring(..)
@@ -47,7 +50,7 @@ module Data.Semiring
   ) where
 
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
-import           Data.Bool (Bool(..), (||), (&&), otherwise, not)
+import           Data.Bool (Bool(..), (||), (&&), not)
 #if MIN_VERSION_base(4,7,0)
 import           Data.Coerce (Coercible, coerce)
 #endif
@@ -56,7 +59,10 @@ import           Data.Eq (Eq(..))
 import           Data.Fixed (Fixed, HasResolution)
 import           Data.Foldable (Foldable(foldMap))
 import qualified Data.Foldable as Foldable
-import           Data.Function ((.), const, flip, id)
+import           Data.Function ((.), const, id)
+#if defined(VERSION_unordered_containers) || defined(VERSION_containers)
+import           Data.Function (flip)
+#endif
 import           Data.Functor (Functor(..))
 #if MIN_VERSION_base(4,12,0)
 import           Data.Functor.Contravariant (Predicate(..), Equivalence(..), Op(..))
@@ -76,15 +82,17 @@ import           Data.Maybe (Maybe(..))
 import           Data.Monoid (Ap(..))
 #endif
 #if defined(VERSION_containers)
+#if MIN_VERSION_base(4,7,0)
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
 import           Data.IntSet (IntSet)
 import qualified Data.IntSet as IntSet
+#endif
 import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
 import           Data.Monoid (Monoid(..), Dual(..))
-import           Data.Ord (Ord(..), Ordering(..), compare)
+import           Data.Ord (Ord)
 #if MIN_VERSION_base(4,6,0)
 import           Data.Ord (Down(..))
 #endif
@@ -102,6 +110,8 @@ import qualified Data.Set as Set
 import           Data.Traversable (Traversable)
 import           Data.Typeable (Typeable)
 #if defined(VERSION_vector)
+import           Data.Bool (otherwise)
+import           Data.Ord (Ordering(..), compare, min, max)
 import           Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import qualified Data.Vector.Storable as SV
@@ -395,18 +405,23 @@ instance Num.Num a => Ring (WrappedNum a) where
 --
 -- Instances should satisfy the following laws:
 --
--- [/additive identity/]
---     @x '+' 'zero' = 'zero' '+' x = x@
+-- [/additive left identity/]
+--     @'zero' '+' x = x@
+-- [/additive right identity/]
+--     @x '+' 'zero' = x@
 -- [/additive associativity/]
 --     @x '+' (y '+' z) = (x '+' y) '+' z@
 -- [/additive commutativity/]
 --     @x '+' y = y '+' x@
--- [/multiplicative identity/]
---     @x '*' 'one' = 'one' '*' x = x@
+-- [/multiplicative left identity/]
+--     @'one' '*' x = x@    
+-- [/multiplicative right identity/]
+--     @x '*' 'one' = x@ 
 -- [/multiplicative associativity/]
 --     @x '*' (y '*' z) = (x '*' y) '*' z@
--- [/left- and right-distributivity of '*' over '+'/]
+-- [/left-distributivity of '*' over '+'/]
 --     @x '*' (y '+' z) = (x '*' y) '+' (x '*' z)@
+-- [/right-distributivity of '*' over '+'/]   
 --     @(x '+' y) '*' z = (x '*' z) '+' (y '*' z)@
 -- [/annihilation/]
 --     @'zero' '*' x = x '*' 'zero' = 'zero'@
@@ -808,6 +823,7 @@ instance (Ord a, Monoid a) => Semiring (Set a) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
 
+#if MIN_VERSION_base(4,7,0)
 -- | Wrapper to mimic 'Set' ('Data.Semigroup.Sum' 'Int'),
 -- 'Set' ('Data.Semigroup.Product' 'Int'), etc.,
 -- while having a more efficient underlying representation.
@@ -826,7 +842,6 @@ newtype IntSetOf a = IntSetOf { getIntSet :: IntSet }
     , Monoid
     )
 
-#if MIN_VERSION_base(4,7,0)
 instance (Coercible Int a, Monoid a) => Semiring (IntSetOf a) where
   zero  = coerce IntSet.empty
   one   = coerce IntSet.singleton (mempty :: a)
@@ -863,6 +878,7 @@ instance (Ord k, Monoid k, Semiring v) => Semiring (Map k v) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
 
+#if MIN_VERSION_base(4,7,0)
 -- | Wrapper to mimic 'Map' ('Data.Semigroup.Sum' 'Int') v,
 -- 'Map' ('Data.Semigroup.Product' 'Int') v, etc.,
 -- while having a more efficient underlying representation.
@@ -881,7 +897,6 @@ newtype IntMapOf k v = IntMapOf { getIntMap :: IntMap v }
     , Monoid
     )
 
-#if MIN_VERSION_base(4,7,0)
 instance (Coercible Int k, Monoid k, Semiring v) => Semiring (IntMapOf k v) where
   zero = coerce (IntMap.empty :: IntMap v)
   one  = coerce (IntMap.singleton :: Int -> v -> IntMap v) (mempty :: k) (one :: v)
