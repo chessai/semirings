@@ -140,6 +140,12 @@ import           GHC.Read (Read)
 import           GHC.Real (Integral, Fractional, Real, RealFrac)
 import           GHC.Show (Show)
 import           Numeric.Natural (Natural)
+#if defined(VERSION_log_domain)
+import           Numeric.Log (Log(..),Precise(..))
+import           Numeric.Log.Signed (SignedLog(..))
+import qualified GHC.Float as GHCFloat
+import qualified GHC.Real as GHCReal
+#endif
 import           System.Posix.Types
   (CCc, CDev, CGid, CIno, CMode, CNlink,
    COff, CPid, CRLim, CSpeed, CSsize,
@@ -438,7 +444,6 @@ class Semiring a where
 -- | The class of semirings with an additive inverse.
 --
 --     @'negate' a '+' a = 'zero'@
-
 class Semiring a => Ring a where
 #if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL negate #-}
@@ -958,26 +963,37 @@ instance (Eq k, Hashable k, Monoid k, Semiring v) => Semiring (HashMap k v) wher
 #endif
 
 {--------------------------------------------------------------------
-  Instances (primitive)
+  Instances (log-float)
 --------------------------------------------------------------------}
 
-#if defined(VERSION_primitive)
--- | The multiplication laws are satisfied for
---   any underlying 'Monoid', so we require a
---   'Monoid' constraint instead of a 'Semiring'
---   constraint since 'times' can use
---   the context of either.
--- instance (Monoid a) => Semiring (Array a) where
---   zero  = mempty
---   one   = runST e where
---     e :: forall s. Monoid a => ST s (Array a)
---     e = (Array.newArray 1 mempty) >>= Array.unsafeFreezeArray
---   plus _ _ = mempty
---   times _ _ = mempty
---   {-# INLINE plus  #-}
---   {-# INLINE zero  #-}
---   {-# INLINE times #-}
---   {-# INLINE one   #-}
+#if defined(VERSION_log_domain)
+instance (Precise a, GHCFloat.RealFloat a) => Semiring (Log a) where
+  plus x y = x Num.+ y
+  times x y = x Num.* y
+  one = Exp 0
+  zero = Exp (-(1 GHCReal./ 0)) 
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
+
+instance (Precise a, GHCFloat.RealFloat a) => Ring (Log a) where
+  negate x = Num.negate x
+  {-# INLINE negate #-}
+
+instance (Precise a, GHCFloat.RealFloat a) => Semiring (SignedLog a) where
+  plus x y = x Num.+ y
+  times x y = x Num.* y
+  one = SLExp True 0
+  zero = SLExp False (-(1 GHCReal./ 0))
+  {-# INLINE plus  #-}
+  {-# INLINE zero  #-}
+  {-# INLINE times #-}
+  {-# INLINE one   #-}
+
+instance (Precise a, GHCFloat.RealFloat a) => Ring (SignedLog a) where
+  negate x = Num.negate x
+  {-# INLINE negate #-}
 #endif
 
 {--------------------------------------------------------------------

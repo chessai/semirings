@@ -8,11 +8,11 @@ ghcHead="ghcHEAD"
 for g in "${ghcs1709[@]}"
 do
   nix-shell -I nixpkgs=https://github.com/nixos/nixpkgs-channels/archive/nixos-17.09.tar.gz -p haskell.compiler.$g --run "cabal new-build"
-  nix-shell -I nixpkgs=https://github.com/nixos/nixpkgs-channels/archive/nixos-17.09.tar.gz -p haskell.compiler.$g --run "cabal new-build -f-hashable -f-containers -f-unordered-containers -f-vector"
+  nix-shell -I nixpkgs=https://github.com/nixos/nixpkgs-channels/archive/nixos-17.09.tar.gz -p haskell.compiler.$g --run "cabal new-build -f-hashable -f-containers -f-unordered-containers -f-vector -f-log-domain"
 done
 
 for g in "${ghcs1809[@]}"
 do
   nix-shell -I nixpkgs=https://github.com/nixos/nixpkgs-channels/archive/nixos-18.09.tar.gz -p haskell.compiler.$g --run "cabal new-build"
-  nix-shell -I nixpkgs=https://github.com/nixos/nixpkgs-channels/archive/nixos-18.09.tar.gz -p haskell.compiler.$g --run "cabal new-build -f-hashable -f-containers -f-unordered-containers -f-vector"
+  nix-shell -I nixpkgs=https://github.com/nixos/nixpkgs-channels/archive/nixos-18.09.tar.gz -p haskell.compiler.$g --run "cabal new-build -f-hashable -f-containers -f-unordered-containers -f-vector -f-log-domain"
 done
