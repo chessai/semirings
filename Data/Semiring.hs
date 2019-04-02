@@ -140,10 +140,19 @@ import           GHC.Read (Read)
 import           GHC.Real (Integral, Fractional, Real, RealFrac)
 import           GHC.Show (Show)
 import           Numeric.Natural (Natural)
+
+#ifdef mingw32_HOST_OS
+#define HOST_OS_WINDOWS 1
+#else
+#define HOST_OS_WINDOWS 0
+#endif
+
+#if !HOST_OS_WINDOWS
 import           System.Posix.Types
   (CCc, CDev, CGid, CIno, CMode, CNlink,
    COff, CPid, CRLim, CSpeed, CSsize,
    CTcflag, CUid, Fd)
+#endif
 
 infixl 7 *, `times`
 infixl 6 +, `plus`, -, `minus`
@@ -690,21 +699,26 @@ deriveSemiring(CSChar)
 deriveSemiring(CChar)
 deriveSemiring(IntPtr)
 deriveSemiring(WordPtr)
-deriveSemiring(Fd)
-deriveSemiring(CRLim)
-deriveSemiring(CTcflag)
-deriveSemiring(CSpeed)
+
+#if !HOST_OS_WINDOWS
 deriveSemiring(CCc)
-deriveSemiring(CUid)
-deriveSemiring(CNlink)
-deriveSemiring(CGid)
-deriveSemiring(CSsize)
-deriveSemiring(CPid)
-deriveSemiring(COff)
-deriveSemiring(CMode)
-deriveSemiring(CIno)
 deriveSemiring(CDev)
+deriveSemiring(CGid)
+deriveSemiring(CIno)
+deriveSemiring(CMode)
+deriveSemiring(CNlink)
+deriveSemiring(COff)
+deriveSemiring(CPid)
+deriveSemiring(CRLim)
+deriveSemiring(CSpeed)
+deriveSemiring(CSsize)
+deriveSemiring(CTcflag)
+deriveSemiring(CUid)
+deriveSemiring(Fd)
+#endif
+
 deriveSemiring(Natural)
+
 instance Integral a => Semiring (Ratio a) where
   {-# SPECIALIZE instance Semiring Rational #-}
   zero  = 0 % 1
@@ -775,21 +789,25 @@ deriveRing(CSChar)
 deriveRing(CChar)
 deriveRing(IntPtr)
 deriveRing(WordPtr)
-deriveRing(Fd)
-deriveRing(CRLim)
-deriveRing(CTcflag)
-deriveRing(CSpeed)
-deriveRing(CCc)
-deriveRing(CUid)
-deriveRing(CNlink)
-deriveRing(CGid)
-deriveRing(CSsize)
-deriveRing(CPid)
-deriveRing(COff)
-deriveRing(CMode)
-deriveRing(CIno)
-deriveRing(CDev)
 deriveRing(Natural)
+
+#if !HOST_OS_WINDOWS
+deriveRing(CCc)
+deriveRing(CDev)
+deriveRing(CGid)
+deriveRing(CIno)
+deriveRing(CMode)
+deriveRing(CNlink)
+deriveRing(COff)
+deriveRing(CPid)
+deriveRing(CRLim)
+deriveRing(CSpeed)
+deriveRing(CSsize)
+deriveRing(CTcflag)
+deriveRing(CUid)
+deriveRing(Fd)
+#endif
+
 instance Integral a => Ring (Ratio a) where
   negate = Num.negate
   {-# INLINE negate #-}
