@@ -1,3 +1,9 @@
+0.3.1.2: [2019.04.02]
+---------------------
+* Fix build error on windows caused by providing instances
+  to POSIX types. Thanks to @Bodigrim and @CarlEdman for
+  reporting this.
+
 0.3.1.1: [2019.01.12]
 ---------------------
 * Fix build error caused by disabling building with containers.
