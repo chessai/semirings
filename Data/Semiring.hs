@@ -38,7 +38,7 @@ module Data.Semiring
   , Add(..)
   , Mul(..)
   , WrappedNum(..)
-#if defined(VERSION_containers) && MIN_VERSION_base(4,7,0) 
+#if defined(VERSION_containers) && MIN_VERSION_base(4,7,0)
   , IntSetOf(..)
   , IntMapOf(..)
 #endif
@@ -423,14 +423,14 @@ instance Num.Num a => Ring (WrappedNum a) where
 -- [/additive commutativity/]
 --     @x '+' y = y '+' x@
 -- [/multiplicative left identity/]
---     @'one' '*' x = x@    
+--     @'one' '*' x = x@
 -- [/multiplicative right identity/]
---     @x '*' 'one' = x@ 
+--     @x '*' 'one' = x@
 -- [/multiplicative associativity/]
 --     @x '*' (y '*' z) = (x '*' y) '*' z@
 -- [/left-distributivity of '*' over '+'/]
 --     @x '*' (y '+' z) = (x '*' y) '+' (x '*' z)@
--- [/right-distributivity of '*' over '+'/]   
+-- [/right-distributivity of '*' over '+'/]
 --     @(x '+' y) '*' z = (x '*' z) '+' (y '*' z)@
 -- [/annihilation/]
 --     @'zero' '*' x = x '*' 'zero' = 'zero'@
@@ -514,10 +514,6 @@ instance Semiring Bool where
   {-# INLINE times #-}
   {-# INLINE one   #-}
 
-instance Ring Bool where
-  negate = not
-  {-# INLINE negate #-}
-
 -- | The 'Semiring' instance for '[a]' can be interpreted as
 --   treating each element of the list as coefficients to a
 --   polynomial in one variable.
@@ -538,10 +534,6 @@ instance Semiring a => Semiring [a] where
   {-# INLINE times #-}
   {-# INLINE one   #-}
 
-instance Ring a => Ring [a] where
-  negate = fmap negate
-  {-# INLINE negate #-}
-
 instance Semiring a => Semiring (Maybe a) where
   zero  = Nothing
   one   = Just one
@@ -557,10 +549,6 @@ instance Semiring a => Semiring (Maybe a) where
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
-
-instance Ring a => Ring (Maybe a) where
-  negate = fmap negate
-  {-# INLINE negate #-}
 
 instance Semiring a => Semiring (IO a) where
   zero  = pure zero
@@ -638,10 +626,8 @@ instance (Ring a, Applicative f) => Ring (Ap f a) where
 
 #if MIN_VERSION_base(4,12,0)
 deriving instance Semiring (Predicate a)
-deriving instance Ring (Predicate a)
 
 deriving instance Semiring a => Semiring (Equivalence a)
-deriving instance Ring a => Ring (Equivalence a)
 
 deriving instance Semiring a => Semiring (Op a b)
 deriving instance Ring a => Ring (Op a b)
@@ -1043,10 +1029,6 @@ instance Semiring a => Semiring (Vector a) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
 
-instance Ring a => Ring (Vector a) where
-  negate = Vector.map negate
-  {-# INLINE negate #-}
-
 instance (UV.Unbox a, Semiring a) => Semiring (UV.Vector a) where
   zero = UV.empty
   one  = UV.singleton one
@@ -1076,10 +1058,6 @@ instance (UV.Unbox a, Semiring a) => Semiring (UV.Vector a) where
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
-
-instance (UV.Unbox a, Ring a) => Ring (UV.Vector a) where
-  negate = UV.map negate
-  {-# INLINE negate #-}
 
 instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
   zero = SV.empty
@@ -1112,10 +1090,6 @@ instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
-
-instance (SV.Storable a, Ring a) => Ring (SV.Vector a) where
-  negate = SV.map negate
-  {-# INLINE negate #-}
 #endif
 
 -- [Section: List fusion]

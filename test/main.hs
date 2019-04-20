@@ -53,7 +53,7 @@ ringLaws p = [QCC.semiringLaws p, QCC.ringLaws p]
 
 namedTests :: [(String, [Laws])]
 namedTests =
-  [ ("Bool", ringLaws pBool)
+  [ ("Bool", semiringLaws pBool)
 --  , ("Double", ringLaws pDouble) -- needs to be within some epsilon
 --  , ("Float", ringLaws pFloat)   -- needs to be within some epsilon
 --  , ("Complex", ringLaws pComplex) -- needs to be within some epsilon
@@ -68,8 +68,8 @@ namedTests =
   , ("Word32", ringLaws pWord32)
   , ("Word64", ringLaws pWord64)
   , ("()", ringLaws pUnit)
-  , ("[]", ringLaws pList)
-  , ("Maybe", ringLaws pMaybe)
+  , ("[]", semiringLaws pList)
+  , ("Maybe", semiringLaws pMaybe)
   , ("PosRatio", semiringLaws pPosRatio)
   , ("IO", ringLaws pIO)
   , ("Fixed", ringLaws pFixed)
@@ -83,12 +83,12 @@ namedTests =
 --  , ("IntSet", semiringLaws pIntSet) -- needs newtypes
   , ("HashSet", semiringLaws pHashSet)
   , ("HashMap", semiringLaws pHashMap)
-  , ("Vector", ringLaws pVector)
-  , ("Storable Vector", ringLaws pStorableVector)
-  , ("Unboxed Vector", ringLaws pUnboxedVector)
+  , ("Vector", semiringLaws pVector)
+  , ("Storable Vector", semiringLaws pStorableVector)
+  , ("Unboxed Vector", semiringLaws pUnboxedVector)
   , ("Map", semiringLaws pMap)
-  , ("Predicate", ringLaws pPredicate)
-  , ("Equivalence", ringLaws pEquivalence)
+  , ("Predicate", semiringLaws pPredicate)
+  , ("Equivalence", semiringLaws pEquivalence)
   , ("Op", ringLaws pOp)
   , ("Ap", ringLaws pAp)
 
@@ -117,13 +117,11 @@ deriving instance (Arbitrary (f a)) => Arbitrary (Ap f a)
 newtype Predicate a = Predicate (a -> Bool)
   deriving (Eq, Show)
 deriving instance Semiring (Predicate a)
-deriving instance Ring (Predicate a)
 deriving instance (Arbitrary a, CoArbitrary a) => Arbitrary (Predicate a)
 
 newtype Equivalence a = Equivalence (a -> a -> Bool)
   deriving (Eq, Show)
 deriving instance Semiring a => Semiring (Equivalence a)
-deriving instance Ring a => Ring (Equivalence a)
 deriving instance (Arbitrary a, CoArbitrary a) => Arbitrary (Equivalence a)
 
 newtype Op a b = Op (b -> a)
