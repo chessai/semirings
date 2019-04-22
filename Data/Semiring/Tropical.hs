@@ -123,6 +123,8 @@ instance forall e a. (Ord a, Monoid.Monoid a, Extremum e) => Semiring (Tropical 
   times Infinity _ = Infinity
   times _ Infinity = Infinity
   times (Tropical x) (Tropical y) = Tropical (Monoid.mappend x y)
+  fromNatural 0 = zero
+  fromNatural _ = one
 
 instance forall e a. (Ord a, Monoid.Monoid a, Extremum e) => Star (Tropical e a) where
   star _ = one
