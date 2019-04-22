@@ -552,7 +552,8 @@ instance Semiring a => Semiring [a] where
   one  = [one]
   plus  = listAdd -- See Section: List fusion
   times = listTimes -- See Section: List fusion
-  fromNatural = (: []) . fromNatural
+  fromNatural 0 = []
+  fromNatural n = [fromNatural n]
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
