@@ -50,7 +50,7 @@ module Data.Semiring
   ) where
 
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
-import           Data.Bool (Bool(..), (||), (&&), not)
+import           Data.Bool (Bool(..), (||), (&&))
 #if MIN_VERSION_base(4,7,0)
 import           Data.Coerce (Coercible, coerce)
 #endif
@@ -137,7 +137,7 @@ import           GHC.IO (IO)
 import           GHC.Integer (Integer)
 import qualified GHC.Num as Num
 import           GHC.Read (Read)
-import           GHC.Real (Integral, Fractional, Real, RealFrac)
+import           GHC.Real (Integral, Fractional, Real, RealFrac, fromIntegral)
 import           GHC.Show (Show)
 import           Numeric.Natural (Natural)
 
@@ -316,6 +316,7 @@ newtype Add a = Add { getAdd :: a }
 
 instance Semiring a => Semigroup (Add a) where
   Add a <> Add b = Add (a + b)
+  stimes n (Add a) = Add (fromNatural (fromIntegral n) * a)
   {-# INLINE (<>) #-}
 
 instance Semiring a => Monoid (Add a) where
@@ -323,6 +324,13 @@ instance Semiring a => Monoid (Add a) where
   mappend = (<>)
   {-# INLINE mempty #-}
   {-# INLINE mappend #-}
+
+-- | This is an internal type, solely for purposes
+-- of default implementation of 'fromNatural'.
+newtype Add' a = Add' { getAdd' :: a }
+
+instance Semiring a => Semigroup (Add' a) where
+  Add' a <> Add' b = Add' (a + b)
 
 -- | Monoid under 'times'. Analogous to 'Data.Monoid.Product', but
 --   uses the 'Semiring' constraint rather than 'Num'.
@@ -388,6 +396,7 @@ instance Num.Num a => Semiring (WrappedNum a) where
   zero  = 0
   times = (Num.*)
   one   = 1
+  fromNatural = fromIntegral
 
 instance Num.Num a => Ring (WrappedNum a) where
   negate = Num.negate
@@ -437,12 +446,17 @@ instance Num.Num a => Ring (WrappedNum a) where
 
 class Semiring a where
 #if __GLASGOW_HASKELL__ >= 708
-  {-# MINIMAL plus, zero, times, one #-}
+  {-# MINIMAL plus, times, (zero, one | fromNatural) #-}
 #endif
   plus  :: a -> a -> a -- ^ Commutative Operation
   zero  :: a           -- ^ Commutative Unit
+  zero = fromNatural 0
   times :: a -> a -> a -- ^ Associative Operation
   one   :: a           -- ^ Associative Unit
+  one = fromNatural 1
+  fromNatural :: Natural -> a -- ^ Homomorphism of additive semigroups
+  fromNatural 0 = zero
+  fromNatural n = getAdd' (stimes n (Add' one))
 
 -- | The class of semirings with an additive inverse.
 --
@@ -471,10 +485,12 @@ instance Semiring b => Semiring (a -> b) where
   zero        = const zero
   times f g x = f x `times` g x
   one         = const one
+  fromNatural = const . fromNatural
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 instance Ring b => Ring (a -> b) where
   negate f x = negate (f x)
@@ -485,10 +501,12 @@ instance Semiring () where
   zero      = ()
   times _ _ = ()
   one       = ()
+  fromNatural _ = ()
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 instance Ring () where
   negate _ = ()
@@ -499,20 +517,25 @@ instance Semiring (Proxy a) where
   zero      = Proxy
   times _ _ = Proxy
   one       = Proxy
+  fromNatural _ = Proxy
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 instance Semiring Bool where
   plus  = (||)
   zero  = False
   times = (&&)
   one   = True
+  fromNatural 0 = False
+  fromNatural _ = True
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 -- | The 'Semiring' instance for '[a]' can be interpreted as
 --   treating each element of the list as coefficients to a
@@ -529,10 +552,12 @@ instance Semiring a => Semiring [a] where
   one  = [one]
   plus  = listAdd -- See Section: List fusion
   times = listTimes -- See Section: List fusion
+  fromNatural = (: []) . fromNatural
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 instance Semiring a => Semiring (Maybe a) where
   zero  = Nothing
@@ -545,20 +570,26 @@ instance Semiring a => Semiring (Maybe a) where
   times Nothing _ = Nothing
   times _ Nothing = Nothing
   times (Just x) (Just y) = Just (times x y)
+
+  fromNatural 0 = Nothing
+  fromNatural n = Just (fromNatural n)
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 instance Semiring a => Semiring (IO a) where
   zero  = pure zero
   one   = pure one
   plus  = liftA2 plus
   times = liftA2 times
+  fromNatural = pure . fromNatural
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 instance Ring a => Ring (IO a) where
   negate = fmap negate
@@ -569,10 +600,12 @@ instance Semiring a => Semiring (Dual a) where
   Dual x `plus` Dual y = Dual (y `plus` x)
   one = Dual one
   Dual x `times` Dual y = Dual (y `times` x)
+  fromNatural = Dual . fromNatural
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 instance Ring a => Ring (Dual a) where
   negate (Dual x) = Dual (negate x)
@@ -583,10 +616,12 @@ instance Semiring a => Semiring (Const a b) where
   one  = Const one
   plus  (Const x) (Const y) = Const (x `plus`  y)
   times (Const x) (Const y) = Const (x `times` y)
+  fromNatural = Const . fromNatural
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 instance Ring a => Ring (Const a b) where
   negate (Const x) = Const (negate x)
@@ -599,10 +634,12 @@ instance Ring a => Semiring (Complex a) where
   plus  (x :+ y) (x' :+ y') = plus x x' :+ plus y y'
   times (x :+ y) (x' :+ y')
     = (x * x' - (y * y')) :+ (x * y' + y * x')
+  fromNatural n = fromNatural n :+ zero
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 instance Ring a => Ring (Complex a) where
   negate (x :+ y) = negate x :+ negate y
@@ -614,10 +651,12 @@ instance (Semiring a, Applicative f) => Semiring (Ap f a) where
   one   = pure one
   plus  = liftA2 plus
   times = liftA2 times
+  fromNatural = pure . fromNatural
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 instance (Ring a, Applicative f) => Ring (Ap f a) where
   negate = fmap negate
@@ -639,10 +678,12 @@ instance Semiring (ty) where {    \
 ;  one   = 1                      \
 ;  plus  x y = (Num.+) x y        \
 ;  times x y = (Num.*) x y        \
+;  fromNatural = fromIntegral     \
 ;  {-# INLINE zero #-}            \
 ;  {-# INLINE one  #-}            \
 ;  {-# INLINE plus #-}            \
 ;  {-# INLINE times #-}           \
+;  {-# INLINE fromNatural #-}     \
 }
 
 deriveSemiring(Int)
@@ -711,10 +752,12 @@ instance Integral a => Semiring (Ratio a) where
   one   = 1 % 1
   plus  = (Num.+)
   times = (Num.*)
+  fromNatural n = fromIntegral n % 1
   {-# INLINE zero  #-}
   {-# INLINE one   #-}
   {-# INLINE plus  #-}
   {-# INLINE times #-}
+  {-# INLINE fromNatural #-}
 deriving instance Semiring a => Semiring (Identity a)
 #if MIN_VERSION_base(4,6,0)
 deriving instance Semiring a => Semiring (Down a)
@@ -724,10 +767,12 @@ instance HasResolution a => Semiring (Fixed a) where
   one   = 1
   plus  = (Num.+)
   times = (Num.*)
+  fromNatural = fromIntegral
   {-# INLINE zero  #-}
   {-# INLINE one   #-}
   {-# INLINE plus  #-}
   {-# INLINE times #-}
+  {-# INLINE fromNatural #-}
 
 #define deriveRing(ty)          \
 instance Ring (ty) where {      \
@@ -822,10 +867,13 @@ instance (Ord a, Monoid a) => Semiring (Set a) where
   one   = Set.singleton mempty
   plus  = Set.union
   times xs ys = Foldable.foldMap (flip Set.map ys . mappend) xs
+  fromNatural 0 = zero
+  fromNatural _ = one
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 #if MIN_VERSION_base(4,7,0)
 -- | Wrapper to mimic 'Set' ('Data.Semigroup.Sum' 'Int'),
@@ -856,10 +904,13 @@ instance (Coercible Int a, Monoid a) => Semiring (IntSetOf a) where
         | k :: a <- coerce IntSet.toList xs
         , l :: a <- coerce IntSet.toList ys
         ]
+  fromNatural 0 = zero
+  fromNatural _ = one
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 #endif
 
 -- | The multiplication laws are satisfied for
@@ -877,10 +928,13 @@ instance (Ord k, Monoid k, Semiring v) => Semiring (Map k v) where
         | (k,v) <- Map.toList xs
         , (l,u) <- Map.toList ys
         ]
+  fromNatural 0 = zero
+  fromNatural n = Map.singleton mempty (fromNatural n)
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 #if MIN_VERSION_base(4,7,0)
 -- | Wrapper to mimic 'Map' ('Data.Semigroup.Sum' 'Int') v,
@@ -911,10 +965,13 @@ instance (Coercible Int k, Monoid k, Semiring v) => Semiring (IntMapOf k v) wher
         | (k :: k, v :: v) <- coerce (IntMap.toList :: IntMap v -> [(Int, v)]) xs
         , (l :: k, u :: v) <- coerce (IntMap.toList :: IntMap v -> [(Int, v)]) ys
         ]
+  fromNatural 0 = zero
+  fromNatural n = coerce (IntMap.singleton :: Int -> v -> IntMap v) (mempty :: k) (fromNatural n :: v)
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 #endif
 
 #endif
@@ -935,10 +992,13 @@ instance (Eq a, Hashable a, Monoid a) => Semiring (HashSet a) where
   one  = HashSet.singleton mempty
   plus = HashSet.union
   times xs ys = Foldable.foldMap (flip HashSet.map ys . mappend) xs
+  fromNatural 0 = zero
+  fromNatural _ = one
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 -- | The multiplication laws are satisfied for
 --   any underlying 'Monoid' as the key type,
@@ -955,33 +1015,13 @@ instance (Eq k, Hashable k, Monoid k, Semiring v) => Semiring (HashMap k v) wher
         | (k,v) <- HashMap.toList xs
         , (l,u) <- HashMap.toList ys
         ]
+  fromNatural 0 = zero
+  fromNatural n = HashMap.singleton mempty (fromNatural n)
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
-#endif
-
-{--------------------------------------------------------------------
-  Instances (primitive)
---------------------------------------------------------------------}
-
-#if defined(VERSION_primitive)
--- | The multiplication laws are satisfied for
---   any underlying 'Monoid', so we require a
---   'Monoid' constraint instead of a 'Semiring'
---   constraint since 'times' can use
---   the context of either.
--- instance (Monoid a) => Semiring (Array a) where
---   zero  = mempty
---   one   = runST e where
---     e :: forall s. Monoid a => ST s (Array a)
---     e = (Array.newArray 1 mempty) >>= Array.unsafeFreezeArray
---   plus _ _ = mempty
---   times _ _ = mempty
---   {-# INLINE plus  #-}
---   {-# INLINE zero  #-}
---   {-# INLINE times #-}
---   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 #endif
 
 {--------------------------------------------------------------------
@@ -1024,10 +1064,13 @@ instance Semiring a => Semiring (Vector a) where
         where
           !kmin = max 0 (n - (klen - 1))
           !kmax = min n (slen - 1)
+  fromNatural 0 = Vector.empty
+  fromNatural n = Vector.singleton (fromNatural n)
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 instance (UV.Unbox a, Semiring a) => Semiring (UV.Vector a) where
   zero = UV.empty
@@ -1054,10 +1097,13 @@ instance (UV.Unbox a, Semiring a) => Semiring (UV.Vector a) where
         where
           !kmin = max 0 (n - (klen - 1))
           !kmax = min n (slen - 1)
+  fromNatural 0 = UV.empty
+  fromNatural n = UV.singleton (fromNatural n)
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 
 instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
   zero = SV.empty
@@ -1086,10 +1132,13 @@ instance (SV.Storable a, Semiring a) => Semiring (SV.Vector a) where
           where
             !kmin = max 0 (n - (klen - 1))
             !kmax = min n (slen - 1)
+  fromNatural 0 = SV.empty
+  fromNatural n = SV.singleton (fromNatural n)
   {-# INLINE plus  #-}
   {-# INLINE zero  #-}
   {-# INLINE times #-}
   {-# INLINE one   #-}
+  {-# INLINE fromNatural #-}
 #endif
 
 -- [Section: List fusion]
