@@ -65,7 +65,6 @@ namedTests =
   , ("Word32", ringLaws pWord32)
   , ("Word64", ringLaws pWord64)
   , ("()", ringLaws pUnit)
-  , ("[]", semiringLaws pList)
   , ("Maybe", semiringLaws pMaybe)
   , ("PosRatio", semiringLaws pPosRatio)
   , ("IO", ringLaws pIO)
@@ -191,7 +190,6 @@ pWord16 = p @Word16
 pWord32 = p @Word32
 pWord64 = p @Word64
 pUnit = p @()
-pList = p @([Int])
 pMaybe = p @(Maybe Int)
 pPosRatio = p @(PosRatio Int)
 pIO = p @(IO Int)

@@ -529,29 +529,6 @@ instance Semiring Bool where
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
 
--- | The 'Semiring' instance for '[a]' can be interpreted as
---   treating each element of the list as coefficients to a
---   polynomial in one variable.
---
--- ==== __Examples__
---
--- @poly1 = [1,2,3] :: [Int]@
--- @poly2 = [  2,1] :: [Int]@
--- @poly1 * poly2 = [2,5,8,3]@
--- fromList [2,5,8,3]
-instance Semiring a => Semiring [a] where
-  zero = []
-  one  = [one]
-  plus  = listAdd -- See Section: List fusion
-  times = listTimes -- See Section: List fusion
-  fromNatural 0 = []
-  fromNatural n = [fromNatural n]
-  {-# INLINE plus  #-}
-  {-# INLINE zero  #-}
-  {-# INLINE times #-}
-  {-# INLINE one   #-}
-  {-# INLINE fromNatural #-}
-
 instance Semiring a => Semiring (Maybe a) where
   zero  = Nothing
   one   = Just one
@@ -1016,38 +993,3 @@ instance (Eq k, Hashable k, Monoid k, Semiring v) => Semiring (HashMap k v) wher
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
 #endif
-
--- [Section: List fusion]
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-listAdd, listTimes :: Semiring a => [a] -> [a] -> [a]
-listAdd [] ys = ys
-listAdd xs [] = xs
-listAdd (x:xs) (y:ys) = (x + y) : listAdd xs ys
-{-# NOINLINE [0] listAdd #-}
-
-listTimes _  [] = []
-listTimes xs ys = List.foldr f [] xs
-  where
-    f x zs = List.foldr (g x) id ys (zero : zs)
-    g x y a []     = x `times` y : a []
-    g x y a (z:zs) = x `times` y `plus` z : a zs
-{-# NOINLINE [0] listTimes #-}
-
-type ListBuilder a = forall b. (a -> b -> b) -> b -> b
-
-{-# RULES
-"listAddFB/left"  forall    (g :: ListBuilder a). listAdd    (build g) = listAddFBL g
-"listAddFB/right" forall xs (g :: ListBuilder a). listAdd xs (build g) = listAddFBR xs g
-  #-}
-
--- a definition of listAdd which can be fused on its left argument
-listAddFBL :: Semiring a => ListBuilder a -> [a] -> [a]
-listAddFBL xf = xf f id where
-  f x xs (y:ys) = x + y : xs ys
-  f x xs []     = x : xs []
-
--- a definition of listAdd which can be fused on its right argument
-listAddFBR :: Semiring a => [a] -> ListBuilder a -> [a]
-listAddFBR xs' yf = yf f id xs' where
-  f y ys (x:xs) = x + y : ys xs
-  f y ys []     = y : ys []
