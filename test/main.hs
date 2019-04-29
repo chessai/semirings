@@ -26,7 +26,6 @@ import Data.Semigroup
 import Data.Semiring
 import Data.Sequence
 import Data.Set
-import Data.Vector hiding (generate)
 import Data.Word
 import GHC.Natural
 import Prelude hiding (Num(..))
@@ -38,8 +37,6 @@ import Test.Tasty (defaultMain, testGroup, TestTree)
 import Text.Show.Functions ()
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
-import qualified Data.Vector.Storable as SV
-import qualified Data.Vector.Unboxed as UV
 import qualified GHC.Num as Num
 import qualified Test.QuickCheck.Classes as QCC
 
@@ -68,7 +65,6 @@ namedTests =
   , ("Word32", ringLaws pWord32)
   , ("Word64", ringLaws pWord64)
   , ("()", ringLaws pUnit)
-  , ("[]", semiringLaws pList)
   , ("Maybe", semiringLaws pMaybe)
   , ("PosRatio", semiringLaws pPosRatio)
   , ("IO", ringLaws pIO)
@@ -83,9 +79,6 @@ namedTests =
 --  , ("IntSet", semiringLaws pIntSet) -- needs newtypes
   , ("HashSet", semiringLaws pHashSet)
   , ("HashMap", semiringLaws pHashMap)
-  , ("Vector", semiringLaws pVector)
-  , ("Storable Vector", semiringLaws pStorableVector)
-  , ("Unboxed Vector", semiringLaws pUnboxedVector)
   , ("Map", semiringLaws pMap)
   , ("Predicate", semiringLaws pPredicate)
   , ("Equivalence", semiringLaws pEquivalence)
@@ -197,7 +190,6 @@ pWord16 = p @Word16
 pWord32 = p @Word32
 pWord64 = p @Word64
 pUnit = p @()
-pList = p @([Int])
 pMaybe = p @(Maybe Int)
 pPosRatio = p @(PosRatio Int)
 pIO = p @(IO Int)
@@ -215,9 +207,6 @@ pSeq = p @(Seq Int)
 pSet = p @(Set (Sum Int))
 pHashSet = p @(HashSet (Sum Int))
 pFunction = p @(Int -> Int)
-pVector = p @(Vector Int)
-pStorableVector = p @(SV.Vector Int)
-pUnboxedVector = p @(UV.Vector Int)
 pMap = p @(Map (Sum Int) Int)
 pHashMap = p @(HashMap (Sum Int) Int)
 pConst = p @(Const Int Int)

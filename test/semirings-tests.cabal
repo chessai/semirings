@@ -20,17 +20,16 @@ test-suite test
   main-is: main.hs
   type: exitcode-stdio-1.0
   build-depends: base >= 4.5 && < 4.13
-               , QuickCheck 
+               , QuickCheck
                , base-orphans
                , containers
                , hashable
                , quickcheck-classes >= 0.4.14.3
-               , quickcheck-instances 
+               , quickcheck-instances
                , semirings >= 0.2.1.1
                , tasty
                , tasty-quickcheck
                , unordered-containers
-               , vector
   ghc-options: -O2
 
 source-repository head
