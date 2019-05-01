@@ -33,6 +33,8 @@ module Data.Semiring
   , product
   , sum'
   , product'
+  , isZero
+  , isOne
 
     -- * Types
   , Add(..)
@@ -59,7 +61,7 @@ import           Data.Eq (Eq(..))
 import           Data.Fixed (Fixed, HasResolution)
 import           Data.Foldable (Foldable(foldMap))
 import qualified Data.Foldable as Foldable
-import           Data.Function ((.), const, id)
+import           Data.Function ((.), const)
 #if defined(VERSION_unordered_containers) || defined(VERSION_containers)
 import           Data.Function (flip)
 #endif
@@ -76,7 +78,6 @@ import           Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
 #endif
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
-import qualified Data.List as List
 import           Data.Maybe (Maybe(..))
 #if MIN_VERSION_base(4,12,0)
 import           Data.Monoid (Ap(..))
@@ -103,10 +104,6 @@ import           Data.Semigroup (Semigroup(..))
 import           Data.Set (Set)
 import qualified Data.Set as Set
 #endif
--- #if defined(VERSION_primitive)
--- import           Data.Primitive.Array (Array(..))
--- import qualified Data.Primitive.Array as Array
--- #endif
 import           Data.Traversable (Traversable)
 import           Data.Typeable (Typeable)
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
@@ -119,7 +116,6 @@ import           Foreign.C.Types
    CUSeconds, CUShort, CWchar)
 import           Foreign.Ptr (IntPtr, WordPtr)
 import           Foreign.Storable (Storable)
-import           GHC.Base (build)
 import           GHC.Enum (Enum, Bounded)
 import           GHC.Float (Float, Double)
 #if MIN_VERSION_base(4,6,1)
@@ -993,3 +989,13 @@ instance (Eq k, Hashable k, Monoid k, Semiring v) => Semiring (HashMap k v) wher
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
 #endif
+
+-- | Is the value 'zero'?
+isZero :: (Eq a, Semiring a) => a -> Bool
+isZero x = x == zero
+{-# INLINEABLE isZero #-}
+
+-- | Is the value 'one'?
+isOne :: (Eq a, Semiring a) => a -> Bool
+isOne x = x == one
+{-# INLINEABLE isOne #-}
