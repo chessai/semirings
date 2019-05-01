@@ -26,7 +26,6 @@ import Data.Semigroup
 import Data.Semiring
 import Data.Sequence
 import Data.Set
-import Data.Vector hiding (generate)
 import Data.Word
 import GHC.Natural
 import Prelude hiding (Num(..))
@@ -38,66 +37,63 @@ import Test.Tasty (defaultMain, testGroup, TestTree)
 import Text.Show.Functions ()
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
-import qualified Data.Vector.Storable as SV
-import qualified Data.Vector.Unboxed as UV
 import qualified GHC.Num as Num
 import qualified Test.QuickCheck.Classes as QCC
 
 type Laws = QCC.Laws
 
-myLaws :: (Arbitrary a, Show a, Eq a, Semiring a) => Proxy a -> [Laws]
-myLaws p = [QCC.semiringLaws p]
+semiringLaws :: (Arbitrary a, Show a, Eq a, Semiring a) => Proxy a -> [Laws]
+semiringLaws p = [QCC.semiringLaws p]
+
+ringLaws :: (Arbitrary a, Show a, Eq a, Ring a) => Proxy a -> [Laws]
+ringLaws p = [QCC.semiringLaws p, QCC.ringLaws p]
 
 namedTests :: [(String, [Laws])]
 namedTests =
-  [ ("Bool", myLaws pBool)
---  , ("Double", myLaws pDouble) -- needs to be within some epsilon
---  , ("Float", myLaws pFloat)   -- needs to be within some epsilon
---  , ("Complex", myLaws pComplex) -- needs to be within some epsilon
-  , ("Int", myLaws pInt)
-  , ("Int8", myLaws pInt8)
-  , ("Int16", myLaws pInt16)
-  , ("Int32", myLaws pInt32)
-  , ("Int64", myLaws pInt64)
-  , ("Word", myLaws pWord)
-  , ("Word8", myLaws pWord8)
-  , ("Word16", myLaws pWord16)
-  , ("Word32", myLaws pWord32)
-  , ("Word64", myLaws pWord64)
-  , ("()", myLaws pUnit)
-  , ("[]", myLaws pList)
-  , ("Maybe", myLaws pMaybe)
-  , ("PosRatio", myLaws pPosRatio)
-  , ("IO", myLaws pIO)
-  , ("Fixed", myLaws pFixed)
-  , ("Identity", myLaws pIdentity)
-  , ("Dual", myLaws pDual)
-  , ("(->)", myLaws pFunction)
-  , ("Down", myLaws pDown)
-  , ("Const", myLaws pConst)
---  , ("IntMap", myLaws pIntMap) -- needs newtypes
-  , ("Set", myLaws pSet)
---  , ("IntSet", myLaws pIntSet) -- needs newtypes
-  , ("HashSet", myLaws pHashSet)
-  , ("HashMap", myLaws pHashMap)
-  , ("Vector", myLaws pVector)
-  , ("Storable Vector", myLaws pStorableVector)
-  , ("Unboxed Vector", myLaws pUnboxedVector)
-  , ("Map", myLaws pMap)
-  , ("Predicate", myLaws pPredicate)
-  , ("Equivalence", myLaws pEquivalence)
-  , ("Op", myLaws pOp)
-  , ("Ap", myLaws pAp)
+  [ ("Bool", semiringLaws pBool)
+--  , ("Double", ringLaws pDouble) -- needs to be within some epsilon
+--  , ("Float", ringLaws pFloat)   -- needs to be within some epsilon
+--  , ("Complex", ringLaws pComplex) -- needs to be within some epsilon
+  , ("Int", ringLaws pInt)
+  , ("Int8", ringLaws pInt8)
+  , ("Int16", ringLaws pInt16)
+  , ("Int32", ringLaws pInt32)
+  , ("Int64", ringLaws pInt64)
+  , ("Word", ringLaws pWord)
+  , ("Word8", ringLaws pWord8)
+  , ("Word16", ringLaws pWord16)
+  , ("Word32", ringLaws pWord32)
+  , ("Word64", ringLaws pWord64)
+  , ("()", ringLaws pUnit)
+  , ("Maybe", semiringLaws pMaybe)
+  , ("PosRatio", semiringLaws pPosRatio)
+  , ("IO", ringLaws pIO)
+  , ("Fixed", ringLaws pFixed)
+  , ("Identity", ringLaws pIdentity)
+  , ("Dual", ringLaws pDual)
+  , ("(->)", ringLaws pFunction)
+  , ("Down", ringLaws pDown)
+  , ("Const", ringLaws pConst)
+--  , ("IntMap", semiringLaws pIntMap) -- needs newtypes
+  , ("Set", semiringLaws pSet)
+--  , ("IntSet", semiringLaws pIntSet) -- needs newtypes
+  , ("HashSet", semiringLaws pHashSet)
+  , ("HashMap", semiringLaws pHashMap)
+  , ("Map", semiringLaws pMap)
+  , ("Predicate", semiringLaws pPredicate)
+  , ("Equivalence", semiringLaws pEquivalence)
+  , ("Op", ringLaws pOp)
+  , ("Ap", ringLaws pAp)
 
-  , ("IntSet Sum", myLaws pIntSetSum)
-  , ("IntSet Product", myLaws pIntSetProduct)
-  , ("IntSet Min", myLaws pIntSetMin)
-  , ("IntSet Max", myLaws pIntSetMax)
+  , ("IntSet Sum", semiringLaws pIntSetSum)
+  , ("IntSet Product", semiringLaws pIntSetProduct)
+  , ("IntSet Min", semiringLaws pIntSetMin)
+  , ("IntSet Max", semiringLaws pIntSetMax)
 
-  , ("IntMap Sum", myLaws pIntMapSum)
-  , ("IntMap Product", myLaws pIntMapProduct)
-  , ("IntMap Min", myLaws pIntMapMin)
-  , ("IntMap Max", myLaws pIntMapMax)
+  , ("IntMap Sum", semiringLaws pIntMapSum)
+  , ("IntMap Product", semiringLaws pIntMapProduct)
+  , ("IntMap Min", semiringLaws pIntMapMin)
+  , ("IntMap Max", semiringLaws pIntMapMax)
   ]
 
 #if !(MIN_VERSION_base(4,12,0))
@@ -114,13 +110,11 @@ deriving instance (Arbitrary (f a)) => Arbitrary (Ap f a)
 newtype Predicate a = Predicate (a -> Bool)
   deriving (Eq, Show)
 deriving instance Semiring (Predicate a)
-deriving instance Ring (Predicate a)
 deriving instance (Arbitrary a, CoArbitrary a) => Arbitrary (Predicate a)
 
 newtype Equivalence a = Equivalence (a -> a -> Bool)
   deriving (Eq, Show)
 deriving instance Semiring a => Semiring (Equivalence a)
-deriving instance Ring a => Ring (Equivalence a)
 deriving instance (Arbitrary a, CoArbitrary a) => Arbitrary (Equivalence a)
 
 newtype Op a b = Op (b -> a)
@@ -196,7 +190,6 @@ pWord16 = p @Word16
 pWord32 = p @Word32
 pWord64 = p @Word64
 pUnit = p @()
-pList = p @([Int])
 pMaybe = p @(Maybe Int)
 pPosRatio = p @(PosRatio Int)
 pIO = p @(IO Int)
@@ -214,9 +207,6 @@ pSeq = p @(Seq Int)
 pSet = p @(Set (Sum Int))
 pHashSet = p @(HashSet (Sum Int))
 pFunction = p @(Int -> Int)
-pVector = p @(Vector Int)
-pStorableVector = p @(SV.Vector Int)
-pUnboxedVector = p @(UV.Vector Int)
 pMap = p @(Map (Sum Int) Int)
 pHashMap = p @(HashMap (Sum Int) Int)
 pConst = p @(Const Int Int)

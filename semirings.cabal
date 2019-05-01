@@ -20,16 +20,16 @@ description:
   More formally, a Semiring R is a set equipped with two binary relations `+` and `*`, such that:
   .
   (R,+) is a commutative monoid with identity element 0,
-  . 
+  .
   (R,*) is a monoid with identity element 1,
-  . 
+  .
   (*) left and right distributes over addition, and
-  . 
+  .
   multiplication by '0' annihilates R.
 
 build-type:    Simple
 extra-source-files: README.md CHANGELOG.md
-tested-with:   GHC == 7.4.1 
+tested-with:   GHC == 7.4.1
              , GHC == 7.4.2
              , GHC == 7.6.1
              , GHC == 7.6.2
@@ -39,9 +39,9 @@ tested-with:   GHC == 7.4.1
              , GHC == 7.10.1
              , GHC == 7.10.2
              , GHC == 7.10.3
-             , GHC == 8.0.1 
+             , GHC == 8.0.1
              , GHC == 8.0.2
-             , GHC == 8.2.1 
+             , GHC == 8.2.1
              , GHC == 8.2.2
              , GHC == 8.4.1
              , GHC == 8.4.2
@@ -83,14 +83,6 @@ flag unordered-containers
   default: True
   manual: True
 
-flag vector
-  description:
-    You can disable the use of the `vector` package using `-f-vector`.
-    .
-    Disabling this may be useful for accelerating builds in sandboxes for expert users.
-  default: True
-  manual: True
-
 library
   default-language: Haskell98
   ghc-options: -Wall
@@ -98,7 +90,7 @@ library
   build-depends:
       base >= 4.5 && < 5
     , integer-gmp
-  
+
   if impl(ghc < 7.10)
     build-depends:
         nats >= 0.1 && < 2
@@ -118,7 +110,7 @@ library
   if impl(ghc >= 7.6.1)
     exposed-modules:
       Data.Semiring.Generic
-   
+
     if flag(containers)
       build-depends: containers >= 0.5.4 && < 0.6.1.0
 
@@ -127,6 +119,3 @@ library
 
     if flag(hashable) && flag(unordered-containers)
       build-depends: unordered-containers >= 0.2  && < 0.3
-
-    if flag(vector)
-      build-depends: vector >= 0.7 && < 0.13.0.0
