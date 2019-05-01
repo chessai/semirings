@@ -1,6 +1,11 @@
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
+-----------------------------------------------------------------------------
+-- |
+-- A class for *-semirings (pron. "star-semirings").
+--
+-----------------------------------------------------------------------------
 module Data.Star
   ( Star(..)
   ) where
