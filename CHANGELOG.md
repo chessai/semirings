@@ -1,3 +1,12 @@
+0.4: [2019.05.01]
+-----------------
+* Remove unlawful instances of `Ring` (thanks to @Bodigrim for noticing these)
+* Add `fromNatural` to `Semiring` typeclass (thanks @Bodigrim)
+* Remove Semiring/Ring instances for [] and Vector. (thanks @Bodigrim)
+  These instances are better served by a dedicated polynomial package,
+  which @Bodigrim has made at http://hackage.haskell.org/package/poly.
+* Add isZero/isOne predicates.
+
 0.3.1.2: [2019.04.02]
 ---------------------
 * Fix build error on windows caused by providing instances
