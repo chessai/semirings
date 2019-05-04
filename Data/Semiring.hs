@@ -790,7 +790,6 @@ deriveRing(CSChar)
 deriveRing(CChar)
 deriveRing(IntPtr)
 deriveRing(WordPtr)
-deriveRing(Natural)
 
 #if !HOST_OS_WINDOWS
 deriveRing(CCc)
