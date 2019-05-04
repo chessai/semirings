@@ -52,7 +52,7 @@ module Data.Semiring
   ) where
 
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
-import           Data.Bool (Bool(..), (||), (&&))
+import           Data.Bool (Bool(..), (||), (&&), otherwise)
 #if MIN_VERSION_base(4,7,0)
 import           Data.Coerce (Coercible, coerce)
 #endif
@@ -93,7 +93,7 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
 import           Data.Monoid (Monoid(..), Dual(..))
-import           Data.Ord (Ord)
+import           Data.Ord (Ord((<)))
 #if MIN_VERSION_base(4,6,0)
 import           Data.Ord (Down(..))
 #endif
@@ -117,6 +117,7 @@ import           Foreign.C.Types
 import           Foreign.Ptr (IntPtr, WordPtr)
 import           Foreign.Storable (Storable)
 import           GHC.Enum (Enum, Bounded)
+import           GHC.Err (error)
 import           GHC.Float (Float, Double)
 #if MIN_VERSION_base(4,6,1)
 import           GHC.Generics (Generic,Generic1)
@@ -151,14 +152,17 @@ infixr 8 ^
 --------------------------------------------------------------------}
 
 -- | Raise a number to a non-negative integral power.
--- If the power is negative, this will return 'zero'.
+-- If the power is negative, this will call 'error'.
 {-# SPECIALISE [1] (^) ::
         Integer -> Integer -> Integer,
         Integer -> Int -> Integer,
         Int -> Int -> Int #-}
 {-# INLINABLE [1] (^) #-} -- See note [Inlining (^)]
 (^) :: (Semiring a, Integral b) => a -> b -> a
-x ^ y = getMul (stimes y (Mul x))
+x ^ y
+  | y < 0 = error "Data.Semiring.^: negative power"
+  | y == 0 = one
+  | otherwise = getMul (stimes y (Mul x))
 
 {- Note [Inlining (^)]
    ~~~~~~~~~~~~~~~~~~~

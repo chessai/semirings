@@ -5,8 +5,10 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DeriveFunctor #-}
 
+import Control.Monad ((>=>),forM)
 import Control.Applicative (liftA2)
 import Data.Complex
+import Data.Either
 import Data.Fixed
 import Data.Functor.Const
 import Data.Functor.Identity
@@ -28,7 +30,8 @@ import Data.Sequence
 import Data.Set
 import Data.Word
 import GHC.Natural
-import Prelude hiding (Num(..))
+import qualified Data.Foldable as F
+import Prelude hiding (Num(..),(^))
 import System.IO.Unsafe
 import Test.QuickCheck hiding (Fixed)
 import Test.QuickCheck.Gen (suchThat)
@@ -39,7 +42,36 @@ import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
 import qualified GHC.Num as Num
 import qualified Test.QuickCheck.Classes as QCC
+import qualified Control.Exception as E
 
+main :: IO ()
+main = do
+  QCC.lawsCheckMany namedTests
+  F.fold pow_prop
+
+forceError :: a -> IO (Either E.ErrorCall a)
+forceError = E.try . E.evaluate
+
+pow_prop :: [IO ()]
+pow_prop = [quickCheck pow_prop1, quickCheck pow_prop2, quickCheck pow_prop3]
+
+pow_prop1 :: Int -> Negative Int -> Property
+pow_prop1 x y = ioProperty $ do
+  p <- forceError (x ^ getNegative y)
+  pure $ isLeft p
+
+pow_prop2 :: Int -> Positive Int -> Property
+pow_prop2 x y = ioProperty $ do
+  p <- forceError (x ^ getPositive y)
+  pure $ isRight p
+
+pow_prop3 :: Int -> Property
+pow_prop3 x = ioProperty $ do
+  p <- forceError (x ^ 0)
+  case p of
+    Left e -> pure False
+    Right x -> pure $ x == 1
+ 
 type Laws = QCC.Laws
 
 semiringLaws :: (Arbitrary a, Show a, Eq a, Semiring a) => Proxy a -> [Laws]
@@ -129,9 +161,6 @@ pEquivalence = p @(Equivalence Int)
 pOp = p @(Op Int Int)
 
 deriving instance Arbitrary a => Arbitrary (Down a)
-
-main :: IO ()
-main = QCC.lawsCheckMany namedTests
 
 -- | Rationals constrained to being positive
 newtype PosRatio a = PosRatio { getPosRatio :: Ratio a }
