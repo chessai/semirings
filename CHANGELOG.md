@@ -1,3 +1,8 @@
+0.4.1: [2019.05.04]
+-------------------
+* Remove unlawful and useless `Ring` instance for `GHC.Natural.Natural`.
+* Correct behaviour/docs of Data.Semiring.(^)
+
 0.4: [2019.05.01]
 -----------------
 * Remove unlawful instances of `Ring` (thanks to @Bodigrim for noticing these)
