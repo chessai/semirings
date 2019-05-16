@@ -1,0 +1,199 @@
+{-# LANGUAGE DefaultSignatures          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MagicHash                  #-}
+
+module Data.Euclidean
+  ( Euclidean(..)
+  , GcdDomain(..)
+  , WrappedIntegral(..)
+  ) where
+
+import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, (*))
+import qualified Prelude as P
+import Data.Maybe
+import Data.Ratio
+import Data.Semiring
+import GHC.Exts
+import GHC.Integer.GMP.Internals
+import Numeric.Natural
+
+-- | 'GcdDomain' represents a
+-- <https://en.wikipedia.org/wiki/GCD_domain GCD domain>.
+-- This is a domain, where 'gcd' and 'lcm' can be defined,
+-- but it does not necessarily allows a well-behaved
+-- division with remainder (as in 'Euclidean' domain).
+--
+-- For instance, a ring of polynomials with integer
+-- coefficients is a 'GcdDomain', but not 'Euclidean'.
+--
+-- All methods of 'GcdDomain' have default implementations
+-- in terms of 'Euclidean'. So most of the time
+-- it is enough to write:
+--
+-- > instance GcdDomain Foo
+-- > instance Euclidean Foo where
+-- >   quotRem = ...
+-- >   degree  = ...
+class Semiring a => GcdDomain a where
+
+  -- | Division without remainder.
+  --
+  -- prop> \x y -> (x * y) `divide` y == Just x
+  -- prop> \x y -> maybe True (\z -> x == z * y) (x `divide` y)
+  divide :: a -> a -> Maybe a
+
+  default divide :: (Eq a, Euclidean a) => a -> a -> Maybe a
+  divide x y = let (q, r) = quotRem x y in
+    if isZero r then Just q else Nothing
+
+  -- | Greatest common divisor. Must satisfy
+  --
+  -- prop> \x y -> isJust (x `divide` gcd x y) && isJust (y `divide` gcd x y)
+  -- prop> \x y z -> isJust (gcd (x * z) (y * z) `divide` z)
+  gcd :: a -> a -> a
+
+  default gcd :: (Eq a, Euclidean a) => a -> a -> a
+  gcd a b
+    | isZero b  = a
+    | otherwise = gcd b (a `rem` b)
+
+  -- | Lowest common multiple. Must satisfy
+  --
+  -- prop> \x y -> isJust (lcm x y `divide` x) && isJust (lcm x y `divide` y)
+  -- prop> \x y z -> isNothing (z `divide` x) || isNothing (z `divide` y) || isJust (z `divide` lcm x y)
+  lcm :: a -> a -> a
+
+  default lcm :: Eq a => a -> a -> a
+  lcm a b
+    | isZero a || isZero b = zero
+    | otherwise = case a `divide` gcd a b of
+      Nothing -> error "lcm: violated gcd invariant"
+      Just c  -> c * b
+
+  -- | Test whether two arguments are
+  -- <https://en.wikipedia.org/wiki/Coprime_integers coprime>.
+  -- Must match its default definition:
+  --
+  -- prop> \x y -> coprime x y == isJust (1 `divide` gcd x y)
+  coprime :: a -> a -> Bool
+
+  default coprime :: Eq a => a -> a -> Bool
+  coprime x y = isJust (one `divide` gcd x y)
+
+infixl 7 `divide`
+
+-- | Informally speaking, 'Euclidean' is a superclass of 'Integral',
+-- lacking 'toInteger', which allows to define division with remainder
+-- for a wider range of types, e. g., complex integers
+-- and polynomials with rational coefficients.
+--
+-- 'Euclidean' represents a
+-- <https://en.wikipedia.org/wiki/Euclidean_domain Euclidean domain>
+-- endowed by a given Euclidean function 'degree'.
+class Semiring a => Euclidean a where
+  -- | Division with remainder.
+  --
+  -- prop> \x y -> y == 0 || let (q, r) = x `quotRem` y in x == q * y + r
+  quotRem :: a -> a -> (a, a)
+
+  -- | Division. Must match its default definition:
+  --
+  -- prop> \x y -> quot x y == fst (quotRem x y)
+  quot :: a -> a -> a
+  quot x y = fst (quotRem x y)
+
+  -- | Remainder. Must match its default definition:
+  --
+  -- prop> \x y -> rem x y == snd (quotRem x y)
+  rem :: a -> a -> a
+  rem x y = snd (quotRem x y)
+
+  -- | Euclidean (aka degree, valuation, gauge, norm) function on 'a'. Usually 'fromIntegral' . 'abs'.
+  --
+  -- 'degree' is rarely used in applications directly,
+  -- but it is crucial for testing soundness of 'quotRem'.
+  --
+  -- prop> \x y -> y == 0 || let (q, r) = x `quotRem` y in (r == 0 || degree r < degree y)
+  degree :: a -> Natural
+
+infixl 7 `quot`
+infixl 7 `rem`
+
+coprimeIntegral :: Integral a => a -> a -> Bool
+coprimeIntegral x y = (odd x || odd y) && P.gcd x y == 1
+
+-- | Wrapper around 'Integral' with 'GcdDomain'
+-- and 'Euclidean' instances.
+newtype WrappedIntegral a = WrapIntegral { unwrapIntegral :: a }
+  deriving (Eq, Ord, Show, Num, Integral, Real, Enum)
+
+instance Num a => Semiring (WrappedIntegral a) where
+  plus  = (P.+)
+  zero  = 0
+  times = (P.*)
+  one   = 1
+  fromNatural = fromIntegral
+
+instance Integral a => GcdDomain (WrappedIntegral a) where
+  gcd     = P.gcd
+  lcm     = P.lcm
+  coprime = coprimeIntegral
+
+instance Integral a => Euclidean (WrappedIntegral a) where
+  degree  = fromIntegral . abs . unwrapIntegral
+  quotRem = P.quotRem
+  quot    = P.quot
+
+instance GcdDomain Int where
+  gcd (I# x) (I# y) = I# (gcdInt x y)
+  lcm     = P.lcm
+  coprime = coprimeIntegral
+
+instance Euclidean Int where
+  degree  = fromIntegral . abs
+  quotRem = P.quotRem
+  quot    = P.quot
+  rem     = P.rem
+
+instance GcdDomain Word where
+  gcd (W# x) (W# y) = W# (gcdWord x y)
+  lcm     = P.lcm
+  coprime = coprimeIntegral
+
+instance Euclidean Word where
+  degree  = fromIntegral
+  quotRem = P.quotRem
+  quot    = P.quot
+  rem     = P.rem
+
+instance GcdDomain Integer where
+  gcd     = gcdInteger
+  lcm     = lcmInteger
+  coprime = coprimeIntegral
+
+instance Euclidean Integer where
+  degree  = fromInteger . abs
+  quotRem = P.quotRem
+  quot    = P.quot
+  rem     = P.rem
+
+instance GcdDomain Natural where
+  gcd     = P.gcd
+  lcm     = P.lcm
+  coprime = coprimeIntegral
+
+instance Euclidean Natural where
+  degree  = id
+  quotRem = P.quotRem
+  quot    = P.quot
+  rem     = P.rem
+
+instance Integral a => GcdDomain (Ratio a) where
+  divide x y = Just (x / y)
+  gcd _ _ = 1
+  lcm _ _ = 1
+  coprime _ _ = True
+
+instance Integral a => Euclidean (Ratio a) where
+  degree = const 0
+  quotRem x y = (x / y, 0)
