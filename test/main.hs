@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -9,6 +10,7 @@ import Control.Monad ((>=>),forM)
 import Control.Applicative (liftA2)
 import Data.Complex
 import Data.Either
+import Data.Euclidean
 import Data.Fixed
 import Data.Functor.Const
 import Data.Functor.Identity
@@ -71,7 +73,7 @@ pow_prop3 x = ioProperty $ do
   case p of
     Left e -> pure False
     Right x -> pure $ x == 1
- 
+
 type Laws = QCC.Laws
 
 semiringLaws :: (Arbitrary a, Show a, Eq a, Semiring a) => Proxy a -> [Laws]
@@ -79,6 +81,13 @@ semiringLaws p = [QCC.semiringLaws p]
 
 ringLaws :: (Arbitrary a, Show a, Eq a, Ring a) => Proxy a -> [Laws]
 ringLaws p = [QCC.semiringLaws p, QCC.ringLaws p]
+
+euclideanLaws :: (Arbitrary a, Show a, Eq a, Euclidean a) => Proxy a -> [Laws]
+#if MIN_VERSION_quickcheck_classes(0,6,3)
+euclideanLaws p = [QCC.gcdDomainLaws p, QCC.euclideanLaws p]
+#else
+euclideanLaws _ = []
+#endif
 
 namedTests :: [(String, [Laws])]
 namedTests =
@@ -126,6 +135,12 @@ namedTests =
   , ("IntMap Product", semiringLaws pIntMapProduct)
   , ("IntMap Min", semiringLaws pIntMapMin)
   , ("IntMap Max", semiringLaws pIntMapMax)
+
+  , ("Int", euclideanLaws pInt)
+  , ("Word", euclideanLaws pWord)
+  , ("Integer", euclideanLaws pInteger)
+  , ("Natural", euclideanLaws pNatural)
+  , ("Rational", euclideanLaws pRational)
   ]
 
 #if !(MIN_VERSION_base(4,12,0))
@@ -240,6 +255,7 @@ pMap = p @(Map (Sum Int) Int)
 pHashMap = p @(HashMap (Sum Int) Int)
 pConst = p @(Const Int Int)
 pAlt = p @(Alt Maybe Int)
+pRational = p @Rational
 
 pIntSetSum = p @(IntSetOf (Sum Int))
 pIntSetProduct = p @(IntSetOf (Product Int))
