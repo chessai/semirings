@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -10,7 +9,6 @@ import Control.Monad ((>=>),forM)
 import Control.Applicative (liftA2)
 import Data.Complex
 import Data.Either
-import Data.Euclidean
 import Data.Fixed
 import Data.Functor.Const
 import Data.Functor.Identity
@@ -49,10 +47,31 @@ import qualified Control.Exception as E
 main :: IO ()
 main = do
   QCC.lawsCheckMany namedTests
+  F.fold pow_prop
 
 forceError :: a -> IO (Either E.ErrorCall a)
 forceError = E.try . E.evaluate
 
+pow_prop :: [IO ()]
+pow_prop = [quickCheck pow_prop1, quickCheck pow_prop2, quickCheck pow_prop3]
+
+pow_prop1 :: Int -> Negative Int -> Property
+pow_prop1 x y = ioProperty $ do
+  p <- forceError (x ^ getNegative y)
+  pure $ isLeft p
+
+pow_prop2 :: Int -> Positive Int -> Property
+pow_prop2 x y = ioProperty $ do
+  p <- forceError (x ^ getPositive y)
+  pure $ isRight p
+
+pow_prop3 :: Int -> Property
+pow_prop3 x = ioProperty $ do
+  p <- forceError (x ^ 0)
+  case p of
+    Left e -> pure False
+    Right x -> pure $ x == 1
+ 
 type Laws = QCC.Laws
 
 semiringLaws :: (Arbitrary a, Show a, Eq a, Semiring a) => Proxy a -> [Laws]
@@ -60,9 +79,6 @@ semiringLaws p = [QCC.semiringLaws p]
 
 ringLaws :: (Arbitrary a, Show a, Eq a, Ring a) => Proxy a -> [Laws]
 ringLaws p = [QCC.semiringLaws p, QCC.ringLaws p]
-
-euclideanLaws :: (Arbitrary a, Show a, Eq a, GcdDomain a, Euclidean a) => Proxy a -> [Laws]
-euclideanLaws p = [QCC.gcdDomainLaws p, QCC.euclideanLaws p]
 
 namedTests :: [(String, [Laws])]
 namedTests =
@@ -110,11 +126,6 @@ namedTests =
   , ("IntMap Product", semiringLaws pIntMapProduct)
   , ("IntMap Min", semiringLaws pIntMapMin)
   , ("IntMap Max", semiringLaws pIntMapMax)
-
-  , ("Int", euclideanLaws pInt)
-  , ("Word", euclideanLaws pWord)
-  , ("Integer", euclideanLaws pInteger)
-  , ("Natural", euclideanLaws pNatural)
   ]
 
 #if !(MIN_VERSION_base(4,12,0))
