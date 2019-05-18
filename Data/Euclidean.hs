@@ -11,7 +11,6 @@ module Data.Euclidean
 import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, (*))
 import qualified Prelude as P
 import Data.Maybe
-import Data.Ratio
 import Data.Semiring
 import GHC.Exts
 import GHC.Integer.GMP.Internals
@@ -19,12 +18,15 @@ import Numeric.Natural
 
 -- | 'GcdDomain' represents a
 -- <https://en.wikipedia.org/wiki/GCD_domain GCD domain>.
--- This is a domain, where 'gcd' and 'lcm' can be defined,
--- but it does not necessarily allows a well-behaved
--- division with remainder (as in 'Euclidean' domain).
+-- This is a domain, where GCD can be defined,
+-- but which does not necessarily allow a well-behaved
+-- division with remainder (as in 'Euclidean' domains).
 --
--- For instance, a ring of polynomials with integer
--- coefficients is a 'GcdDomain', but not 'Euclidean'.
+-- For example, there is no way to define 'rem' over
+-- polynomials with integer coefficients such that
+-- remainder is always "smaller" than divisor. However,
+-- 'gcd' is still definable, just not by means of
+-- Euclidean algorithm.
 --
 -- All methods of 'GcdDomain' have default implementations
 -- in terms of 'Euclidean'. So most of the time
@@ -63,7 +65,7 @@ class Semiring a => GcdDomain a where
   -- prop> \x y z -> isNothing (z `divide` x) || isNothing (z `divide` y) || isJust (z `divide` lcm x y)
   lcm :: a -> a -> a
 
-  default lcm :: Eq a => a -> a -> a
+  default lcm :: (Eq a, Euclidean a) => a -> a -> a
   lcm a b
     | isZero a || isZero b = zero
     | otherwise = case a `divide` gcd a b of
@@ -90,7 +92,7 @@ infixl 7 `divide`
 -- 'Euclidean' represents a
 -- <https://en.wikipedia.org/wiki/Euclidean_domain Euclidean domain>
 -- endowed by a given Euclidean function 'degree'.
-class Semiring a => Euclidean a where
+class GcdDomain a => Euclidean a where
   -- | Division with remainder.
   --
   -- prop> \x y -> y == 0 || let (q, r) = x `quotRem` y in x == q * y + r
@@ -110,8 +112,9 @@ class Semiring a => Euclidean a where
 
   -- | Euclidean (aka degree, valuation, gauge, norm) function on 'a'. Usually 'fromIntegral' . 'abs'.
   --
-  -- 'degree' is rarely used in applications directly,
-  -- but it is crucial for testing soundness of 'quotRem'.
+  -- 'degree' is rarely used by itself. Its purpose
+  -- is to provide an evidence of soundness of 'quotRem'
+  -- by testing the following property:
   --
   -- prop> \x y -> y == 0 || let (q, r) = x `quotRem` y in (r == 0 || degree r < degree y)
   degree :: a -> Natural
@@ -187,13 +190,3 @@ instance Euclidean Natural where
   quotRem = P.quotRem
   quot    = P.quot
   rem     = P.rem
-
-instance Integral a => GcdDomain (Ratio a) where
-  divide x y = Just (x / y)
-  gcd _ _ = 1
-  lcm _ _ = 1
-  coprime _ _ = True
-
-instance Integral a => Euclidean (Ratio a) where
-  degree = const 0
-  quotRem x y = (x / y, 0)
