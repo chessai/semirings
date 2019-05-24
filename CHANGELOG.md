@@ -1,3 +1,8 @@
+XXX: [TBA]
+----------
+* Add `Euclidean` typeclass.
+* Add `Mod2`, the integers modulo 2, along with its Semiring/Ring/Star
+  instances.
 0.4.1: [2019.05.04]
 -------------------
 * Remove unlawful and useless `Ring` instance for `GHC.Natural.Natural`.
