@@ -1,6 +1,6 @@
 semirings
 ==========
-[![Hackage](https://img.shields.io/hackage/v/semirings.svg)](https://hackage.haskell.org/package/semirings) [![Build Status](https://secure.travis-ci.org/chessai/semirings.svg)](http://travis-ci.org/chessai/semirings)
+[![Hackage](https://img.shields.io/hackage/v/semirings.svg)](https://hackage.haskell.org/package/semirings) [![Build Status](https://travis-ci.org/chessai/semirings.svg?branch=master)](https://travis-ci.org/chessai/semirings)
 
 Haskellers are usually familiar with monoids and semigroups. A monoid has an appending operation `<>` or `mappend` and an identity element `mempty`. A semigroup has an append `<>`, but does not require an `mempty` element.
 
