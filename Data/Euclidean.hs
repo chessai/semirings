@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DefaultSignatures          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
@@ -151,7 +152,11 @@ instance Integral a => Euclidean (WrappedIntegral a) where
   rem     = P.rem
 
 instance GcdDomain Int where
+#if MIN_VERSION_integer_gmp(0,5,1)
   gcd (I# x) (I# y) = I# (gcdInt x y)
+#else
+  gcd     = P.gcd
+#endif
   lcm     = P.lcm
   coprime = coprimeIntegral
 
@@ -162,7 +167,11 @@ instance Euclidean Int where
   rem     = P.rem
 
 instance GcdDomain Word where
+#if MIN_VERSION_integer_gmp(1,0,0)
   gcd (W# x) (W# y) = W# (gcdWord x y)
+#else
+  gcd     = P.gcd
+#endif
   lcm     = P.lcm
   coprime = coprimeIntegral
 
