@@ -40,6 +40,7 @@ module Data.Semiring
   , Add(..)
   , Mul(..)
   , WrappedNum(..)
+  , Mod2(..)
 #if defined(VERSION_containers) && MIN_VERSION_base(4,7,0)
   , IntSetOf(..)
   , IntMapOf(..)
@@ -61,7 +62,7 @@ import           Data.Eq (Eq(..))
 import           Data.Fixed (Fixed, HasResolution)
 import           Data.Foldable (Foldable(foldMap))
 import qualified Data.Foldable as Foldable
-import           Data.Function ((.), const)
+import           Data.Function ((.), const, id)
 #if defined(VERSION_unordered_containers) || defined(VERSION_containers)
 import           Data.Function (flip)
 #endif
@@ -392,6 +393,36 @@ instance Num.Num a => Semiring (WrappedNum a) where
 
 instance Num.Num a => Ring (WrappedNum a) where
   negate = Num.negate
+
+-- | 'Mod2' represents the integers mod 2.
+--
+--   It is useful in the computing of <https://en.wikipedia.org/wiki/Zhegalkin_polynomial Zhegalkin polynomials>.
+newtype Mod2 = Mod2 { getMod2 :: Bool }
+  deriving
+    ( Bounded
+    , Enum
+    , Eq
+    , Ord
+    , Read
+    , Show
+#if MIN_VERSION_base(4,6,1)
+    , Generic
+#endif
+    )
+
+instance Semiring Mod2 where
+  -- we inline the definition of 'xor'
+  -- on Bools, since the instance did not exist until
+  -- base-4.7.0.
+  plus (Mod2 x) (Mod2 y) = Mod2 (x /= y)
+  times (Mod2 x) (Mod2 y) = Mod2 (x && y)
+  zero = Mod2 False
+  one = Mod2 True
+
+instance Ring Mod2 where
+  negate = id
+  {-# INLINE negate #-}
+
 
 {--------------------------------------------------------------------
   Classes

@@ -11,7 +11,7 @@ module Data.Star
   ) where
 
 import Data.Bool (Bool(..))
-import Data.Function (id, (.))
+import Data.Function (id, (.), const)
 import Data.Proxy (Proxy(..))
 import Data.Semiring
 
@@ -25,7 +25,7 @@ import Data.Semiring
 --
 -- @'aplus' x = x '*' 'star' x@
 class (Semiring a) => Star a where
-#if __GLASGOW_HASKELL__ >= 708  
+#if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL star | aplus #-}
 #endif
   star :: a -> a
@@ -57,4 +57,7 @@ instance Star (Proxy a) where
   aplus _ = Proxy
   {-# INLINE star #-}
   {-# INLINE aplus #-}
+
+instance Star Mod2 where
+  star = const one
 
