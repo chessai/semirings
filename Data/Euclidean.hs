@@ -6,11 +6,13 @@ module Data.Euclidean
   ( Euclidean(..)
   , GcdDomain(..)
   , WrappedIntegral(..)
+  , WrappedFractional(..)
   ) where
 
 import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, (*))
 import qualified Prelude as P
 import Data.Maybe
+import Data.Ratio
 import Data.Semiring
 import GHC.Exts
 import GHC.Integer.GMP.Internals
@@ -146,6 +148,7 @@ instance Integral a => Euclidean (WrappedIntegral a) where
   degree  = fromIntegral . abs . unwrapIntegral
   quotRem = P.quotRem
   quot    = P.quot
+  rem     = P.rem
 
 instance GcdDomain Int where
   gcd (I# x) (I# y) = I# (gcdInt x y)
@@ -190,3 +193,64 @@ instance Euclidean Natural where
   quotRem = P.quotRem
   quot    = P.quot
   rem     = P.rem
+
+-- | Wrapper around 'Fractional'
+-- with trivial 'GcdDomain'
+-- and 'Euclidean' instances.
+newtype WrappedFractional a = WrapFractional { unwrapFractional :: a }
+  deriving (Eq, Ord, Show, Num, Fractional)
+
+instance Num a => Semiring (WrappedFractional a) where
+  plus  = (P.+)
+  zero  = 0
+  times = (P.*)
+  one   = 1
+  fromNatural = fromIntegral
+
+instance (Eq a, Fractional a) => GcdDomain (WrappedFractional a) where
+  divide x y = Just (x / y)
+  gcd        = const $ const 1
+  lcm        = const $ const 1
+  coprime    = const $ const True
+
+instance (Eq a, Fractional a) => Euclidean (WrappedFractional a) where
+  degree      = const 0
+  quotRem x y = (x / y, 0)
+  quot        = (/)
+  rem         = const $ const 0
+
+instance Integral a => GcdDomain (Ratio a) where
+  divide x y = Just (x / y)
+  gcd        = const $ const 1
+  lcm        = const $ const 1
+  coprime    = const $ const True
+
+instance Integral a => Euclidean (Ratio a) where
+  degree      = const 0
+  quotRem x y = (x / y, 0)
+  quot        = (/)
+  rem         = const $ const 0
+
+instance GcdDomain Float where
+  divide x y = Just (x / y)
+  gcd        = const $ const 1
+  lcm        = const $ const 1
+  coprime    = const $ const True
+
+instance Euclidean Float where
+  degree      = const 0
+  quotRem x y = (x / y, 0)
+  quot        = (/)
+  rem         = const $ const 0
+
+instance GcdDomain Double where
+  divide x y = Just (x / y)
+  gcd        = const $ const 1
+  lcm        = const $ const 1
+  coprime    = const $ const True
+
+instance Euclidean Double where
+  degree      = const 0
+  quotRem x y = (x / y, 0)
+  quot        = (/)
+  rem         = const $ const 0
