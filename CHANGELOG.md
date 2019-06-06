@@ -1,4 +1,4 @@
-XXX: [TBA]
+0.4.2: [2019.06.06]
 ----------
 * Add `Euclidean` typeclass.
 * Add `Mod2`, the integers modulo 2, along with its Semiring/Ring/Star
