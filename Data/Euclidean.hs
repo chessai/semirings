@@ -68,7 +68,7 @@ class Semiring a => GcdDomain a where
   -- prop> \x y z -> isNothing (z `divide` x) || isNothing (z `divide` y) || isJust (z `divide` lcm x y)
   lcm :: a -> a -> a
 
-  default lcm :: (Eq a, Euclidean a) => a -> a -> a
+  default lcm :: Eq a => a -> a -> a
   lcm a b
     | isZero a || isZero b = zero
     | otherwise = case a `divide` gcd a b of
