@@ -1,3 +1,7 @@
+TBA
+---
+* give WrappedNum/WrappedIntegral `Bits` instances.
+
 0.4.2: [2019.06.06]
 ----------
 * Add `Euclidean` typeclass.
