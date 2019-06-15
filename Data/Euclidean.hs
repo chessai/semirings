@@ -12,6 +12,7 @@ module Data.Euclidean
 
 import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, (*))
 import qualified Prelude as P
+import Data.Bits
 import Data.Maybe
 import Data.Ratio
 import Data.Semiring
@@ -131,7 +132,7 @@ coprimeIntegral x y = (odd x || odd y) && P.gcd x y == 1
 -- | Wrapper around 'Integral' with 'GcdDomain'
 -- and 'Euclidean' instances.
 newtype WrappedIntegral a = WrapIntegral { unwrapIntegral :: a }
-  deriving (Eq, Ord, Show, Num, Integral, Real, Enum)
+  deriving (Eq, Ord, Show, Num, Integral, Real, Enum, Bits)
 
 instance Num a => Semiring (WrappedIntegral a) where
   plus  = (P.+)

@@ -53,6 +53,7 @@ module Data.Semiring
   ) where
 
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
+import           Data.Bits (Bits)
 import           Data.Bool (Bool(..), (||), (&&), otherwise)
 #if MIN_VERSION_base(4,7,0)
 import           Data.Coerce (Coercible, coerce)
@@ -382,6 +383,7 @@ newtype WrappedNum a = WrapNum { unwrapNum :: a }
     , Storable
     , Traversable
     , Typeable
+    , Bits
     )
 
 instance Num.Num a => Semiring (WrappedNum a) where
