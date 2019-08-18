@@ -224,6 +224,9 @@ instance Num a => Semiring (WrappedFractional a) where
   one   = 1
   fromNatural = fromIntegral
 
+instance Fractional a => Ring (WrappedFractional a) where
+  negate = P.negate
+
 instance (Eq a, Fractional a) => GcdDomain (WrappedFractional a) where
   divide x y = Just (x / y)
   gcd        = const $ const 1

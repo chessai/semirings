@@ -105,6 +105,7 @@ library
   if impl(ghc >= 7.2)
     exposed-modules:
       Data.Euclidean
+      Data.Field
       Data.Semiring
       Data.Star
       Data.Semiring.Tropical
