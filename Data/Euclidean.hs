@@ -20,9 +20,11 @@ module Data.Euclidean
 import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, (*))
 import qualified Prelude as P
 import Data.Bits
+import Data.Complex
 import Data.Maybe
 import Data.Ratio
 import Data.Semiring
+import Foreign.C.Types
 import GHC.Exts
 import GHC.Integer.GMP.Internals
 import Numeric.Natural
@@ -135,6 +137,18 @@ infixl 7 `rem`
 
 coprimeIntegral :: Integral a => a -> a -> Bool
 coprimeIntegral x y = (odd x || odd y) && P.gcd x y == 1
+
+instance GcdDomain () where
+  divide  = const $ const (Just ())
+  gcd     = const $ const ()
+  lcm     = const $ const ()
+  coprime = const $ const True
+
+instance Euclidean () where
+  degree  = const 0
+  quotRem = const $ const ((), ())
+  quot    = const $ const ()
+  rem     = const $ const ()
 
 -- | Wrapper around 'Integral' with 'GcdDomain'
 -- and 'Euclidean' instances.
@@ -274,3 +288,46 @@ instance Euclidean Double where
   quotRem x y = (x / y, 0)
   quot        = (/)
   rem         = const $ const 0
+
+instance GcdDomain CFloat where
+  divide x y = Just (x / y)
+  gcd        = const $ const 1
+  lcm        = const $ const 1
+  coprime    = const $ const True
+
+instance Euclidean CFloat where
+  degree      = const 0
+  quotRem x y = (x / y, 0)
+  quot        = (/)
+  rem         = const $ const 0
+
+instance GcdDomain CDouble where
+  divide x y = Just (x / y)
+  gcd        = const $ const 1
+  lcm        = const $ const 1
+  coprime    = const $ const True
+
+instance Euclidean CDouble where
+  degree      = const 0
+  quotRem x y = (x / y, 0)
+  quot        = (/)
+  rem         = const $ const 0
+
+instance (Eq a, Fractional a, Ring a) => GcdDomain (Complex a) where
+  divide _ (0 :+ 0) = Nothing
+  divide z (x :+ y) = Just (z `times` ((x / xxyy) :+ (-y / xxyy)))
+    where
+      xxyy = times x x `plus` times y y
+  gcd               = const $ const (1 :+ 0)
+  lcm               = const $ const (1 :+ 0)
+  coprime           = const $ const True
+
+instance (Eq a, Fractional a, Ring a) => Euclidean (Complex a) where
+  degree      = const 0
+  quotRem x y = case x `divide` y of
+    Nothing -> error "quotRem: zero denominator"
+    Just z  -> (z, 0 :+ 0)
+  quot x y    = case x `divide` y of
+    Nothing -> error "quot: zero denominator"
+    Just z  -> z
+  rem         = const $ const (0 :+ 0)
