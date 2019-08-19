@@ -4,7 +4,7 @@ module Data.Field
   , fromRational
   ) where
 
-import Prelude hiding (fromRational, quot)
+import Prelude hiding (fromRational, quot, (/))
 import Data.Complex (Complex)
 import Data.Euclidean (Euclidean, WrappedFractional, quot)
 import Data.Semiring (Ring, one)
