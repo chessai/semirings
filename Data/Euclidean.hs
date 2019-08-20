@@ -178,6 +178,9 @@ instance Num a => Semiring (WrappedIntegral a) where
   one   = 1
   fromNatural = fromIntegral
 
+instance Num a => Ring (WrappedIntegral a) where
+  negate = P.negate
+
 instance Integral a => GcdDomain (WrappedIntegral a) where
   gcd     = P.gcd
   lcm     = P.lcm
