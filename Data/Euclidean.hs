@@ -12,12 +12,13 @@
 
 module Data.Euclidean
   ( Euclidean(..)
+  , Field
   , GcdDomain(..)
   , WrappedIntegral(..)
   , WrappedFractional(..)
   ) where
 
-import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, (*))
+import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, negate, (*))
 import qualified Prelude as P
 import Data.Bits
 import Data.Complex
@@ -28,6 +29,10 @@ import Foreign.C.Types
 import GHC.Exts
 import GHC.Integer.GMP.Internals
 import Numeric.Natural
+
+---------------------------------------------------------------------
+-- Classes
+---------------------------------------------------------------------
 
 -- | 'GcdDomain' represents a
 -- <https://en.wikipedia.org/wiki/GCD_domain GCD domain>.
@@ -138,6 +143,15 @@ infixl 7 `rem`
 coprimeIntegral :: Integral a => a -> a -> Bool
 coprimeIntegral x y = (odd x || odd y) && P.gcd x y == 1
 
+-- | A 'Field' represents a
+-- <https://en.wikipedia.org/wiki/Field_(mathematics) field>,
+-- a ring with a multiplicative inverse for any non-zero element.
+class (Euclidean a, Ring a) => Field a
+
+---------------------------------------------------------------------
+-- Instances
+---------------------------------------------------------------------
+
 instance GcdDomain () where
   divide  = const $ const (Just ())
   gcd     = const $ const ()
@@ -149,6 +163,8 @@ instance Euclidean () where
   quotRem = const $ const ((), ())
   quot    = const $ const ()
   rem     = const $ const ()
+
+instance Field ()
 
 -- | Wrapper around 'Integral' with 'GcdDomain'
 -- and 'Euclidean' instances.
@@ -253,6 +269,8 @@ instance (Eq a, Fractional a) => Euclidean (WrappedFractional a) where
   quot        = (/)
   rem         = const $ const 0
 
+instance (Eq a, Fractional a) => Field (WrappedFractional a)
+
 instance Integral a => GcdDomain (Ratio a) where
   divide x y = Just (x / y)
   gcd        = const $ const 1
@@ -264,6 +282,8 @@ instance Integral a => Euclidean (Ratio a) where
   quotRem x y = (x / y, 0)
   quot        = (/)
   rem         = const $ const 0
+
+instance Integral a => Field (Ratio a)
 
 instance GcdDomain Float where
   divide x y = Just (x / y)
@@ -277,6 +297,8 @@ instance Euclidean Float where
   quot        = (/)
   rem         = const $ const 0
 
+instance Field Float
+
 instance GcdDomain Double where
   divide x y = Just (x / y)
   gcd        = const $ const 1
@@ -288,6 +310,8 @@ instance Euclidean Double where
   quotRem x y = (x / y, 0)
   quot        = (/)
   rem         = const $ const 0
+
+instance Field Double
 
 instance GcdDomain CFloat where
   divide x y = Just (x / y)
@@ -301,6 +325,8 @@ instance Euclidean CFloat where
   quot        = (/)
   rem         = const $ const 0
 
+instance Field CFloat
+
 instance GcdDomain CDouble where
   divide x y = Just (x / y)
   gcd        = const $ const 1
@@ -313,23 +339,26 @@ instance Euclidean CDouble where
   quot        = (/)
   rem         = const $ const 0
 
-instance (Eq a, Fractional a, Ring a) => GcdDomain (Complex a) where
-  divide _ (0 :+ 0) = Nothing
+instance Field CDouble
+
+instance (Eq a, Field a) => GcdDomain (Complex a) where
   divide z (x :+ y)
-    | d == 0        = Nothing
-    | otherwise     = Just (z `times` ((x / d) :+ (-y / d)))
+    | d == zero     = Nothing
+    | otherwise     = Just (z `times` ((x `quot` d) :+ (negate y `quot` d)))
     where
       d = x `times` x `plus` y `times` y
-  gcd               = const $ const (1 :+ 0)
-  lcm               = const $ const (1 :+ 0)
+  gcd               = const $ const (one :+ zero)
+  lcm               = const $ const (one :+ zero)
   coprime           = const $ const True
 
-instance (Eq a, Fractional a, Ring a) => Euclidean (Complex a) where
+instance (Eq a, Field a) => Euclidean (Complex a) where
   degree      = const 0
   quotRem x y = case x `divide` y of
-    Nothing -> (0 P./ 0 :+ 0 P./ 0, 0 :+ 0)
-    Just z  -> (z, 0 :+ 0)
+    Nothing -> (zero `quot` zero :+ zero `quot` zero, zero :+ zero)
+    Just z  -> (z, zero :+ zero)
   quot x y    = case x `divide` y of
-    Nothing -> 0 P./ 0 :+ 0 P./ 0
+    Nothing -> zero `quot` zero :+ zero `quot` zero
     Just z  -> z
-  rem         = const $ const (0 :+ 0)
+  rem         = const $ const (zero :+ zero)
+
+instance (Eq a, Field a) => Field (Complex a)
