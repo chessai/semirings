@@ -176,7 +176,7 @@ instance Num a => Semiring (WrappedIntegral a) where
   zero  = 0
   times = (P.*)
   one   = 1
-  fromNatural = fromIntegral
+  fromNatural = P.fromIntegral
 
 instance Num a => Ring (WrappedIntegral a) where
   negate = P.negate
@@ -187,7 +187,7 @@ instance Integral a => GcdDomain (WrappedIntegral a) where
   coprime = coprimeIntegral
 
 instance Integral a => Euclidean (WrappedIntegral a) where
-  degree  = fromIntegral . abs . unwrapIntegral
+  degree  = P.fromIntegral . abs . unwrapIntegral
   quotRem = P.quotRem
   quot    = P.quot
   rem     = P.rem
@@ -202,7 +202,7 @@ instance GcdDomain Int where
   coprime = coprimeIntegral
 
 instance Euclidean Int where
-  degree  = fromIntegral . abs
+  degree  = P.fromIntegral . abs
   quotRem = P.quotRem
   quot    = P.quot
   rem     = P.rem
@@ -217,7 +217,7 @@ instance GcdDomain Word where
   coprime = coprimeIntegral
 
 instance Euclidean Word where
-  degree  = fromIntegral
+  degree  = P.fromIntegral
   quotRem = P.quotRem
   quot    = P.quot
   rem     = P.rem
@@ -228,7 +228,7 @@ instance GcdDomain Integer where
   coprime = coprimeIntegral
 
 instance Euclidean Integer where
-  degree  = fromInteger . abs
+  degree  = P.fromInteger . abs
   quotRem = P.quotRem
   quot    = P.quot
   rem     = P.rem
@@ -255,7 +255,7 @@ instance Num a => Semiring (WrappedFractional a) where
   zero  = 0
   times = (P.*)
   one   = 1
-  fromNatural = fromIntegral
+  fromNatural = P.fromIntegral
 
 instance Fractional a => Ring (WrappedFractional a) where
   negate = P.negate
