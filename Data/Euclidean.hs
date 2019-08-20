@@ -315,9 +315,11 @@ instance Euclidean CDouble where
 
 instance (Eq a, Fractional a, Ring a) => GcdDomain (Complex a) where
   divide _ (0 :+ 0) = Nothing
-  divide z (x :+ y) = Just (z `times` ((x / xxyy) :+ (-y / xxyy)))
+  divide z (x :+ y)
+    | d == 0        = Nothing
+    | otherwise     = Just (z `times` ((x / d) :+ (-y / d)))
     where
-      xxyy = times x x `plus` times y y
+      d = x `times` x `plus` y `times` y
   gcd               = const $ const (1 :+ 0)
   lcm               = const $ const (1 :+ 0)
   coprime           = const $ const True
@@ -325,9 +327,9 @@ instance (Eq a, Fractional a, Ring a) => GcdDomain (Complex a) where
 instance (Eq a, Fractional a, Ring a) => Euclidean (Complex a) where
   degree      = const 0
   quotRem x y = case x `divide` y of
-    Nothing -> error "quotRem: zero denominator"
+    Nothing -> (0 P./ 0 :+ 0 P./ 0, 0 :+ 0)
     Just z  -> (z, 0 :+ 0)
   quot x y    = case x `divide` y of
-    Nothing -> error "quot: zero denominator"
+    Nothing -> 0 P./ 0 :+ 0 P./ 0
     Just z  -> z
   rem         = const $ const (0 :+ 0)
