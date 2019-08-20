@@ -345,9 +345,7 @@ instance Euclidean CDouble where
 instance Field CDouble
 
 instance (Eq a, Field a) => GcdDomain (Complex a) where
-  divide z (x :+ y)
-    | d == zero     = Nothing
-    | otherwise     = Just (z `times` ((x `quot` d) :+ (negate y `quot` d)))
+  divide z (x :+ y) = Just (z `times` ((x `quot` d) :+ (negate y `quot` d)))
     where
       d = x `times` x `plus` y `times` y
   gcd               = const $ const (one :+ zero)

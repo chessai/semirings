@@ -97,9 +97,9 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
 import           Data.Monoid (Monoid(..), Dual(..))
-import           Data.Ord (Ord((<)))
+import           Data.Ord (Ord((<)), (>=))
 #if MIN_VERSION_base(4,6,0)
-import           Data.Ord (Down(..), (>=))
+import           Data.Ord (Down(..))
 #endif
 import           Data.Proxy (Proxy(..))
 import           Data.Ratio (Ratio, Rational, (%))
