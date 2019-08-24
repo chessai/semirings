@@ -1,8 +1,8 @@
 TBA
 ---
 * Add `Field` typeclass, instances, and functions.
-* Add `Euclidean` and `GcdDomain` instances for `()`, `CDouble`, `CFloat`,
-  `Complex`, and `WrappedFractional`.
+* Add `Euclidean` and `GcdDomain` instances for `()`, `CDouble`, `CFloat`, 
+  and `Complex`.
 * Add `Ring` and `Bits` instances for `WrappedFractional` and `WrappedIntegral`.
 * Add `fromInteger` and `fromIntegral` functions for `Ring`.
 
