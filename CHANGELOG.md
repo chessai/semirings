@@ -1,18 +1,14 @@
 TBA
 ---
-* give WrappedNum/WrappedIntegral `Bits` instances.
-
-0.4.3: [2019.08.24]
--------------------
 * Add `Field` typeclass, instances, and functions.
 * Add `Euclidean` and `GcdDomain` instances for `()`, `CDouble`, `CFloat`,
   `Complex`, and `WrappedFractional`.
-* Add `Ring` instance for `WrappedFractional` and `WrappedIntegral`.
+* Add `Ring` and `Bits` instances for `WrappedFractional` and `WrappedIntegral`.
 * Add `fromInteger` and `fromIntegral` functions for `Ring`.
 
 0.4.2: [2019.06.06]
 -------------------
-* Add `Euclidean` typeclass.
+* Add `GcdDomain` and `Euclidean` typeclass.
 * Add `Mod2`, the integers modulo 2, along with its Semiring/Ring/Star
   instances.
 
