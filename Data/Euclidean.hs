@@ -12,20 +12,27 @@
 
 module Data.Euclidean
   ( Euclidean(..)
+  , Field
   , GcdDomain(..)
   , WrappedIntegral(..)
   , WrappedFractional(..)
   ) where
 
-import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, (*))
+import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, negate, (*))
 import qualified Prelude as P
 import Data.Bits
+import Data.Complex
 import Data.Maybe
 import Data.Ratio
 import Data.Semiring
+import Foreign.C.Types
 import GHC.Exts
 import GHC.Integer.GMP.Internals
 import Numeric.Natural
+
+---------------------------------------------------------------------
+-- Classes
+---------------------------------------------------------------------
 
 -- | 'GcdDomain' represents a
 -- <https://en.wikipedia.org/wiki/GCD_domain GCD domain>.
@@ -136,6 +143,29 @@ infixl 7 `rem`
 coprimeIntegral :: Integral a => a -> a -> Bool
 coprimeIntegral x y = (odd x || odd y) && P.gcd x y == 1
 
+-- | A 'Field' represents a
+-- <https://en.wikipedia.org/wiki/Field_(mathematics) field>,
+-- a ring with a multiplicative inverse for any non-zero element.
+class (Euclidean a, Ring a) => Field a
+
+---------------------------------------------------------------------
+-- Instances
+---------------------------------------------------------------------
+
+instance GcdDomain () where
+  divide  = const $ const (Just ())
+  gcd     = const $ const ()
+  lcm     = const $ const ()
+  coprime = const $ const True
+
+instance Euclidean () where
+  degree  = const 0
+  quotRem = const $ const ((), ())
+  quot    = const $ const ()
+  rem     = const $ const ()
+
+instance Field ()
+
 -- | Wrapper around 'Integral' with 'GcdDomain'
 -- and 'Euclidean' instances.
 newtype WrappedIntegral a = WrapIntegral { unwrapIntegral :: a }
@@ -146,7 +176,10 @@ instance Num a => Semiring (WrappedIntegral a) where
   zero  = 0
   times = (P.*)
   one   = 1
-  fromNatural = fromIntegral
+  fromNatural = P.fromIntegral
+
+instance Num a => Ring (WrappedIntegral a) where
+  negate = P.negate
 
 instance Integral a => GcdDomain (WrappedIntegral a) where
   gcd     = P.gcd
@@ -154,7 +187,7 @@ instance Integral a => GcdDomain (WrappedIntegral a) where
   coprime = coprimeIntegral
 
 instance Integral a => Euclidean (WrappedIntegral a) where
-  degree  = fromIntegral . abs . unwrapIntegral
+  degree  = P.fromIntegral . abs . unwrapIntegral
   quotRem = P.quotRem
   quot    = P.quot
   rem     = P.rem
@@ -169,7 +202,7 @@ instance GcdDomain Int where
   coprime = coprimeIntegral
 
 instance Euclidean Int where
-  degree  = fromIntegral . abs
+  degree  = P.fromIntegral . abs
   quotRem = P.quotRem
   quot    = P.quot
   rem     = P.rem
@@ -184,7 +217,7 @@ instance GcdDomain Word where
   coprime = coprimeIntegral
 
 instance Euclidean Word where
-  degree  = fromIntegral
+  degree  = P.fromIntegral
   quotRem = P.quotRem
   quot    = P.quot
   rem     = P.rem
@@ -195,7 +228,7 @@ instance GcdDomain Integer where
   coprime = coprimeIntegral
 
 instance Euclidean Integer where
-  degree  = fromInteger . abs
+  degree  = P.fromInteger . abs
   quotRem = P.quotRem
   quot    = P.quot
   rem     = P.rem
@@ -222,7 +255,10 @@ instance Num a => Semiring (WrappedFractional a) where
   zero  = 0
   times = (P.*)
   one   = 1
-  fromNatural = fromIntegral
+  fromNatural = P.fromIntegral
+
+instance Fractional a => Ring (WrappedFractional a) where
+  negate = P.negate
 
 instance (Eq a, Fractional a) => GcdDomain (WrappedFractional a) where
   divide x y = Just (x / y)
@@ -236,6 +272,8 @@ instance (Eq a, Fractional a) => Euclidean (WrappedFractional a) where
   quot        = (/)
   rem         = const $ const 0
 
+instance (Eq a, Fractional a) => Field (WrappedFractional a)
+
 instance Integral a => GcdDomain (Ratio a) where
   divide x y = Just (x / y)
   gcd        = const $ const 1
@@ -247,6 +285,8 @@ instance Integral a => Euclidean (Ratio a) where
   quotRem x y = (x / y, 0)
   quot        = (/)
   rem         = const $ const 0
+
+instance Integral a => Field (Ratio a)
 
 instance GcdDomain Float where
   divide x y = Just (x / y)
@@ -260,6 +300,8 @@ instance Euclidean Float where
   quot        = (/)
   rem         = const $ const 0
 
+instance Field Float
+
 instance GcdDomain Double where
   divide x y = Just (x / y)
   gcd        = const $ const 1
@@ -271,3 +313,53 @@ instance Euclidean Double where
   quotRem x y = (x / y, 0)
   quot        = (/)
   rem         = const $ const 0
+
+instance Field Double
+
+instance GcdDomain CFloat where
+  divide x y = Just (x / y)
+  gcd        = const $ const 1
+  lcm        = const $ const 1
+  coprime    = const $ const True
+
+instance Euclidean CFloat where
+  degree      = const 0
+  quotRem x y = (x / y, 0)
+  quot        = (/)
+  rem         = const $ const 0
+
+instance Field CFloat
+
+instance GcdDomain CDouble where
+  divide x y = Just (x / y)
+  gcd        = const $ const 1
+  lcm        = const $ const 1
+  coprime    = const $ const True
+
+instance Euclidean CDouble where
+  degree      = const 0
+  quotRem x y = (x / y, 0)
+  quot        = (/)
+  rem         = const $ const 0
+
+instance Field CDouble
+
+instance (Eq a, Field a) => GcdDomain (Complex a) where
+  divide z (x :+ y) = Just (z `times` ((x `quot` d) :+ (negate y `quot` d)))
+    where
+      d = x `times` x `plus` y `times` y
+  gcd               = const $ const (one :+ zero)
+  lcm               = const $ const (one :+ zero)
+  coprime           = const $ const True
+
+instance (Eq a, Field a) => Euclidean (Complex a) where
+  degree      = const 0
+  quotRem x y = case x `divide` y of
+    Nothing -> (zero `quot` zero :+ zero `quot` zero, zero :+ zero)
+    Just z  -> (z, zero :+ zero)
+  quot x y    = case x `divide` y of
+    Nothing -> zero `quot` zero :+ zero `quot` zero
+    Just z  -> z
+  rem         = const $ const (zero :+ zero)
+
+instance (Eq a, Field a) => Field (Complex a)

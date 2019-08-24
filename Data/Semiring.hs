@@ -48,8 +48,10 @@ module Data.Semiring
 
     -- * Ring typeclass
   , Ring(..)
-  , (-)
+  , fromInteger
+  , fromIntegral
   , minus
+  , (-)
   ) where
 
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
@@ -95,7 +97,7 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
 import           Data.Monoid (Monoid(..), Dual(..))
-import           Data.Ord (Ord((<)))
+import           Data.Ord (Ord((<)), (>=))
 #if MIN_VERSION_base(4,6,0)
 import           Data.Ord (Down(..))
 #endif
@@ -128,7 +130,8 @@ import           GHC.IO (IO)
 import           GHC.Integer (Integer)
 import qualified GHC.Num as Num
 import           GHC.Read (Read)
-import           GHC.Real (Integral, Fractional, Real, RealFrac, fromIntegral)
+import           GHC.Real (Integral, Fractional, Real, RealFrac)
+import qualified GHC.Real as Real
 import           GHC.Show (Show)
 import           Numeric.Natural (Natural)
 
@@ -310,7 +313,7 @@ newtype Add a = Add { getAdd :: a }
 
 instance Semiring a => Semigroup (Add a) where
   Add a <> Add b = Add (a + b)
-  stimes n (Add a) = Add (fromNatural (fromIntegral n) * a)
+  stimes n (Add a) = Add (fromNatural (Real.fromIntegral n) * a)
   {-# INLINE (<>) #-}
 
 instance Semiring a => Monoid (Add a) where
@@ -391,7 +394,7 @@ instance Num.Num a => Semiring (WrappedNum a) where
   zero  = 0
   times = (Num.*)
   one   = 1
-  fromNatural = fromIntegral
+  fromNatural = Real.fromIntegral
 
 instance Num.Num a => Ring (WrappedNum a) where
   negate = Num.negate
@@ -500,6 +503,20 @@ class Semiring a => Ring a where
 minus :: Ring a => a -> a -> a
 minus x y = x + negate y
 {-# INLINE minus #-}
+
+-- | Convert from integer to ring.
+fromInteger :: Ring a => Integer -> a
+fromInteger x
+  | x >= 0    = fromNatural (Num.fromInteger x)
+  | otherwise = negate (fromNatural (Num.fromInteger (Num.negate x)))
+{-# INLINE fromInteger #-}
+
+-- | Convert from integral to ring.
+fromIntegral :: (Integral a, Ring b) => a -> b
+fromIntegral x
+  | x >= 0    = fromNatural (Real.fromIntegral x)
+  | otherwise = negate (fromNatural (Real.fromIntegral (Num.negate x)))
+{-# INLINE fromIntegral #-}
 
 {--------------------------------------------------------------------
   Instances (base)
@@ -675,18 +692,18 @@ deriving instance Semiring a => Semiring (Op a b)
 deriving instance Ring a => Ring (Op a b)
 #endif
 
-#define deriveSemiring(ty)        \
-instance Semiring (ty) where {    \
-   zero  = 0                      \
-;  one   = 1                      \
-;  plus  x y = (Num.+) x y        \
-;  times x y = (Num.*) x y        \
-;  fromNatural = fromIntegral     \
-;  {-# INLINE zero #-}            \
-;  {-# INLINE one  #-}            \
-;  {-# INLINE plus #-}            \
-;  {-# INLINE times #-}           \
-;  {-# INLINE fromNatural #-}     \
+#define deriveSemiring(ty)         \
+instance Semiring (ty) where {     \
+   zero  = 0                       \
+;  one   = 1                       \
+;  plus  x y = (Num.+) x y         \
+;  times x y = (Num.*) x y         \
+;  fromNatural = Real.fromIntegral \
+;  {-# INLINE zero #-}             \
+;  {-# INLINE one  #-}             \
+;  {-# INLINE plus #-}             \
+;  {-# INLINE times #-}            \
+;  {-# INLINE fromNatural #-}      \
 }
 
 deriveSemiring(Int)
@@ -755,7 +772,7 @@ instance Integral a => Semiring (Ratio a) where
   one   = 1 % 1
   plus  = (Num.+)
   times = (Num.*)
-  fromNatural n = fromIntegral n % 1
+  fromNatural n = Real.fromIntegral n % 1
   {-# INLINE zero  #-}
   {-# INLINE one   #-}
   {-# INLINE plus  #-}
@@ -770,7 +787,7 @@ instance HasResolution a => Semiring (Fixed a) where
   one   = 1
   plus  = (Num.+)
   times = (Num.*)
-  fromNatural = fromIntegral
+  fromNatural = Real.fromIntegral
   {-# INLINE zero  #-}
   {-# INLINE one   #-}
   {-# INLINE plus  #-}
