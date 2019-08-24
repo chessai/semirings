@@ -344,22 +344,21 @@ instance Euclidean CDouble where
 
 instance Field CDouble
 
-instance (Eq a, Field a) => GcdDomain (Complex a) where
-  divide z (x :+ y) = Just (z `times` ((x `quot` d) :+ (negate y `quot` d)))
-    where
-      d = x `times` x `plus` y `times` y
-  gcd               = const $ const (one :+ zero)
-  lcm               = const $ const (one :+ zero)
-  coprime           = const $ const True
+conjQuotAbs :: Field a => Complex a -> Complex a
+conjQuotAbs (x :+ y) = x `quot` norm :+ (negate y) `quot` norm
+  where
+    norm = (x `times` x) `plus` (y `times` y)
 
-instance (Eq a, Field a) => Euclidean (Complex a) where
+instance Field a => GcdDomain (Complex a) where
+  divide x y = Just (x `times` conjQuotAbs y)
+  gcd        = const $ const one
+  lcm        = const $ const one
+  coprime    = const $ const True
+
+instance Field a => Euclidean (Complex a) where
   degree      = const 0
-  quotRem x y = case x `divide` y of
-    Nothing -> (zero `quot` zero :+ zero `quot` zero, zero :+ zero)
-    Just z  -> (z, zero :+ zero)
-  quot x y    = case x `divide` y of
-    Nothing -> zero `quot` zero :+ zero `quot` zero
-    Just z  -> z
-  rem         = const $ const (zero :+ zero)
+  quotRem x y = (quot x y, zero)
+  quot x y    = x `times` conjQuotAbs y
+  rem         = const $ const zero
 
-instance (Eq a, Field a) => Field (Complex a)
+instance Field a => Field (Complex a)
