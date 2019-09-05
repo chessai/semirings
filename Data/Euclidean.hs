@@ -258,22 +258,22 @@ instance Num a => Semiring (WrappedFractional a) where
   one   = 1
   fromNatural = P.fromIntegral
 
-instance Fractional a => Ring (WrappedFractional a) where
+instance Num a => Ring (WrappedFractional a) where
   negate = P.negate
 
-instance (Eq a, Fractional a) => GcdDomain (WrappedFractional a) where
+instance Fractional a => GcdDomain (WrappedFractional a) where
   divide x y = Just (x / y)
   gcd        = const $ const 1
   lcm        = const $ const 1
   coprime    = const $ const True
 
-instance (Eq a, Fractional a) => Euclidean (WrappedFractional a) where
+instance Fractional a => Euclidean (WrappedFractional a) where
   degree      = const 0
   quotRem x y = (x / y, 0)
   quot        = (/)
   rem         = const $ const 0
 
-instance (Eq a, Fractional a) => Field (WrappedFractional a)
+instance Fractional a => Field (WrappedFractional a)
 
 instance Integral a => GcdDomain (Ratio a) where
   divide x y = Just (x / y)
