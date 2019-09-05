@@ -26,7 +26,7 @@ test-suite test
                , hashable
                , quickcheck-classes >= 0.4.14.3
                , quickcheck-instances
-               , semirings >= 0.2.1.1
+               , semirings
                , tasty
                , tasty-quickcheck
                , unordered-containers

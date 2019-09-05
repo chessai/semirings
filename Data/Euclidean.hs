@@ -28,6 +28,7 @@ import Data.Semiring
 import Foreign.C.Types
 import GHC.Exts
 import GHC.Integer.GMP.Internals
+
 import Numeric.Natural
 
 ---------------------------------------------------------------------

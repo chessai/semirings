@@ -95,20 +95,15 @@ namedTests =
 --  , ("Double", ringLaws pDouble) -- needs to be within some epsilon
 --  , ("Float", ringLaws pFloat)   -- needs to be within some epsilon
 --  , ("Complex", ringLaws pComplex) -- needs to be within some epsilon
-  , ("Int", ringLaws pInt)
-  , ("Int8", ringLaws pInt8)
-  , ("Int16", ringLaws pInt16)
-  , ("Int32", ringLaws pInt32)
-  , ("Int64", ringLaws pInt64)
-  , ("Word", ringLaws pWord)
-  , ("Word8", ringLaws pWord8)
-  , ("Word16", ringLaws pWord16)
-  , ("Word32", ringLaws pWord32)
-  , ("Word64", ringLaws pWord64)
-  , ("()", ringLaws pUnit)
+  , ("Mod2", semiringLaws pMod2 ++ ringLaws pMod2)
+  , ("Int", semiringLaws pInt ++ ringLaws pInt ++ euclideanLaws pInt)
+  , ("Word", semiringLaws pWord ++ ringLaws pWord ++ euclideanLaws pWord)
+  , ("Natural", semiringLaws pNatural ++ euclideanLaws pNatural)
+  , ("Rational", semiringLaws pRational ++ ringLaws pRational ++ euclideanLaws pRational)
+  , ("()", semiringLaws pInt8 ++ ringLaws pUnit)
   , ("Maybe", semiringLaws pMaybe)
   , ("PosRatio", semiringLaws pPosRatio)
-  , ("IO", ringLaws pIO)
+  , ("IO", semiringLaws pIO ++ ringLaws pIO)
   , ("Fixed", ringLaws pFixed)
   , ("Identity", ringLaws pIdentity)
   , ("Dual", ringLaws pDual)
@@ -123,8 +118,8 @@ namedTests =
   , ("Map", semiringLaws pMap)
   , ("Predicate", semiringLaws pPredicate)
   , ("Equivalence", semiringLaws pEquivalence)
-  , ("Op", ringLaws pOp)
-  , ("Ap", ringLaws pAp)
+  , ("Op", semiringLaws pOp ++ ringLaws pOp)
+  , ("Ap", semiringLaws pAp ++ ringLaws pAp)
 
   , ("IntSet Sum", semiringLaws pIntSetSum)
   , ("IntSet Product", semiringLaws pIntSetProduct)
@@ -136,11 +131,6 @@ namedTests =
   , ("IntMap Min", semiringLaws pIntMapMin)
   , ("IntMap Max", semiringLaws pIntMapMax)
 
-  , ("Int", euclideanLaws pInt)
-  , ("Word", euclideanLaws pWord)
-  , ("Integer", euclideanLaws pInteger)
-  , ("Natural", euclideanLaws pNatural)
-  , ("Rational", euclideanLaws pRational)
   ]
 
 #if !(MIN_VERSION_base(4,12,0))
@@ -218,6 +208,8 @@ deriving instance Hashable a => Hashable (Sum a)
 deriving instance Arbitrary (IntSetOf a)
 deriving instance Arbitrary v => Arbitrary (IntMapOf k v)
 
+deriving instance Arbitrary Mod2
+
 pBool = p @Bool
 pDouble = p @Double
 pFloat = p @Float
@@ -256,6 +248,7 @@ pHashMap = p @(HashMap (Sum Int) Int)
 pConst = p @(Const Int Int)
 pAlt = p @(Alt Maybe Int)
 pRational = p @Rational
+pMod2 = p @Mod2
 
 pIntSetSum = p @(IntSetOf (Sum Int))
 pIntSetProduct = p @(IntSetOf (Product Int))
