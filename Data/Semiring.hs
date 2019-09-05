@@ -523,9 +523,9 @@ fromIntegral x
 --------------------------------------------------------------------}
 
 instance Semiring b => Semiring (a -> b) where
-  plus f g x  = f x `plus` g x
+  plus f g    = \x -> f x `plus` g x
   zero        = const zero
-  times f g x = f x `times` g x
+  times f g   = \x -> f x `times` g x
   one         = const one
   fromNatural = const . fromNatural
   {-# INLINE plus  #-}
