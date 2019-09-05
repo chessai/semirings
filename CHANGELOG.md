@@ -1,5 +1,5 @@
-TBA
----
+0.5: [2019.09.05]
+-----------------
 * Add `Field` typeclass, instances, and functions.
 * Add `Euclidean` and `GcdDomain` instances for `()`, `CDouble`, `CFloat`,
   and `Complex`.
