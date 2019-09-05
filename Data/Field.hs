@@ -1,3 +1,5 @@
+-- | A 'Field' is a 'Ring' in which all nonzero elements
+--   have a multiplicative inverse.
 module Data.Field
   ( -- * Field typeclass
     Field
