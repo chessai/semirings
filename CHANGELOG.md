@@ -1,3 +1,9 @@
+0.5.1: [2019.09.13]
+-------------------
+* Bump upper bound on containers to 0.7
+* Bump upper bound on hashable to 1.4
+* Remove redundant constraints from WrappedFractional instances
+
 0.5: [2019.09.05]
 -----------------
 * Add `Field` typeclass, instances, and functions.
