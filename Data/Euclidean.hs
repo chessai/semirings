@@ -20,6 +20,7 @@ module Data.Euclidean
 
 import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, negate, (*))
 import qualified Prelude as P
+import Control.Exception
 import Data.Bits
 import Data.Complex
 import Data.Int (Int, Int8, Int16, Int32, Int64)
@@ -168,6 +169,16 @@ instance Euclidean () where
   rem     = const $ const ()
 
 instance Field ()
+
+instance GcdDomain Mod2 where
+
+instance Euclidean Mod2 where
+  degree = const 0
+  quotRem x y
+    | isZero y  = throw DivideByZero
+    | otherwise = (x, zero)
+
+instance Field Mod2
 
 -- | Wrapper around 'Integral' with 'GcdDomain'
 -- and 'Euclidean' instances.

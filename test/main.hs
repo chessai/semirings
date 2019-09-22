@@ -95,7 +95,7 @@ namedTests =
 --  , ("Double", ringLaws pDouble) -- needs to be within some epsilon
 --  , ("Float", ringLaws pFloat)   -- needs to be within some epsilon
 --  , ("Complex", ringLaws pComplex) -- needs to be within some epsilon
-  , ("Mod2", semiringLaws pMod2 ++ ringLaws pMod2)
+  , ("Mod2", semiringLaws pMod2 ++ ringLaws pMod2 ++ euclideanLaws pMod2)
   , ("Int", semiringLaws pInt ++ ringLaws pInt ++ euclideanLaws pInt)
   , ("Word", semiringLaws pWord ++ ringLaws pWord ++ euclideanLaws pWord)
   , ("Natural", semiringLaws pNatural ++ euclideanLaws pNatural)
