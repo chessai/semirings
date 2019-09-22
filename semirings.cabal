@@ -114,7 +114,7 @@ library
     exposed-modules:
       Data.Semiring.Generic
 
-    if flag(containers)
+    if flag(containers) && impl(ghc >= 7.8)
       build-depends: containers >= 0.5.4 && < 0.7
 
     if flag(hashable) && impl(ghc < 7.8)
