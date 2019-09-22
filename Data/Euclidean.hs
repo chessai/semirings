@@ -22,9 +22,11 @@ import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, negate, (
 import qualified Prelude as P
 import Data.Bits
 import Data.Complex
+import Data.Int (Int, Int8, Int16, Int32, Int64)
 import Data.Maybe
 import Data.Ratio
 import Data.Semiring
+import Data.Word (Word, Word8, Word16, Word32, Word64)
 import Foreign.C.Types
 import GHC.Exts
 import GHC.Integer.GMP.Internals
@@ -202,12 +204,6 @@ instance GcdDomain Int where
   lcm     = P.lcm
   coprime = coprimeIntegral
 
-instance Euclidean Int where
-  degree  = P.fromIntegral . abs
-  quotRem = P.quotRem
-  quot    = P.quot
-  rem     = P.rem
-
 instance GcdDomain Word where
 #if MIN_VERSION_integer_gmp(1,0,0)
   gcd (W# x) (W# y) = W# (gcdWord x y)
@@ -217,33 +213,48 @@ instance GcdDomain Word where
   lcm     = P.lcm
   coprime = coprimeIntegral
 
-instance Euclidean Word where
-  degree  = P.fromIntegral
-  quotRem = P.quotRem
-  quot    = P.quot
-  rem     = P.rem
-
 instance GcdDomain Integer where
   gcd     = gcdInteger
   lcm     = lcmInteger
   coprime = coprimeIntegral
 
-instance Euclidean Integer where
-  degree  = P.fromInteger . abs
-  quotRem = P.quotRem
-  quot    = P.quot
-  rem     = P.rem
+#define deriveGcdDomain(ty)     \
+instance GcdDomain (ty) where { \
+;  gcd     = P.gcd              \
+;  lcm     = P.lcm              \
+;  coprime = coprimeIntegral    \
+}
 
-instance GcdDomain Natural where
-  gcd     = P.gcd
-  lcm     = P.lcm
-  coprime = coprimeIntegral
+deriveGcdDomain(Int8)
+deriveGcdDomain(Int16)
+deriveGcdDomain(Int32)
+deriveGcdDomain(Int64)
+deriveGcdDomain(Word8)
+deriveGcdDomain(Word16)
+deriveGcdDomain(Word32)
+deriveGcdDomain(Word64)
+deriveGcdDomain(Natural)
 
-instance Euclidean Natural where
-  degree  = id
-  quotRem = P.quotRem
-  quot    = P.quot
-  rem     = P.rem
+#define deriveEuclidean(ty)       \
+instance Euclidean (ty) where {   \
+;  degree  = P.fromIntegral . abs \
+;  quotRem = P.quotRem            \
+;  quot    = P.quot               \
+;  rem     = P.rem                \
+}
+
+deriveEuclidean(Int)
+deriveEuclidean(Int8)
+deriveEuclidean(Int16)
+deriveEuclidean(Int32)
+deriveEuclidean(Int64)
+deriveEuclidean(Integer)
+deriveEuclidean(Word)
+deriveEuclidean(Word8)
+deriveEuclidean(Word16)
+deriveEuclidean(Word32)
+deriveEuclidean(Word64)
+deriveEuclidean(Natural)
 
 -- | Wrapper around 'Fractional'
 -- with trivial 'GcdDomain'
