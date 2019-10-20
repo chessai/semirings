@@ -16,6 +16,7 @@ module Data.Euclidean
   , GcdDomain(..)
   , WrappedIntegral(..)
   , WrappedFractional(..)
+  , gcdExt
   ) where
 
 import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, negate, (*))
@@ -147,7 +148,19 @@ infixl 7 `rem`
 coprimeIntegral :: Integral a => a -> a -> Bool
 coprimeIntegral x y = (odd x || odd y) && P.gcd x y == 1
 
--- | A 'Field' represents a
+-- | Execute the extended Euclidean algorithm.
+-- For elements @a@ and @b@, compute their greatest common divisor @g@
+-- and the coefficient @s@ satisfying @as + bt = g@.
+gcdExt :: (Eq a, Euclidean a, Ring a) => a -> a -> (a, a)
+gcdExt = go one zero
+  where
+    go s s' r r'
+      | r' == zero = (r, s)
+      | otherwise  = case quotRem r r' of
+        (q, r'') -> go s' (minus s (times q s')) r' r''
+{-# INLINE gcdExt #-}
+
+-- | 'Field' represents a
 -- <https://en.wikipedia.org/wiki/Field_(mathematics) field>,
 -- a ring with a multiplicative inverse for any non-zero element.
 class (Euclidean a, Ring a) => Field a
