@@ -10,7 +10,7 @@ import Control.Monad ((>=>),forM)
 import Control.Applicative (liftA2)
 import Data.Complex
 import Data.Either
-import Data.Euclidean
+import Data.Euclidean hiding (gcd)
 import Data.Fixed
 import Data.Functor.Const
 import Data.Functor.Identity
@@ -50,6 +50,7 @@ main :: IO ()
 main = do
   QCC.lawsCheckMany namedTests
   F.fold pow_prop
+  F.fold gcd_prop
 
 forceError :: a -> IO (Either E.ErrorCall a)
 forceError = E.try . E.evaluate
@@ -73,6 +74,17 @@ pow_prop3 x = ioProperty $ do
   case p of
     Left e -> pure False
     Right x -> pure $ x == 1
+
+gcd_prop :: [IO ()]
+gcd_prop = [quickCheck gcd_prop1, quickCheck gcd_prop2]
+
+gcd_prop1 :: Integer -> Integer -> Property
+gcd_prop1 x y = Num.abs (fst (x `gcdExt` y)) === x `gcd` y
+
+gcd_prop2 :: Integer -> Integer -> Property
+gcd_prop2 x y = y /= 0 ==> (x * s) `mod` y === g `mod` y
+  where
+    (g, s) = x `gcdExt` y
 
 type Laws = QCC.Laws
 

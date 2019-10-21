@@ -150,7 +150,7 @@ coprimeIntegral x y = (odd x || odd y) && P.gcd x y == 1
 
 -- | Execute the extended Euclidean algorithm.
 -- For elements @a@ and @b@, compute their greatest common divisor @g@
--- and the coefficient @s@ satisfying @as + bt = g@.
+-- and the coefficient @s@ satisfying @as + bt = g@ for some @t@.
 gcdExt :: (Eq a, Euclidean a, Ring a) => a -> a -> (a, a)
 gcdExt = go one zero
   where
@@ -158,7 +158,7 @@ gcdExt = go one zero
       | r' == zero = (r, s)
       | otherwise  = case quotRem r r' of
         (q, r'') -> go s' (minus s (times q s')) r' r''
-{-# INLINE gcdExt #-}
+{-# INLINABLE gcdExt #-}
 
 -- | 'Field' represents a
 -- <https://en.wikipedia.org/wiki/Field_(mathematics) field>,

@@ -1,3 +1,7 @@
+TBA
+---
+* Add `gcdExt` function
+
 0.5.1: [2019.09.13]
 -------------------
 * Bump upper bound on containers to 0.7
