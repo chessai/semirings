@@ -44,6 +44,11 @@ recip = quot one
 infixl 7 /
 
 -- | Convert from rational to field.
+--
+-- When @{-#@ @LANGUAGE RebindableSyntax #-}@ is enabled,
+-- this function is used for desugaring rational literals (like, @2.37@).
+-- This may be used to facilitate transition from 'Fractional' to 'Field',
+-- because less casts are now required.
 fromRational :: Field a => Rational -> a
 fromRational x = quot (fromInteger (numerator x)) (fromInteger (denominator x))
 {-# INLINE fromRational #-}

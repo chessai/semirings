@@ -505,6 +505,12 @@ minus x y = x + negate y
 {-# INLINE minus #-}
 
 -- | Convert from integer to ring.
+--
+-- When @{-#@ @LANGUAGE RebindableSyntax #-}@ is enabled,
+-- this function is used for desugaring integer literals.
+-- This may be used to facilitate transition from 'Prelude.Num' to 'Ring':
+-- no need to replace 0 and 1 with 'one' and 'zero'
+-- or to cast numeric literals.
 fromInteger :: Ring a => Integer -> a
 fromInteger x
   | x >= 0    = fromNatural (Num.fromInteger x)
