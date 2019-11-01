@@ -6,7 +6,7 @@
 * Add GcdDomain/Euclidean instances for {Int|Word}{8|16|32|64}
 * Mention `RebindableSyntax` in haddocks
 
-rev: 4b0e5c0f3b3e087d49af4e9c1847e0e2578e0e8b
+rev: b4334fe06635f106b1f08bac127c1ae259cddae6
 
 0.5.1: [2019.09.13]
 -------------------
