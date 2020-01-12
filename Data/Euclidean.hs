@@ -209,6 +209,7 @@ instance Num a => Ring (WrappedIntegral a) where
   negate = P.negate
 
 instance Integral a => GcdDomain (WrappedIntegral a) where
+  divide x y = case x `P.quotRem` y of (q, 0) -> Just q; _ -> Nothing
   gcd     = P.gcd
   lcm     = P.lcm
   coprime = coprimeIntegral
@@ -220,6 +221,7 @@ instance Integral a => Euclidean (WrappedIntegral a) where
   rem     = P.rem
 
 instance GcdDomain Int where
+  divide x y = case x `P.quotRem` y of (q, 0) -> Just q; _ -> Nothing
 #if MIN_VERSION_integer_gmp(0,5,1)
   gcd (I# x) (I# y) = I# (gcdInt x y)
 #else
@@ -229,6 +231,7 @@ instance GcdDomain Int where
   coprime = coprimeIntegral
 
 instance GcdDomain Word where
+  divide x y = case x `P.quotRem` y of (q, 0) -> Just q; _ -> Nothing
 #if MIN_VERSION_integer_gmp(1,0,0)
   gcd (W# x) (W# y) = W# (gcdWord x y)
 #else
@@ -238,12 +241,14 @@ instance GcdDomain Word where
   coprime = coprimeIntegral
 
 instance GcdDomain Integer where
+  divide x y = case x `P.quotRem` y of (q, 0) -> Just q; _ -> Nothing
   gcd     = gcdInteger
   lcm     = lcmInteger
   coprime = coprimeIntegral
 
 #define deriveGcdDomain(ty)     \
 instance GcdDomain (ty) where { \
+;  divide x y = case x `P.quotRem` y of { (q, 0) -> Just q; _ -> Nothing } \
 ;  gcd     = P.gcd              \
 ;  lcm     = P.lcm              \
 ;  coprime = coprimeIntegral    \
