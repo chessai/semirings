@@ -288,14 +288,8 @@ newtype B = B Integer
 
 data AB = AB A B
   deriving (Show, Eq, Generic)
---  deriving (Semiring) via (GenericSemiring AB)
-
-instance Semiring AB where
-  plus = gplus
-  times = gtimes
-  zero = gzero
-  one = gone
+  deriving (Semiring) via (GenericSemiring AB)
 
 instance Arbitrary AB where
   arbitrary = AB <$> arbitrary <*> arbitrary
-  --shrink = error "foo" --genericShrink
+  shrink = genericShrink
