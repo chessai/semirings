@@ -8,3 +8,5 @@
 result*
 *.hi
 *.o
+.stack-work
+hie.log

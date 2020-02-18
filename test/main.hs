@@ -5,6 +5,9 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DerivingStrategies #-}
 
 import Control.Monad ((>=>),forM)
 import Control.Applicative (liftA2)
@@ -28,9 +31,11 @@ import Data.Proxy (Proxy(..))
 import Data.Ratio
 import Data.Semigroup
 import Data.Semiring
+import Data.Semiring.Generic
 import Data.Sequence
 import Data.Set
 import Data.Word
+import GHC.Generics
 import GHC.Natural
 import qualified Data.Foldable as F
 import Prelude hiding (Num(..),(^))
@@ -143,6 +148,7 @@ namedTests =
   , ("IntMap Min", semiringLaws pIntMapMin)
   , ("IntMap Max", semiringLaws pIntMapMax)
 
+  , ("AB", semiringLaws pAB)
   ]
 
 #if !(MIN_VERSION_base(4,12,0))
@@ -261,6 +267,7 @@ pConst = p @(Const Int Int)
 pAlt = p @(Alt Maybe Int)
 pRational = p @Rational
 pMod2 = p @Mod2
+pAB = p @AB
 
 pIntSetSum = p @(IntSetOf (Sum Int))
 pIntSetProduct = p @(IntSetOf (Product Int))
@@ -271,3 +278,18 @@ pIntMapSum = p @(IntMapOf (Sum Int) Int)
 pIntMapProduct = p @(IntMapOf (Product Int) Int)
 pIntMapMin = p @(IntMapOf (Min Int) Int)
 pIntMapMax = p @(IntMapOf (Max Int) Int)
+
+newtype A = A Integer
+  deriving (Show, Eq)
+  deriving newtype (Semiring, Arbitrary)
+newtype B = B Integer
+  deriving (Show, Eq)
+  deriving newtype (Semiring, Arbitrary)
+
+data AB = AB A B
+  deriving (Show, Eq, Generic)
+  deriving (Semiring) via (GenericSemiring AB)
+
+instance Arbitrary AB where
+  arbitrary = AB <$> arbitrary <*> arbitrary
+  shrink = genericShrink

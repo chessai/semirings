@@ -1,8 +1,9 @@
-{-# LANGUAGE CPP              #-}
+{-# LANGUAGE CPP                  #-}
 #if MIN_VERSION_base(4,6,0)
-{-# LANGUAGE DeriveGeneric    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeOperators    #-}
+{-# LANGUAGE DeriveGeneric        #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE UndecidableInstances #-}
 #endif
 
 -- below are safe orphan instances
@@ -48,10 +49,13 @@ import Prelude hiding (Num(..))
 -- | An Identity-style wrapper with a 'Generic' interface
 --   to be used with '-XDerivingVia'.
 newtype GenericSemiring a = GenericSemiring a
-  deriving (Generic)
 
-instance (Semiring a) => Semiring (GenericSemiring a) where
-  zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
+instance (Generic a, GSemiring (Rep a)) => Semiring (GenericSemiring a) where
+  zero = GenericSemiring gzero
+  one = GenericSemiring gone
+  plus (GenericSemiring x) (GenericSemiring y) = GenericSemiring (gplus x y)
+  times (GenericSemiring x) (GenericSemiring y) = GenericSemiring (gtimes x y)
+  fromNatural x = GenericSemiring (gfromNatural x)
 
 instance (Semiring a, Semiring b) => Semiring (a,b) where
   zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
@@ -184,7 +188,7 @@ instance (GSemiring a, GSemiring b) => GSemiring (a :*: b) where
   gzero' = gzero' :*: gzero'
   gone'  = gone'  :*: gone'
   gplus'  (a :*: b) (c :*: d) = gplus'  a c :*: gplus' b d
-  gtimes' (a :*: b) (c :*: d) = gtimes' a c :*: gplus' b d
+  gtimes' (a :*: b) (c :*: d) = gtimes' a c :*: gtimes' b d
   gfromNatural' n = gfromNatural' n :*: gfromNatural' n
 
 instance (GRing a, GRing b) => GRing (a :*: b) where
