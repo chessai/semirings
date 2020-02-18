@@ -1,4 +1,4 @@
--- | A 'Field' is a 'Ring' in which all nonzero elements
+-- | A 'Field' is a 'Data.Semiring.Ring' in which all nonzero elements
 --   have a multiplicative inverse.
 module Data.Field
   ( -- * Field typeclass
@@ -21,7 +21,7 @@ import Data.Semiring (fromInteger, one)
 -- | Divide two elements of a 'Field'.
 -- For any 'Prelude.Fractional' type, this is the same as '(Prelude./)'.
 --
---     @x `divide` y = x `times` 'recip' y@
+--     @x `divide` y = x `Data.Semiring.times` 'recip' y@
 divide :: Field a => a -> a -> a
 divide = quot
 {-# INLINE divide #-}
@@ -31,7 +31,7 @@ infixl 7 `divide`
 -- | Invert an element of a 'Field'.
 -- For any 'Prelude.Fractional' type, this is the same as 'Prelude.recip'.
 --
---     @'recip' x `times` x = 'one'@
+--     @'recip' x `Data.Semiring.times` x = 'one'@
 recip :: Field a => a -> a
 recip = quot one
 {-# INLINE recip #-}

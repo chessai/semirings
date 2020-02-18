@@ -19,19 +19,19 @@ module Data.Euclidean
   , gcdExt
   ) where
 
-import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, negate, (*))
+import Prelude hiding (quotRem, quot, rem, divMod, div, mod, gcd, lcm, negate, (*), Int, Word)
 import qualified Prelude as P
-import Control.Exception
-import Data.Bits
-import Data.Complex
+import Control.Exception (throw, ArithException(..))
+import Data.Bits (Bits)
+import Data.Complex (Complex(..))
 import Data.Int (Int, Int8, Int16, Int32, Int64)
-import Data.Maybe
-import Data.Ratio
-import Data.Semiring
+import Data.Maybe (isJust)
+import Data.Ratio (Ratio)
+import Data.Semiring (Semiring(..), Ring(..), (*), minus, isZero, Mod2)
 import Data.Word (Word, Word8, Word16, Word32, Word64)
-import Foreign.C.Types
-import GHC.Exts
-import GHC.Integer.GMP.Internals
+import Foreign.C.Types (CFloat, CDouble)
+import GHC.Exts (Int(..), Word(..))
+import GHC.Integer.GMP.Internals (gcdInt, gcdWord, gcdInteger, lcmInteger)
 
 import Numeric.Natural
 
@@ -133,7 +133,7 @@ class GcdDomain a => Euclidean a where
   rem :: a -> a -> a
   rem x y = snd (quotRem x y)
 
-  -- | Euclidean (aka degree, valuation, gauge, norm) function on 'a'. Usually 'fromIntegral' . 'abs'.
+  -- | Euclidean (aka degree, valuation, gauge, norm) function on @a@. Usually @'fromIntegral' '.' 'abs'@.
   --
   -- 'degree' is rarely used by itself. Its purpose
   -- is to provide an evidence of soundness of 'quotRem'

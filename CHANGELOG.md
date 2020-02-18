@@ -1,3 +1,11 @@
+0.5.3: [2020.02.18]
+-------------------
+* Fix non-terminating GenericSemiring instances
+* Fix incorrect implementation of gtimes' for product types in GSemiring
+* Implement GcdDomain.divide explicitly
+* Remove redundant imports
+* Disambiguate all haddock identifiers
+
 0.5.2: [2019.11.01]
 -------------------
 * Add `gcdExt` function

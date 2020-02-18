@@ -287,7 +287,7 @@ product' = Foldable.foldl' times one
 {-# INLINE product' #-}
 
 -- | Monoid under 'plus'. Analogous to 'Data.Monoid.Sum', but
---   uses the 'Semiring' constraint rather than 'Num'.
+--   uses the 'Semiring' constraint rather than 'Num.Num'.
 newtype Add a = Add { getAdd :: a }
   deriving
     ( Bounded
@@ -330,7 +330,7 @@ instance Semiring a => Semigroup (Add' a) where
   Add' a <> Add' b = Add' (a + b)
 
 -- | Monoid under 'times'. Analogous to 'Data.Monoid.Product', but
---   uses the 'Semiring' constraint rather than 'Num'.
+--   uses the 'Semiring' constraint rather than 'Num.Num'.
 newtype Mul a = Mul { getMul :: a }
   deriving
     ( Bounded
@@ -364,7 +364,7 @@ instance Semiring a => Monoid (Mul a) where
   {-# INLINE mempty #-}
   {-# INLINE mappend #-}
 
--- | Provide Semiring and Ring for an arbitrary Num. It is useful with GHC 8.6+'s DerivingVia extension.
+-- | Provide Semiring and Ring for an arbitrary 'Num.Num'. It is useful with GHC 8.6+'s DerivingVia extension.
 newtype WrappedNum a = WrapNum { unwrapNum :: a }
   deriving
     ( Bounded
@@ -438,11 +438,11 @@ instance Ring Mod2 where
 -- can think of a semiring as two monoids of the same
 -- underlying type, with the first being commutative.
 -- In the documentation, you will often see the first
--- monoid being referred to as 'additive', and the second
--- monoid being referred to as 'multiplicative', a typical
+-- monoid being referred to as @additive@, and the second
+-- monoid being referred to as @multiplicative@, a typical
 -- convention when talking about semirings.
 --
--- For any type R with a 'Prelude.Num'
+-- For any type R with a 'Num.Num'
 -- instance, the additive monoid is (R, 'Prelude.+', 0)
 -- and the multiplicative monoid is (R, 'Prelude.*', 1).
 --
@@ -496,8 +496,8 @@ class Semiring a => Ring a where
 #endif
   negate :: a -> a
 
--- | Subtract two 'Ring' values. For any type 'R' with
--- a 'Prelude.Num' instance, this is the same as '(Prelude.-)'.
+-- | Subtract two 'Ring' values. For any type @R@ with
+-- a 'Num.Num' instance, this is the same as '(Prelude.-)'.
 --
 --     @x `minus` y = x '+' 'negate' y@
 minus :: Ring a => a -> a -> a
@@ -508,7 +508,7 @@ minus x y = x + negate y
 --
 -- When @{-#@ @LANGUAGE RebindableSyntax #-}@ is enabled,
 -- this function is used for desugaring integer literals.
--- This may be used to facilitate transition from 'Prelude.Num' to 'Ring':
+-- This may be used to facilitate transition from 'Num.Num' to 'Ring':
 -- no need to replace 0 and 1 with 'one' and 'zero'
 -- or to cast numeric literals.
 fromInteger :: Ring a => Integer -> a
