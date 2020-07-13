@@ -60,7 +60,6 @@ import Numeric.Natural
 -- >   quotRem = ...
 -- >   degree  = ...
 class Semiring a => GcdDomain a where
-
   -- | Division without remainder.
   --
   -- prop> \x y -> (x * y) `divide` y == Just x
@@ -116,10 +115,12 @@ infixl 7 `divide`
 -- <https://en.wikipedia.org/wiki/Euclidean_domain Euclidean domain>
 -- endowed by a given Euclidean function 'degree'.
 class GcdDomain a => Euclidean a where
+  {-# MINIMAL (quotRem | quot, rem), degree #-}
   -- | Division with remainder.
   --
   -- prop> \x y -> y == 0 || let (q, r) = x `quotRem` y in x == q * y + r
   quotRem :: a -> a -> (a, a)
+  quotRem x y = (quot x y, rem x y)
 
   -- | Division. Must match its default definition:
   --
