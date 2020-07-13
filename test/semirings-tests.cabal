@@ -26,7 +26,7 @@ test-suite test
   hs-source-dirs: .
   main-is: main.hs
   type: exitcode-stdio-1.0
-  build-depends: base
+  build-depends: base >= 4.8 && < 5
                , QuickCheck
                , base-orphans
                , containers
