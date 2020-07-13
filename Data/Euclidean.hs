@@ -143,7 +143,9 @@ class GcdDomain a => Euclidean a where
   -- prop> \x y -> y == 0 || let (q, r) = x `quotRem` y in (r == 0 || degree r < degree y)
   degree :: a -> Natural
 
+  #if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL (quotRem | quot, rem), degree #-}
+  #endif
 
 infixl 7 `quot`
 infixl 7 `rem`
