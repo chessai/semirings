@@ -15,8 +15,8 @@ import Data.Complex
 import Data.Either
 import Data.Euclidean hiding (gcd)
 import Data.Fixed
-import Data.Functor.Const
-import Data.Functor.Identity
+import Data.Functor.Const.Compat
+import Data.Functor.Identity.Compat
 import Data.HashMap.Strict
 import Data.HashSet
 import Data.Hashable
@@ -29,7 +29,7 @@ import Data.Ord (Down(..))
 import Data.Orphans ()
 import Data.Proxy (Proxy(..))
 import Data.Ratio
-import Data.Semigroup
+import Data.Semigroup.Compat
 import Data.Semiring
 import Data.Semiring.Generic
 import Data.Sequence
