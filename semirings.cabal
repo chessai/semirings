@@ -74,7 +74,7 @@ library
   build-depends:
       base >= 4.8 && < 5
     , base-compat-batteries
-    , integer-gmp
+    , integer-gmp >= 0.1.0.0
   exposed-modules:
     Data.Euclidean
     Data.Field
