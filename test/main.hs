@@ -159,6 +159,9 @@ instance (Semiring a, Applicative f) => Semiring (Ap f a) where
   one = pure one
   plus = liftA2 plus
   times = liftA2 times
+  fromNatural = pure . fromNatural
+instance (Ring a, Applicative f) => Ring (Ap f a) where
+  negate = fmap negate
 #endif
 deriving instance (Arbitrary (f a)) => Arbitrary (Ap f a)
 
