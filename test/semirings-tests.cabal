@@ -38,13 +38,9 @@ test-suite test
                , tasty-quickcheck
                , unordered-containers
 
-  if impl(ghc < 7.10)
-    build-depends: transformers
-
   if impl(ghc < 8.0)
+    build-depends: transformers
     build-depends: semigroups >= 0.17
-
-  ghc-options: -O2
 
 source-repository head
   type:     git
