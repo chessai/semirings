@@ -33,6 +33,7 @@ module Data.Semiring.Generic
   , gone
   , gplus
   , gtimes
+  , gfromNatural
   , GRing(..)
   , gnegate
   , GenericSemiring(..)
