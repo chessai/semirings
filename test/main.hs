@@ -1,13 +1,13 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
+#if MIN_VERSION_base(4,12,0)
+{-# LANGUAGE DerivingVia #-}
+#endif
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE DerivingStrategies #-}
 
 import Control.Monad ((>=>),forM)
 import Control.Applicative (liftA2)
@@ -178,10 +178,10 @@ deriving instance Semiring a => Semiring (Op a b)
 deriving instance Ring a => Ring (Op a b)
 deriving instance (Arbitrary a, CoArbitrary a, CoArbitrary b) => Arbitrary (Op a b)
 
-pAp = p @(Ap Identity Int)
-pPredicate = p @(Predicate Int)
-pEquivalence = p @(Equivalence Int)
-pOp = p @(Op Int Int)
+pAp = Proxy :: Proxy (Ap Identity Int)
+pPredicate = Proxy :: Proxy (Predicate Int)
+pEquivalence = Proxy :: Proxy (Equivalence Int)
+pOp = Proxy :: Proxy (Op Int Int)
 
 deriving instance Arbitrary a => Arbitrary (Down a)
 
@@ -194,9 +194,6 @@ instance (Arbitrary a, Integral a, Ord a) => Arbitrary (PosRatio a) where
     let nm = suchThat (arbitrary :: Gen a) (> 0)
         dm = suchThat (arbitrary :: Gen a) (> 0)
     in PosRatio <$> liftA2 (%) nm dm
-
-p :: forall a. Proxy a
-p = Proxy
 
 instance (Arbitrary a, Eq b) => Eq (a -> b) where
   (==) f g =
@@ -228,67 +225,74 @@ deriving instance Arbitrary v => Arbitrary (IntMapOf k v)
 
 deriving instance Arbitrary Mod2
 
-pBool = p @Bool
-pDouble = p @Double
-pFloat = p @Float
-pInt = p @Int
-pInt8 = p @Int8
-pInt16 = p @Int16
-pInt32 = p @Int32
-pInt64 = p @Int64
-pInteger = p @Integer
-pNatural = p @Natural
-pWord = p @Word
-pWord8 = p @Word8
-pWord16 = p @Word16
-pWord32 = p @Word32
-pWord64 = p @Word64
-pUnit = p @()
-pMaybe = p @(Maybe Int)
-pPosRatio = p @(PosRatio Int)
-pIO = p @(IO Int)
-pComplex = p @(Complex Double)
-pFixed = p @(Fixed E0)
-pMin = p @(Min Int)
-pMax = p @(Max Int)
-pIdentity = p @(Identity Int)
-pDual = p @(Dual Int)
-pEndo = p @(Endo (Sum Int))
-pSum  = p @(Sum Int)
-pProduct = p @(Product Int)
-pDown = p @(Down Int)
-pSeq = p @(Seq Int)
-pSet = p @(Set (Sum Int))
-pHashSet = p @(HashSet (Sum Int))
-pFunction = p @(Int -> Int)
-pMap = p @(Map (Sum Int) Int)
-pHashMap = p @(HashMap (Sum Int) Int)
-pConst = p @(Const Int Int)
-pAlt = p @(Alt Maybe Int)
-pRational = p @Rational
-pMod2 = p @Mod2
-pAB = p @AB
+pBool = Proxy :: Proxy Bool
+pDouble = Proxy :: Proxy Double
+pFloat = Proxy :: Proxy Float
+pInt = Proxy :: Proxy Int
+pInt8 = Proxy :: Proxy Int8
+pInt16 = Proxy :: Proxy Int16
+pInt32 = Proxy :: Proxy Int32
+pInt64 = Proxy :: Proxy Int64
+pInteger = Proxy :: Proxy Integer
+pNatural = Proxy :: Proxy Natural
+pWord = Proxy :: Proxy Word
+pWord8 = Proxy :: Proxy Word8
+pWord16 = Proxy :: Proxy Word16
+pWord32 = Proxy :: Proxy Word32
+pWord64 = Proxy :: Proxy Word64
+pUnit = Proxy :: Proxy ()
+pMaybe = Proxy :: Proxy (Maybe Int)
+pPosRatio = Proxy :: Proxy (PosRatio Int)
+pIO = Proxy :: Proxy (IO Int)
+pComplex = Proxy :: Proxy (Complex Double)
+pFixed = Proxy :: Proxy (Fixed E0)
+pMin = Proxy :: Proxy (Min Int)
+pMax = Proxy :: Proxy (Max Int)
+pIdentity = Proxy :: Proxy (Identity Int)
+pDual = Proxy :: Proxy (Dual Int)
+pEndo = Proxy :: Proxy (Endo (Sum Int))
+pSum  = Proxy :: Proxy (Sum Int)
+pProduct = Proxy :: Proxy (Product Int)
+pDown = Proxy :: Proxy (Down Int)
+pSeq = Proxy :: Proxy (Seq Int)
+pSet = Proxy :: Proxy (Set (Sum Int))
+pHashSet = Proxy :: Proxy (HashSet (Sum Int))
+pFunction = Proxy :: Proxy (Int -> Int)
+pMap = Proxy :: Proxy (Map (Sum Int) Int)
+pHashMap = Proxy :: Proxy (HashMap (Sum Int) Int)
+pConst = Proxy :: Proxy (Const Int Int)
+pAlt = Proxy :: Proxy (Alt Maybe Int)
+pRational = Proxy :: Proxy Rational
+pMod2 = Proxy :: Proxy Mod2
+pAB = Proxy :: Proxy AB
 
-pIntSetSum = p @(IntSetOf (Sum Int))
-pIntSetProduct = p @(IntSetOf (Product Int))
-pIntSetMin = p @(IntSetOf (Min Int))
-pIntSetMax = p @(IntSetOf (Max Int))
+pIntSetSum = Proxy :: Proxy (IntSetOf (Sum Int))
+pIntSetProduct = Proxy :: Proxy (IntSetOf (Product Int))
+pIntSetMin = Proxy :: Proxy (IntSetOf (Min Int))
+pIntSetMax = Proxy :: Proxy (IntSetOf (Max Int))
 
-pIntMapSum = p @(IntMapOf (Sum Int) Int)
-pIntMapProduct = p @(IntMapOf (Product Int) Int)
-pIntMapMin = p @(IntMapOf (Min Int) Int)
-pIntMapMax = p @(IntMapOf (Max Int) Int)
+pIntMapSum = Proxy :: Proxy (IntMapOf (Sum Int) Int)
+pIntMapProduct = Proxy :: Proxy (IntMapOf (Product Int) Int)
+pIntMapMin = Proxy :: Proxy (IntMapOf (Min Int) Int)
+pIntMapMax = Proxy :: Proxy (IntMapOf (Max Int) Int)
 
 newtype A = A Integer
-  deriving (Show, Eq)
-  deriving newtype (Semiring, Arbitrary)
+  deriving (Show, Eq, Semiring, Arbitrary)
 newtype B = B Integer
-  deriving (Show, Eq)
-  deriving newtype (Semiring, Arbitrary)
+  deriving (Show, Eq, Semiring, Arbitrary)
 
 data AB = AB A B
   deriving (Show, Eq, Generic)
+#if MIN_VERSION_base(4,12,0)
   deriving (Semiring) via (GenericSemiring AB)
+#else
+instance Semiring AB where
+  zero = gzero
+  one = gone
+  plus = gplus
+  times = gtimes
+  fromNatural = gfromNatural
+#endif
 
 instance Arbitrary AB where
   arbitrary = AB <$> arbitrary <*> arbitrary
