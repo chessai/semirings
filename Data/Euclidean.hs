@@ -120,6 +120,7 @@ class GcdDomain a => Euclidean a where
   --
   -- prop> \x y -> y == 0 || let (q, r) = x `quotRem` y in x == q * y + r
   quotRem :: a -> a -> (a, a)
+  quotRem x y = (quot x y, rem x y)
 
   -- | Division. Must match its default definition:
   --
@@ -141,6 +142,8 @@ class GcdDomain a => Euclidean a where
   --
   -- prop> \x y -> y == 0 || let (q, r) = x `quotRem` y in (r == 0 || degree r < degree y)
   degree :: a -> Natural
+
+  {-# MINIMAL (quotRem | quot, rem), degree #-}
 
 infixl 7 `quot`
 infixl 7 `rem`
