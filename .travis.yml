@@ -109,7 +109,9 @@ install:
   - if [ $HCNUMVER -ge 80200 ] ; then echo 'package semirings-tests' >> cabal.project ; fi
   - "if [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
   - |
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(semirings|semirings-tests)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+    echo "package semirings-test" >> cabal.project
+    echo "  ghc-options: -Wall"   >> cabal.project
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(semirings|semirings-tests|transformers)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - if [ -f "./configure.ac" ]; then (cd "." && autoreconf -i); fi
@@ -117,7 +119,6 @@ install:
   - ${CABAL} v2-freeze $WITHCOMPILER ${TEST} ${BENCH}
   - "cat cabal.project.freeze | sed -E 's/^(constraints: *| *)//' | sed 's/any.//'"
   - rm  cabal.project.freeze
-  - travis_wait 40 ${CABAL} v2-build $WITHCOMPILER ${TEST} ${BENCH} --dep -j2 all
 script:
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
   # Packaging...
@@ -140,7 +141,9 @@ script:
   - if [ $HCNUMVER -ge 80200 ] ; then echo 'package semirings-tests' >> cabal.project ; fi
   - "if [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
   - |
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(semirings|semirings-tests)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+    echo "package semirings-test" >> cabal.project
+    echo "  ghc-options: -Wall"   >> cabal.project
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(semirings|semirings-tests|transformers)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   # Building with tests and benchmarks...
@@ -153,9 +156,6 @@ script:
   - (cd ${PKGDIR_semirings_tests} && ${CABAL} -vnormal check)
   # haddock...
   - ${CABAL} v2-haddock $WITHCOMPILER --with-haddock $HADDOCK ${TEST} ${BENCH} all
-  # Building without installed constraints for packages in global-db...
-  - rm -f cabal.project.local
-  - ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks all
 
 # REGENDATA ("0.10.1",["--output=.travis.yml","--config=cabal.haskell-ci","cabal.project"])
 # EOF
