@@ -28,7 +28,7 @@ test-suite test
   type: exitcode-stdio-1.0
   build-depends: base >= 4.8 && < 5
                , QuickCheck
-               , base-compat
+               , base-compat-batteries
                , base-orphans
                , containers
                , hashable
