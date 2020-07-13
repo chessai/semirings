@@ -1,3 +1,9 @@
+0.5.4: [2020.07.13]
+-------------------
+* Drop support for GHCs prior to 7.10
+* Add default quotRem implementation
+* Expose Data.Semiring.Generic.gfromNatural
+
 0.5.3: [2020.02.18]
 -------------------
 * Fix non-terminating GenericSemiring instances
