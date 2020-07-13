@@ -11,9 +11,6 @@
 {-# LANGUAGE Rank2Types                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
-#if MIN_VERSION_base(4,7,0) && !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE UndecidableInstances       #-} -- on GHC 7.8 the coercible constraint causes us to need this
-#endif
 
 -----------------------------------------------------------------------------
 -- |
@@ -41,7 +38,7 @@ module Data.Semiring
   , Mul(..)
   , WrappedNum(..)
   , Mod2(..)
-#if defined(VERSION_containers) && MIN_VERSION_base(4,7,0)
+#if defined(VERSION_containers)
   , IntSetOf(..)
   , IntMapOf(..)
 #endif
@@ -57,9 +54,7 @@ module Data.Semiring
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
 import           Data.Bits (Bits)
 import           Data.Bool (Bool(..), (||), (&&), otherwise)
-#if MIN_VERSION_base(4,7,0)
 import           Data.Coerce (Coercible, coerce)
-#endif
 import           Data.Complex (Complex(..))
 import           Data.Eq (Eq(..))
 import           Data.Fixed (Fixed, HasResolution)
@@ -98,12 +93,10 @@ import qualified Data.Map as Map
 #endif
 import           Data.Monoid (Monoid(..), Dual(..))
 import           Data.Ord (Ord((<)), (>=))
-#if MIN_VERSION_base(4,6,0)
 import           Data.Ord (Down(..))
-#endif
 import           Data.Proxy (Proxy(..))
 import           Data.Ratio (Ratio, Rational, (%))
-import           Data.Semigroup (Semigroup(..))
+import           Data.Semigroup.Compat (Semigroup(..))
 #if defined(VERSION_containers)
 import           Data.Set (Set)
 import qualified Data.Set as Set
@@ -123,9 +116,7 @@ import           Foreign.Storable (Storable)
 import           GHC.Enum (Enum, Bounded)
 import           GHC.Err (error)
 import           GHC.Float (Float, Double)
-#if MIN_VERSION_base(4,6,1)
 import           GHC.Generics (Generic,Generic1)
-#endif
 import           GHC.IO (IO)
 import           GHC.Integer (Integer)
 import qualified GHC.Num as Num
@@ -241,7 +232,6 @@ foldMapT :: (Foldable t, Semiring s) => (a -> s) -> t a -> s
 foldMapT f = Foldable.foldr (times . f) one
 {-# INLINE foldMapT #-}
 
-#if MIN_VERSION_base(4,7,0)
 infixr 9 #.
 (#.) :: Coercible b c => (b -> c) -> (a -> b) -> a -> c
 (#.) _ = coerce
@@ -257,22 +247,6 @@ sum = getAdd #. foldMap Add
 product :: (Foldable t, Semiring a) => t a -> a
 product = getMul #. foldMap Mul
 {-# INLINE product #-}
-
-#else
-
--- | The 'sum' function computes the additive sum of the elements in a structure.
---   This function is lazy. For a strict version, see 'sum''.
-sum :: (Foldable t, Semiring a) => t a -> a
-sum = getAdd . foldMap Add
-{-# INLINE sum #-}
-
--- | The 'product' function computes the product of the elements in a structure.
---   This function is lazy. for a strict version, see 'product''.
-product :: (Foldable t, Semiring a) => t a -> a
-product = getMul . foldMap Mul
-{-# INLINE product #-}
-
-#endif
 
 -- | The 'sum'' function computes the additive sum of the elements in a structure.
 --   This function is strict. For a lazy version, see 'sum'.
@@ -296,10 +270,8 @@ newtype Add a = Add { getAdd :: a }
     , Foldable
     , Fractional
     , Functor
-#if MIN_VERSION_base(4,6,1)
     , Generic
     , Generic1
-#endif
     , Num.Num
     , Ord
     , Read
@@ -339,10 +311,8 @@ newtype Mul a = Mul { getMul :: a }
     , Foldable
     , Fractional
     , Functor
-#if MIN_VERSION_base(4,6,1)
     , Generic
     , Generic1
-#endif
     , Num.Num
     , Ord
     , Read
@@ -373,10 +343,8 @@ newtype WrappedNum a = WrapNum { unwrapNum :: a }
     , Foldable
     , Fractional
     , Functor
-#if MIN_VERSION_base(4,6,1)
     , Generic
     , Generic1
-#endif
     , Num.Num
     , Ord
     , Read
@@ -410,9 +378,7 @@ newtype Mod2 = Mod2 { getMod2 :: Bool }
     , Ord
     , Read
     , Show
-#if MIN_VERSION_base(4,6,1)
     , Generic
-#endif
     )
 
 instance Semiring Mod2 where
@@ -785,9 +751,7 @@ instance Integral a => Semiring (Ratio a) where
   {-# INLINE times #-}
   {-# INLINE fromNatural #-}
 deriving instance Semiring a => Semiring (Identity a)
-#if MIN_VERSION_base(4,6,0)
 deriving instance Semiring a => Semiring (Down a)
-#endif
 instance HasResolution a => Semiring (Fixed a) where
   zero  = 0
   one   = 1
@@ -868,9 +832,7 @@ instance Integral a => Ring (Ratio a) where
   negate = Num.negate
   {-# INLINE negate #-}
 
-#if MIN_VERSION_base(4,6,0)
 deriving instance Ring a => Ring (Down a)
-#endif
 deriving instance Ring a => Ring (Identity a)
 instance HasResolution a => Ring (Fixed a) where
   negate = Num.negate
@@ -900,17 +862,14 @@ instance (Ord a, Monoid a) => Semiring (Set a) where
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
 
-#if MIN_VERSION_base(4,7,0)
 -- | Wrapper to mimic 'Set' ('Data.Semigroup.Sum' 'Int'),
 -- 'Set' ('Data.Semigroup.Product' 'Int'), etc.,
 -- while having a more efficient underlying representation.
 newtype IntSetOf a = IntSetOf { getIntSet :: IntSet }
   deriving
     ( Eq
-#if MIN_VERSION_base(4,6,1)
     , Generic
     , Generic1
-#endif
     , Ord
     , Read
     , Show
@@ -936,7 +895,6 @@ instance (Coercible Int a, Monoid a) => Semiring (IntSetOf a) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
-#endif
 
 -- | The multiplication laws are satisfied for
 --   any underlying 'Monoid' as the key type,
@@ -961,17 +919,14 @@ instance (Ord k, Monoid k, Semiring v) => Semiring (Map k v) where
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
 
-#if MIN_VERSION_base(4,7,0)
 -- | Wrapper to mimic 'Map' ('Data.Semigroup.Sum' 'Int') v,
 -- 'Map' ('Data.Semigroup.Product' 'Int') v, etc.,
 -- while having a more efficient underlying representation.
 newtype IntMapOf k v = IntMapOf { getIntMap :: IntMap v }
   deriving
     ( Eq
-#if MIN_VERSION_base(4,6,1)
     , Generic
     , Generic1
-#endif
     , Ord
     , Read
     , Show
@@ -997,7 +952,6 @@ instance (Coercible Int k, Monoid k, Semiring v) => Semiring (IntMapOf k v) wher
   {-# INLINE times #-}
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
-#endif
 
 #endif
 

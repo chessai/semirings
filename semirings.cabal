@@ -73,38 +73,24 @@ library
 
   build-depends:
       base >= 4.8 && < 5
+    , base-compat
     , integer-gmp
+  exposed-modules:
+    Data.Euclidean
+    Data.Field
+    Data.Semiring
+    Data.Star
+    Data.Semiring.Tropical
+    Data.Semiring.Generic
 
-  if impl(ghc < 7.10)
-    build-depends:
-        nats >= 0.1 && < 2
-      , transformers
+  if flag(containers)
+    build-depends: containers >= 0.5.4 && < 0.7
 
-  if impl(ghc < 8.0)
-    build-depends: semigroups >= 0.17
+  if flag(hashable)
+    build-depends: hashable >= 1.1  && < 1.4
 
-  if impl(ghc < 7.8)
-    build-depends: tagged
+  if flag(hashable)
+    build-depends: hashable >= 1.1  && < 1.4
 
-  if impl(ghc >= 7.2)
-    exposed-modules:
-      Data.Euclidean
-      Data.Field
-      Data.Semiring
-      Data.Star
-      Data.Semiring.Tropical
-  if impl(ghc >= 7.6.1)
-    exposed-modules:
-      Data.Semiring.Generic
-
-    if flag(containers) && impl(ghc >= 7.8)
-      build-depends: containers >= 0.5.4 && < 0.7
-
-    if flag(hashable) && impl(ghc < 7.8)
-      build-depends: hashable >= 1.1  && < 1.4
-
-    if flag(hashable) && impl(ghc >= 7.8)
-      build-depends: hashable >= 1.1  && < 1.4
-
-    if flag(hashable) && flag(unordered-containers)
-      build-depends: unordered-containers >= 0.2  && < 0.3
+  if flag(hashable) && flag(unordered-containers)
+    build-depends: unordered-containers >= 0.2  && < 0.3
