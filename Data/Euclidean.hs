@@ -114,6 +114,12 @@ infixl 7 `divide`
 -- 'Euclidean' represents a
 -- <https://en.wikipedia.org/wiki/Euclidean_domain Euclidean domain>
 -- endowed by a given Euclidean function 'degree'.
+--
+-- No particular rounding behaviour is expected of 'quotRem'. E. g.,
+-- it is not guaranteed to truncate towards zero or towards negative
+-- infinity (cf. 'P.divMod'), and remainders are not guaranteed to be non-negative.
+-- For a faithful representation of residue classes one can use
+-- <http://hackage.haskell.org/package/mod mod> package instead.
 class GcdDomain a => Euclidean a where
   {-# MINIMAL (quotRem | quot, rem), degree #-}
   -- | Division with remainder.
