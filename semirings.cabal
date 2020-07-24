@@ -87,10 +87,7 @@ library
     build-depends: containers >= 0.5.4 && < 0.7
 
   if flag(hashable)
-    build-depends: hashable >= 1.1  && < 1.4
-
-  if flag(hashable)
-    build-depends: hashable >= 1.1  && < 1.4
+    build-depends: hashable >= 1.1 && < 1.4
 
   if flag(hashable) && flag(unordered-containers)
-    build-depends: unordered-containers >= 0.2  && < 0.3
+    build-depends: unordered-containers >= 0.2 && < 0.3
