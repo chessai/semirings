@@ -11,6 +11,7 @@
 {-# LANGUAGE Rank2Types                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TemplateHaskell            #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -123,8 +124,10 @@ import           GHC.Read (Read)
 import           GHC.Real (Integral, Fractional, Real, RealFrac)
 import qualified GHC.Real as Real
 import           GHC.Show (Show)
+import           Language.Haskell.TH.Syntax (Q, Dec, Type)
 import           Numeric.Natural (Natural)
 import           Prelude (Integer)
+import qualified Prelude as P
 
 #ifdef mingw32_HOST_OS
 #define HOST_OS_WINDOWS 1
@@ -664,80 +667,6 @@ deriving instance Semiring a => Semiring (Op a b)
 deriving instance Ring a => Ring (Op a b)
 #endif
 
-#define deriveSemiring(ty)         \
-instance Semiring (ty) where {     \
-   zero  = 0                       \
-;  one   = 1                       \
-;  plus  x y = (Num.+) x y         \
-;  times x y = (Num.*) x y         \
-;  fromNatural = Real.fromIntegral \
-;  {-# INLINE zero #-}             \
-;  {-# INLINE one  #-}             \
-;  {-# INLINE plus #-}             \
-;  {-# INLINE times #-}            \
-;  {-# INLINE fromNatural #-}      \
-}
-
-deriveSemiring(Int)
-deriveSemiring(Int8)
-deriveSemiring(Int16)
-deriveSemiring(Int32)
-deriveSemiring(Int64)
-deriveSemiring(Integer)
-deriveSemiring(Word)
-deriveSemiring(Word8)
-deriveSemiring(Word16)
-deriveSemiring(Word32)
-deriveSemiring(Word64)
-deriveSemiring(Float)
-deriveSemiring(Double)
-deriveSemiring(CUIntMax)
-deriveSemiring(CIntMax)
-deriveSemiring(CUIntPtr)
-deriveSemiring(CIntPtr)
-deriveSemiring(CSUSeconds)
-deriveSemiring(CUSeconds)
-deriveSemiring(CTime)
-deriveSemiring(CClock)
-deriveSemiring(CSigAtomic)
-deriveSemiring(CWchar)
-deriveSemiring(CSize)
-deriveSemiring(CPtrdiff)
-deriveSemiring(CDouble)
-deriveSemiring(CFloat)
-deriveSemiring(CULLong)
-deriveSemiring(CLLong)
-deriveSemiring(CULong)
-deriveSemiring(CLong)
-deriveSemiring(CUInt)
-deriveSemiring(CInt)
-deriveSemiring(CUShort)
-deriveSemiring(CShort)
-deriveSemiring(CUChar)
-deriveSemiring(CSChar)
-deriveSemiring(CChar)
-deriveSemiring(IntPtr)
-deriveSemiring(WordPtr)
-
-#if !HOST_OS_WINDOWS
-deriveSemiring(CCc)
-deriveSemiring(CDev)
-deriveSemiring(CGid)
-deriveSemiring(CIno)
-deriveSemiring(CMode)
-deriveSemiring(CNlink)
-deriveSemiring(COff)
-deriveSemiring(CPid)
-deriveSemiring(CRLim)
-deriveSemiring(CSpeed)
-deriveSemiring(CSsize)
-deriveSemiring(CTcflag)
-deriveSemiring(CUid)
-deriveSemiring(Fd)
-#endif
-
-deriveSemiring(Natural)
-
 instance Integral a => Semiring (Ratio a) where
   {-# SPECIALIZE instance Semiring Rational #-}
   zero  = 0 % 1
@@ -763,70 +692,6 @@ instance HasResolution a => Semiring (Fixed a) where
   {-# INLINE plus  #-}
   {-# INLINE times #-}
   {-# INLINE fromNatural #-}
-
-#define deriveRing(ty)          \
-instance Ring (ty) where {      \
-  negate = Num.negate           \
-; {-# INLINE negate #-}         \
-}
-
-deriveRing(Int)
-deriveRing(Int8)
-deriveRing(Int16)
-deriveRing(Int32)
-deriveRing(Int64)
-deriveRing(Integer)
-deriveRing(Word)
-deriveRing(Word8)
-deriveRing(Word16)
-deriveRing(Word32)
-deriveRing(Word64)
-deriveRing(Float)
-deriveRing(Double)
-deriveRing(CUIntMax)
-deriveRing(CIntMax)
-deriveRing(CUIntPtr)
-deriveRing(CIntPtr)
-deriveRing(CSUSeconds)
-deriveRing(CUSeconds)
-deriveRing(CTime)
-deriveRing(CClock)
-deriveRing(CSigAtomic)
-deriveRing(CWchar)
-deriveRing(CSize)
-deriveRing(CPtrdiff)
-deriveRing(CDouble)
-deriveRing(CFloat)
-deriveRing(CULLong)
-deriveRing(CLLong)
-deriveRing(CULong)
-deriveRing(CLong)
-deriveRing(CUInt)
-deriveRing(CInt)
-deriveRing(CUShort)
-deriveRing(CShort)
-deriveRing(CUChar)
-deriveRing(CSChar)
-deriveRing(CChar)
-deriveRing(IntPtr)
-deriveRing(WordPtr)
-
-#if !HOST_OS_WINDOWS
-deriveRing(CCc)
-deriveRing(CDev)
-deriveRing(CGid)
-deriveRing(CIno)
-deriveRing(CMode)
-deriveRing(CNlink)
-deriveRing(COff)
-deriveRing(CPid)
-deriveRing(CRLim)
-deriveRing(CSpeed)
-deriveRing(CSsize)
-deriveRing(CTcflag)
-deriveRing(CUid)
-deriveRing(Fd)
-#endif
 
 instance Integral a => Ring (Ratio a) where
   negate = Num.negate
@@ -1012,3 +877,148 @@ isZero x = x == zero
 isOne :: (Eq a, Semiring a) => a -> Bool
 isOne x = x == one
 {-# INLINEABLE isOne #-}
+
+-- Integral and fieldlike instances
+$(let
+  deriveSemiring :: Q Type -> Q [Dec]
+  deriveSemiring ty = [d|
+      instance Semiring $ty where
+         zero  = 0
+         one   = 1
+         plus  x y = (Num.+) x y
+         times x y = (Num.*) x y
+         fromNatural = Real.fromIntegral
+         {-# INLINE zero #-}
+         {-# INLINE one  #-}
+         {-# INLINE plus #-}
+         {-# INLINE times #-}
+         {-# INLINE fromNatural #-}
+      |]
+
+  in P.concat P.<$> P.traverse deriveSemiring
+   [[t|Int|]
+   ,[t|Int8|]
+   ,[t|Int16|]
+   ,[t|Int32|]
+   ,[t|Int64|]
+   ,[t|Integer|]
+   ,[t|Word|]
+   ,[t|Word8|]
+   ,[t|Word16|]
+   ,[t|Word32|]
+   ,[t|Word64|]
+   ,[t|Float|]
+   ,[t|Double|]
+   ,[t|CUIntMax|]
+   ,[t|CIntMax|]
+   ,[t|CUIntPtr|]
+   ,[t|CIntPtr|]
+   ,[t|CSUSeconds|]
+   ,[t|CUSeconds|]
+   ,[t|CTime|]
+   ,[t|CClock|]
+   ,[t|CSigAtomic|]
+   ,[t|CWchar|]
+   ,[t|CSize|]
+   ,[t|CPtrdiff|]
+   ,[t|CDouble|]
+   ,[t|CFloat|]
+   ,[t|CULLong|]
+   ,[t|CLLong|]
+   ,[t|CULong|]
+   ,[t|CLong|]
+   ,[t|CUInt|]
+   ,[t|CInt|]
+   ,[t|CUShort|]
+   ,[t|CShort|]
+   ,[t|CUChar|]
+   ,[t|CSChar|]
+   ,[t|CChar|]
+   ,[t|IntPtr|]
+   ,[t|WordPtr|]
+#if !HOST_OS_WINDOWS
+   ,[t|CCc|]
+   ,[t|CDev|]
+   ,[t|CGid|]
+   ,[t|CIno|]
+   ,[t|CMode|]
+   ,[t|CNlink|]
+   ,[t|COff|]
+   ,[t|CPid|]
+   ,[t|CRLim|]
+   ,[t|CSpeed|]
+   ,[t|CSsize|]
+   ,[t|CTcflag|]
+   ,[t|CUid|]
+   ,[t|Fd|]
+#endif
+   ,[t|Natural|]
+   ])
+
+$(let
+  deriveRing :: Q Type -> Q [Dec]
+  deriveRing ty = [d|
+      instance Ring $ty where
+        negate = Num.negate
+        {-# INLINE negate #-}
+      |]
+
+  in P.concat P.<$> P.traverse deriveRing
+    [[t|Int|]
+    ,[t|Int8|]
+    ,[t|Int16|]
+    ,[t|Int32|]
+    ,[t|Int64|]
+    ,[t|Integer|]
+    ,[t|Word|]
+    ,[t|Word8|]
+    ,[t|Word16|]
+    ,[t|Word32|]
+    ,[t|Word64|]
+    ,[t|Float|]
+    ,[t|Double|]
+    ,[t|CUIntMax|]
+    ,[t|CIntMax|]
+    ,[t|CUIntPtr|]
+    ,[t|CIntPtr|]
+    ,[t|CSUSeconds|]
+    ,[t|CUSeconds|]
+    ,[t|CTime|]
+    ,[t|CClock|]
+    ,[t|CSigAtomic|]
+    ,[t|CWchar|]
+    ,[t|CSize|]
+    ,[t|CPtrdiff|]
+    ,[t|CDouble|]
+    ,[t|CFloat|]
+    ,[t|CULLong|]
+    ,[t|CLLong|]
+    ,[t|CULong|]
+    ,[t|CLong|]
+    ,[t|CUInt|]
+    ,[t|CInt|]
+    ,[t|CUShort|]
+    ,[t|CShort|]
+    ,[t|CUChar|]
+    ,[t|CSChar|]
+    ,[t|CChar|]
+    ,[t|IntPtr|]
+    ,[t|WordPtr|]
+
+#if !HOST_OS_WINDOWS
+    ,[t|CCc|]
+    ,[t|CDev|]
+    ,[t|CGid|]
+    ,[t|CIno|]
+    ,[t|CMode|]
+    ,[t|CNlink|]
+    ,[t|COff|]
+    ,[t|CPid|]
+    ,[t|CRLim|]
+    ,[t|CSpeed|]
+    ,[t|CSsize|]
+    ,[t|CTcflag|]
+    ,[t|CUid|]
+    ,[t|Fd|]
+#endif
+    ])

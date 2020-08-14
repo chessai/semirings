@@ -9,6 +9,7 @@
 {-# LANGUAGE DefaultSignatures          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
+{-# LANGUAGE TemplateHaskell            #-}
 
 module Data.Euclidean
   ( Euclidean(..)
@@ -30,6 +31,7 @@ import Data.Ratio (Ratio)
 import Data.Semiring (Semiring(..), Ring(..), (*), minus, isZero, Mod2)
 import Data.Word (Word, Word8, Word16, Word32, Word64)
 import Foreign.C.Types (CFloat, CDouble)
+import Language.Haskell.TH.Syntax (Q, Dec, Type)
 
 import Numeric.Natural
 
@@ -225,48 +227,6 @@ instance Integral a => Euclidean (WrappedIntegral a) where
   quot    = P.quot
   rem     = P.rem
 
-#define deriveGcdDomain(ty)     \
-instance GcdDomain (ty) where { \
-;  divide x y = case x `P.quotRem` y of { (q, 0) -> Just q; _ -> Nothing } \
-;  gcd     = P.gcd              \
-;  lcm     = P.lcm              \
-;  coprime = coprimeIntegral    \
-}
-
-deriveGcdDomain(Int)
-deriveGcdDomain(Int8)
-deriveGcdDomain(Int16)
-deriveGcdDomain(Int32)
-deriveGcdDomain(Int64)
-deriveGcdDomain(Integer)
-deriveGcdDomain(Word)
-deriveGcdDomain(Word8)
-deriveGcdDomain(Word16)
-deriveGcdDomain(Word32)
-deriveGcdDomain(Word64)
-deriveGcdDomain(Natural)
-
-#define deriveEuclidean(ty)       \
-instance Euclidean (ty) where {   \
-;  degree  = P.fromIntegral . abs \
-;  quotRem = P.quotRem            \
-;  quot    = P.quot               \
-;  rem     = P.rem                \
-}
-
-deriveEuclidean(Int)
-deriveEuclidean(Int8)
-deriveEuclidean(Int16)
-deriveEuclidean(Int32)
-deriveEuclidean(Int64)
-deriveEuclidean(Integer)
-deriveEuclidean(Word)
-deriveEuclidean(Word8)
-deriveEuclidean(Word16)
-deriveEuclidean(Word32)
-deriveEuclidean(Word64)
-deriveEuclidean(Natural)
-
 -- | Wrapper around 'Fractional'
 -- with trivial 'GcdDomain'
 -- and 'Euclidean' instances.
@@ -385,3 +345,52 @@ instance Field a => Euclidean (Complex a) where
   rem         = const $ const zero
 
 instance Field a => Field (Complex a)
+
+$(let
+  deriveGcdDomain :: Q Type -> Q [Dec]
+  deriveGcdDomain ty = [d|
+      instance GcdDomain $ty where
+         gcd     = P.gcd
+         lcm     = P.lcm
+         coprime = coprimeIntegral
+      |]
+
+  in P.concat P.<$> P.traverse deriveGcdDomain
+    [[t|Int|]
+    ,[t|Int8|]
+    ,[t|Int16|]
+    ,[t|Int32|]
+    ,[t|Int64|]
+    ,[t|Integer|]
+    ,[t|Word|]
+    ,[t|Word8|]
+    ,[t|Word16|]
+    ,[t|Word32|]
+    ,[t|Word64|]
+    ,[t|Natural|]
+    ])
+
+$(let
+  deriveEuclidean :: Q Type -> Q [Dec]
+  deriveEuclidean ty = [d|
+      instance Euclidean $ty where
+         degree  = P.fromIntegral . abs
+         quotRem = P.quotRem
+         quot    = P.quot
+         rem     = P.rem
+      |]
+
+  in P.concat P.<$> P.traverse deriveEuclidean
+    [[t|Int|]
+    ,[t|Int8|]
+    ,[t|Int16|]
+    ,[t|Int32|]
+    ,[t|Int64|]
+    ,[t|Integer|]
+    ,[t|Word|]
+    ,[t|Word8|]
+    ,[t|Word16|]
+    ,[t|Word32|]
+    ,[t|Word64|]
+    ,[t|Natural|]
+    ])
