@@ -7,8 +7,10 @@
 
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DefaultSignatures          #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
+{-# LANGUAGE UndecidableInstances       #-}
 #if MIN_VERSION_base(4,12,0)
 {-# LANGUAGE DerivingVia                #-}
 {-# LANGUAGE StandaloneDeriving         #-}
@@ -33,7 +35,7 @@ import Data.Complex (Complex(..))
 import Data.Int (Int, Int8, Int16, Int32, Int64)
 import Data.Maybe (isJust)
 import Data.Ratio (Ratio)
-import Data.Semiring (Semiring(..), Ring(..), (*), minus, isZero, Mod2)
+import Data.Semiring (Semiring(..), IntegralDomain(..), Ring(..), (*), minus, isZero, Mod2)
 import Data.Word (Word, Word8, Word16, Word32, Word64)
 import Foreign.C.Types (CFloat, CDouble)
 
@@ -67,17 +69,7 @@ import Numeric.Natural
 -- > instance Euclidean Foo where
 -- >   quotRem = ...
 -- >   degree  = ...
-class Semiring a => GcdDomain a where
-  -- | Division without remainder.
-  --
-  -- prop> \x y -> (x * y) `divide` y == Just x
-  -- prop> \x y -> maybe True (\z -> x == z * y) (x `divide` y)
-  divide :: a -> a -> Maybe a
-
-  default divide :: (Eq a, Euclidean a) => a -> a -> Maybe a
-  divide x y = let (q, r) = quotRem x y in
-    if isZero r then Just q else Nothing
-
+class IntegralDomain a => GcdDomain a where
   -- | Greatest common divisor. Must satisfy
   --
   -- prop> \x y -> isJust (x `divide` gcd x y) && isJust (y `divide` gcd x y)
@@ -111,8 +103,6 @@ class Semiring a => GcdDomain a where
 
   default coprime :: a -> a -> Bool
   coprime x y = isJust (one `divide` gcd x y)
-
-infixl 7 `divide`
 
 -- | Informally speaking, 'Euclidean' is a superclass of 'Integral',
 -- lacking 'toInteger', which allows to define division with remainder
@@ -185,7 +175,6 @@ class (Euclidean a, Ring a) => Field a
 ---------------------------------------------------------------------
 
 instance GcdDomain () where
-  divide  = const $ const (Just ())
   gcd     = const $ const ()
   lcm     = const $ const ()
   coprime = const $ const True
@@ -223,8 +212,10 @@ instance Num a => Semiring (WrappedIntegral a) where
 instance Num a => Ring (WrappedIntegral a) where
   negate = P.negate
 
-instance Integral a => GcdDomain (WrappedIntegral a) where
+instance Integral a => IntegralDomain (WrappedIntegral a) where
   divide x y = case x `P.quotRem` y of (q, 0) -> Just q; _ -> Nothing
+
+instance Integral a => GcdDomain (WrappedIntegral a) where
   gcd     = P.gcd
   lcm     = P.lcm
   coprime = coprimeIntegral
@@ -251,8 +242,10 @@ instance Num a => Semiring (WrappedFractional a) where
 instance Num a => Ring (WrappedFractional a) where
   negate = P.negate
 
-instance Fractional a => GcdDomain (WrappedFractional a) where
+instance Fractional a => IntegralDomain (WrappedFractional a) where
   divide x y = Just (x / y)
+
+instance Fractional a => GcdDomain (WrappedFractional a) where
   gcd        = const $ const 1
   lcm        = const $ const 1
   coprime    = const $ const True
@@ -266,7 +259,6 @@ instance Fractional a => Euclidean (WrappedFractional a) where
 instance Fractional a => Field (WrappedFractional a)
 
 instance Integral a => GcdDomain (Ratio a) where
-  divide x y = Just (x / y)
   gcd        = const $ const 1
   lcm        = const $ const 1
   coprime    = const $ const True
@@ -280,7 +272,6 @@ instance Integral a => Euclidean (Ratio a) where
 instance Integral a => Field (Ratio a)
 
 instance GcdDomain Float where
-  divide x y = Just (x / y)
   gcd        = const $ const 1
   lcm        = const $ const 1
   coprime    = const $ const True
@@ -294,7 +285,6 @@ instance Euclidean Float where
 instance Field Float
 
 instance GcdDomain Double where
-  divide x y = Just (x / y)
   gcd        = const $ const 1
   lcm        = const $ const 1
   coprime    = const $ const True
@@ -308,7 +298,6 @@ instance Euclidean Double where
 instance Field Double
 
 instance GcdDomain CFloat where
-  divide x y = Just (x / y)
   gcd        = const $ const 1
   lcm        = const $ const 1
   coprime    = const $ const True
@@ -322,7 +311,6 @@ instance Euclidean CFloat where
 instance Field CFloat
 
 instance GcdDomain CDouble where
-  divide x y = Just (x / y)
   gcd        = const $ const 1
   lcm        = const $ const 1
   coprime    = const $ const True
@@ -335,24 +323,23 @@ instance Euclidean CDouble where
 
 instance Field CDouble
 
+instance (Fractional (Complex a), Field a) => GcdDomain (Complex a) where
+  gcd        = const $ const one
+  lcm        = const $ const one
+  coprime    = const $ const True
+
 conjQuotAbs :: Field a => Complex a -> Complex a
 conjQuotAbs (x :+ y) = x `quot` norm :+ (negate y) `quot` norm
   where
     norm = (x `times` x) `plus` (y `times` y)
 
-instance Field a => GcdDomain (Complex a) where
-  divide x y = Just (x `times` conjQuotAbs y)
-  gcd        = const $ const one
-  lcm        = const $ const one
-  coprime    = const $ const True
-
-instance Field a => Euclidean (Complex a) where
+instance (Fractional (Complex a), Field a) => Euclidean (Complex a) where
   degree      = const 0
   quotRem x y = (quot x y, zero)
   quot x y    = x `times` conjQuotAbs y
   rem         = const $ const zero
 
-instance Field a => Field (Complex a)
+instance (Fractional (Complex a), Field a) => Field (Complex a)
 
 #if MIN_VERSION_base(4,12,0)
 deriving via (WrappedIntegral Int) instance GcdDomain Int

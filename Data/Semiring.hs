@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DefaultSignatures          #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
@@ -11,6 +12,7 @@
 {-# LANGUAGE Rank2Types                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE UndecidableInstances       #-}
 #if MIN_VERSION_base(4,12,0)
 {-# LANGUAGE DerivingVia                #-}
 #else
@@ -48,6 +50,11 @@ module Data.Semiring
   , IntMapOf(..)
 #endif
 
+    -- * IntegralDomain typeclass
+  , IntegralDomain(..)
+  , divides
+  , dividesExact
+
     -- * Ring typeclass
   , Ring(..)
   , fromInteger
@@ -58,7 +65,7 @@ module Data.Semiring
 
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
 import           Data.Bits (Bits)
-import           Data.Bool (Bool(..), (||), (&&), otherwise)
+import           Data.Bool (Bool(..), (||), (&&), not, otherwise)
 import           Data.Coerce (Coercible, coerce)
 import           Data.Complex (Complex(..))
 import           Data.Eq (Eq(..))
@@ -69,7 +76,7 @@ import           Data.Function ((.), const, id)
 #if defined(VERSION_unordered_containers) || defined(VERSION_containers)
 import           Data.Function (flip)
 #endif
-import           Data.Functor (Functor(..))
+import           Data.Functor (Functor(..), (<$>))
 #if MIN_VERSION_base(4,12,0)
 import           Data.Functor.Contravariant (Predicate(..), Equivalence(..), Op(..))
 #endif
@@ -81,8 +88,12 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
 #endif
+import {-# SOURCE #-} Data.Euclidean (Euclidean(quotRem))
+#if MIN_VERSION_base(4,12,0)
+import {-# SOURCE #-} Data.Euclidean (WrappedIntegral(..), WrappedFractional(..))
+#endif
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
-import           Data.Maybe (Maybe(..))
+import           Data.Maybe (Maybe(..), isJust, maybe)
 #if MIN_VERSION_base(4,12,0)
 import           Data.Monoid (Ap(..))
 #endif
@@ -106,7 +117,7 @@ import           Data.Semigroup.Compat (Semigroup(..))
 import           Data.Set (Set)
 import qualified Data.Set as Set
 #endif
-import           Data.Traversable (Traversable)
+import           Data.Traversable (Traversable(..))
 import           Data.Typeable (Typeable)
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
 import           Foreign.C.Types
@@ -214,6 +225,10 @@ x ^ y
 "^4/Integer" forall x. x ^ (4 :: Integer) = let u = x in u*u*u*u
 "^5/Integer" forall x. x ^ (5 :: Integer) = let u = x in u*u*u*u*u
   #-}
+
+traverse2 :: (Traversable t, Applicative t, Applicative f) => (a -> b -> f c) -> t a -> t b -> f (t c)
+traverse2 f xs ys = sequenceA (f <$> xs <*> ys)
+{-# INLINE traverse2 #-}
 
 -- | Infix shorthand for 'plus'.
 (+) :: Semiring a => a -> a -> a
@@ -404,6 +419,10 @@ instance Ring Mod2 where
   negate = id
   {-# INLINE negate #-}
 
+instance IntegralDomain Mod2 where
+  divide x y = if y == one then Just x else Nothing
+  {-# INLINE divide #-}
+
 
 {--------------------------------------------------------------------
   Classes
@@ -500,6 +519,41 @@ fromIntegral x
   | otherwise = negate (fromNatural (Real.fromIntegral (Num.negate x)))
 {-# INLINE fromIntegral #-}
 
+-- | The class of semirings with no zero divisors
+--
+--     @a '*' b = 'zero' => 'zero' `'elem'` [a,b]@
+
+class Semiring a => IntegralDomain a where
+  -- | Division without remainder.
+  --
+  -- prop> \x y -> (x * y) `divide` y == Just x
+  -- prop> \x y -> maybe True (\z -> x == z * y) (x `divide` y)
+  divide :: a -> a -> Maybe a
+
+  default divide :: (Eq a, Euclidean a) => a -> a -> Maybe a
+  divide x y = let (q, r) = quotRem x y in
+    if isZero r then Just q else Nothing
+
+  -- | @divDecomp x y = (k, m)@ such that @y == x^k * m@ and
+  -- @x^k `dividesExact` y@.
+  -- For @x `divides` one@, no such decomposition is possible, so by fiat we
+  -- decompose @y=x*(y/x)@
+  divDecomp :: a -> a -> (Natural, a)
+  divDecomp x = maybe (go . ((,) 0)) (\x' y -> (1, x' * y)) (one `divide` x)
+   where
+    go !(k, m) = maybe (k, m) (\m' -> go (k+1, m')) (m `divide` x)
+
+infixl 7 `divide`
+
+-- | @divides x y@: Does 'x' divide 'y'? (Note reversed order relative to
+-- 'divide'!)
+divides :: IntegralDomain a => a -> a -> Bool
+divides x y = isJust (y `divide` x)
+
+-- | @dividesExact x y = (x `divides` y) && not (x `divides` (y/x))@
+dividesExact :: IntegralDomain a => a -> a -> Bool
+dividesExact x y = maybe False (not . (x `divides`)) (y `divide` x)
+
 {--------------------------------------------------------------------
   Instances (base)
 --------------------------------------------------------------------}
@@ -536,6 +590,10 @@ instance Ring () where
   negate _ = ()
   {-# INLINE negate #-}
 
+instance IntegralDomain () where
+  divide _ _ = Just ()
+  {-# INLINE divide #-}
+
 instance Semiring (Proxy a) where
   plus _ _  = Proxy
   zero      = Proxy
@@ -547,6 +605,14 @@ instance Semiring (Proxy a) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
+
+instance Ring (Proxy a) where
+  negate _ = Proxy
+  {-# INLINE negate #-}
+
+instance IntegralDomain (Proxy a) where
+  divide _ _ = Just Proxy
+  {-# INLINE divide #-}
 
 instance Semiring Bool where
   plus  = (||)
@@ -560,6 +626,10 @@ instance Semiring Bool where
   {-# INLINE times #-}
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
+
+instance IntegralDomain Bool where
+  divide x y = if y == one then Just x else Nothing
+  {-# INLINE divide #-}
 
 instance Semiring a => Semiring (Maybe a) where
   zero  = Nothing
@@ -580,6 +650,10 @@ instance Semiring a => Semiring (Maybe a) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
+
+instance IntegralDomain a => IntegralDomain (Maybe a) where
+  divide = liftA2 divide
+  {-# INLINE divide #-}
 
 instance Semiring a => Semiring (IO a) where
   zero  = pure zero
@@ -613,6 +687,10 @@ instance Ring a => Ring (Dual a) where
   negate (Dual x) = Dual (negate x)
   {-# INLINE negate #-}
 
+instance IntegralDomain a => IntegralDomain (Dual a) where
+  divide (Dual x) (Dual y) = fmap Dual (divide y x)
+  {-# INLINE divide #-}
+
 instance Semiring a => Semiring (Const a b) where
   zero = Const zero
   one  = Const one
@@ -628,6 +706,10 @@ instance Semiring a => Semiring (Const a b) where
 instance Ring a => Ring (Const a b) where
   negate (Const x) = Const (negate x)
   {-# INLINE negate #-}
+
+instance IntegralDomain a => IntegralDomain (Const a b) where
+  divide (Const x) (Const y) = fmap Const (divide x y)
+  {-# INLINE divide #-}
 
 -- | This instance can suffer due to floating point arithmetic.
 instance Ring a => Semiring (Complex a) where
@@ -663,6 +745,13 @@ instance (Semiring a, Applicative f) => Semiring (Ap f a) where
 instance (Ring a, Applicative f) => Ring (Ap f a) where
   negate = fmap negate
   {-# INLINE negate #-}
+
+instance
+  (IntegralDomain a, Applicative f, Traversable f) =>
+  IntegralDomain (Ap f a)
+  where
+  divide = traverse2 divide
+  {-# INLINE divide #-}
 #endif
 
 #if MIN_VERSION_base(4,12,0)
@@ -686,6 +775,7 @@ instance Integral a => Semiring (Ratio a) where
   {-# INLINE plus  #-}
   {-# INLINE times #-}
   {-# INLINE fromNatural #-}
+
 deriving instance Semiring a => Semiring (Identity a)
 deriving instance Semiring a => Semiring (Down a)
 instance HasResolution a => Semiring (Fixed a) where
@@ -709,6 +799,9 @@ deriving instance Ring a => Ring (Identity a)
 instance HasResolution a => Ring (Fixed a) where
   negate = Num.negate
   {-# INLINE negate #-}
+
+deriving instance IntegralDomain a => IntegralDomain (Down a)
+deriving instance IntegralDomain a => IntegralDomain (Identity a)
 
 {--------------------------------------------------------------------
   Instances (containers)
@@ -1147,5 +1240,78 @@ $(let
     ,[t|CUid|]
     ,[t|Fd|]
 #endif
+    ])
+#endif
+
+#if MIN_VERSION_base(4,12,0)
+deriving via (WrappedIntegral Int) instance IntegralDomain Int
+deriving via (WrappedIntegral Int8) instance IntegralDomain Int8
+deriving via (WrappedIntegral Int16) instance IntegralDomain Int16
+deriving via (WrappedIntegral Int32) instance IntegralDomain Int32
+deriving via (WrappedIntegral Int64) instance IntegralDomain Int64
+deriving via (WrappedIntegral Integer) instance IntegralDomain Integer
+deriving via (WrappedIntegral Word) instance IntegralDomain Word
+deriving via (WrappedIntegral Word8) instance IntegralDomain Word8
+deriving via (WrappedIntegral Word16) instance IntegralDomain Word16
+deriving via (WrappedIntegral Word32) instance IntegralDomain Word32
+deriving via (WrappedIntegral Word64) instance IntegralDomain Word64
+deriving via (WrappedIntegral Natural) instance IntegralDomain Natural
+deriving via (WrappedFractional Double) instance IntegralDomain Double
+deriving via (WrappedFractional Float) instance IntegralDomain Float
+deriving via (WrappedFractional CDouble) instance IntegralDomain CDouble
+deriving via (WrappedFractional CFloat) instance IntegralDomain CFloat
+deriving via (WrappedFractional (Complex a)) instance
+    (Ring a, Fractional (Complex a)) => IntegralDomain (Complex a)
+deriving via (WrappedFractional (Ratio a)) instance Integral a => IntegralDomain (Ratio a)
+deriving via (WrappedFractional (Fixed a)) instance HasResolution a => IntegralDomain (Fixed a)
+#else
+$(let
+  deriveIntegralDomainInt :: Q Type -> Q [Dec]
+  deriveIntegralDomainInt ty = [d|
+      instance IntegralDomain $ty where
+        divide x y = case x `P.quotRem` y of (q, 0) -> Just q; _ -> Nothing
+        {-# INLINE divide #-}
+      |]
+
+  deriveIntegralDomainFrac :: (Q Type, Q Type) -> Q [Dec]
+  deriveIntegralDomainFrac (ctx, ty) = [d|
+      instance $ctx => IntegralDomain $ty where
+        divide x y = Just (x / y)
+        {-# INLINE divide #-}
+      |]
+
+  deriveIntegralDomainFunctor :: Q Type -> Q [Dec]
+  deriveIntegralDomainFunctor ty = [d|
+      instance IntegralDomain a => IntegralDomain ($ty a) where
+        divide = traverse2 divide
+        {-# INLINE divide #-}
+      |]
+
+  a :: Q Type
+  a = return (VarT (mkName "a"))
+
+  in P.concat P.<$>
+    (P.traverse deriveIntegralDomainInt
+    [[t|Int|]
+    ,[t|Int8|]
+    ,[t|Int16|]
+    ,[t|Int32|]
+    ,[t|Int64|]
+    ,[t|Integer|]
+    ,[t|Word|]
+    ,[t|Word8|]
+    ,[t|Word16|]
+    ,[t|Word32|]
+    ,[t|Word64|]
+    ,[t|Natural|]
+    ])
+    ++ (P.traverse deriveIntegralDomainFrac
+    [([t|()|], [t|Double|])
+    [([t|()|], [t|Float|])
+    [([t|()|], [t|CDouble|])
+    [([t|()|], [t|CFloat|])
+    ,([t|(Ring $a, Fractional (Complex $a))|], [t|Complex $a|])
+    ,([t|Integral $a|], [t|Ratio $a|])
+    ,([t|HasResolution $a|], [t|Fixed $a|])
     ])
 #endif
