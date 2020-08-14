@@ -64,7 +64,6 @@ library
   build-depends:
       base >= 4.8 && < 5
     , base-compat-batteries
-    , template-haskell >= 2.4.0.0
   exposed-modules:
     Data.Euclidean
     Data.Field
@@ -72,6 +71,9 @@ library
     Data.Star
     Data.Semiring.Tropical
     Data.Semiring.Generic
+
+  if impl(ghc < 8.6.1)
+    build-depends: template-haskell >= 2.4.0.0
 
   if flag(containers)
     build-depends: containers >= 0.5.4 && < 0.7
