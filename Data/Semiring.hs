@@ -118,13 +118,13 @@ import           GHC.Err (error)
 import           GHC.Float (Float, Double)
 import           GHC.Generics (Generic,Generic1)
 import           GHC.IO (IO)
-import           GHC.Integer (Integer)
 import qualified GHC.Num as Num
 import           GHC.Read (Read)
 import           GHC.Real (Integral, Fractional, Real, RealFrac)
 import qualified GHC.Real as Real
 import           GHC.Show (Show)
 import           Numeric.Natural (Natural)
+import           Prelude (Integer)
 
 #ifdef mingw32_HOST_OS
 #define HOST_OS_WINDOWS 1

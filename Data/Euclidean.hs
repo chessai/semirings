@@ -30,8 +30,6 @@ import Data.Ratio (Ratio)
 import Data.Semiring (Semiring(..), Ring(..), (*), minus, isZero, Mod2)
 import Data.Word (Word, Word8, Word16, Word32, Word64)
 import Foreign.C.Types (CFloat, CDouble)
-import GHC.Exts (Int(..), Word(..))
-import GHC.Integer.GMP.Internals (gcdInt, gcdWord, gcdInteger, lcmInteger)
 
 import Numeric.Natural
 
@@ -227,32 +225,6 @@ instance Integral a => Euclidean (WrappedIntegral a) where
   quot    = P.quot
   rem     = P.rem
 
-instance GcdDomain Int where
-  divide x y = case x `P.quotRem` y of (q, 0) -> Just q; _ -> Nothing
-#if MIN_VERSION_integer_gmp(0,5,1)
-  gcd (I# x) (I# y) = I# (gcdInt x y)
-#else
-  gcd     = P.gcd
-#endif
-  lcm     = P.lcm
-  coprime = coprimeIntegral
-
-instance GcdDomain Word where
-  divide x y = case x `P.quotRem` y of (q, 0) -> Just q; _ -> Nothing
-#if MIN_VERSION_integer_gmp(1,0,0)
-  gcd (W# x) (W# y) = W# (gcdWord x y)
-#else
-  gcd     = P.gcd
-#endif
-  lcm     = P.lcm
-  coprime = coprimeIntegral
-
-instance GcdDomain Integer where
-  divide x y = case x `P.quotRem` y of (q, 0) -> Just q; _ -> Nothing
-  gcd     = gcdInteger
-  lcm     = lcmInteger
-  coprime = coprimeIntegral
-
 #define deriveGcdDomain(ty)     \
 instance GcdDomain (ty) where { \
 ;  divide x y = case x `P.quotRem` y of { (q, 0) -> Just q; _ -> Nothing } \
@@ -261,10 +233,13 @@ instance GcdDomain (ty) where { \
 ;  coprime = coprimeIntegral    \
 }
 
+deriveGcdDomain(Int)
 deriveGcdDomain(Int8)
 deriveGcdDomain(Int16)
 deriveGcdDomain(Int32)
 deriveGcdDomain(Int64)
+deriveGcdDomain(Integer)
+deriveGcdDomain(Word)
 deriveGcdDomain(Word8)
 deriveGcdDomain(Word16)
 deriveGcdDomain(Word32)
