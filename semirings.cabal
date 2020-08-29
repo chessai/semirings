@@ -41,16 +41,6 @@ source-repository head
   type: git
   location: git://github.com/chessai/semirings.git
 
-flag hashable
-  description:
-    You can disable the use of the `hashable` package using `-f-hashable`.
-    .
-    Disabling this may be useful for accelerating builds in sandboxes for expert users.
-    .
-    Note: `-f-hashable` implies `-f-unordered-containers`, as we are necessarily not able to supply those instances as well.
-  default: True
-  manual: True
-
 flag containers
   description:
     You can disable the use of the `containers` package using `-f-containers`.
@@ -86,8 +76,7 @@ library
   if flag(containers)
     build-depends: containers >= 0.5.4 && < 0.7
 
-  if flag(hashable)
-    build-depends: hashable >= 1.1 && < 1.4
-
-  if flag(hashable) && flag(unordered-containers)
-    build-depends: unordered-containers >= 0.2 && < 0.3
+  if flag(unordered-containers)
+    build-depends:
+        hashable >= 1.1 && < 1.4
+      , unordered-containers >= 0.2 && < 0.3
