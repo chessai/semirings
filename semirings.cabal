@@ -72,6 +72,9 @@ library
     Data.Semiring.Tropical
     Data.Semiring.Generic
 
+  if impl(ghc < 8.6.1)
+    build-depends: template-haskell >= 2.4.0.0
+
   if flag(containers)
     build-depends: containers >= 0.5.4 && < 0.7
 
