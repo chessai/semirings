@@ -109,7 +109,7 @@ class Semiring a => GcdDomain a where
   -- prop> \x y -> coprime x y == isJust (1 `divide` gcd x y)
   coprime :: a -> a -> Bool
 
-  default coprime :: Eq a => a -> a -> Bool
+  default coprime :: a -> a -> Bool
   coprime x y = isJust (one `divide` gcd x y)
 
 infixl 7 `divide`
