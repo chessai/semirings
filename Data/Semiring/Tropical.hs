@@ -103,11 +103,11 @@ data Tropical (e :: Extrema) a
 instance forall e a. (Ord a, Extremum e) => Ord (Tropical e a) where
   compare Infinity Infinity         = EQ
   compare Infinity _                = case extremum (EProxy :: EProxy e) of
-    Minima -> LT
-    Maxima -> GT
-  compare _ Infinity                = case extremum (EProxy :: EProxy e) of
     Minima -> GT
     Maxima -> LT
+  compare _ Infinity                = case extremum (EProxy :: EProxy e) of
+    Minima -> LT
+    Maxima -> GT
   compare (Tropical x) (Tropical y) = compare x y
 
 instance forall e a. (Ord a, Monoid.Monoid a, Extremum e) => Semiring (Tropical e a) where
