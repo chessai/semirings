@@ -1,3 +1,11 @@
+0.6: [2021-01-07]
+-----------------
+* Remove hashable flag (only necessary was unordered-containers flag)
+* Drop redundant `Eq` constraint on default definition of `coprime`
+* Document (lack of guaranteed) rounding behaviour of quotRem
+* Fix totally broken Ord instance for Tropical
+* Stop depending on integer-gmp
+
 0.5.4: [2020.07.13]
 -------------------
 * Drop support for GHCs prior to 7.10
