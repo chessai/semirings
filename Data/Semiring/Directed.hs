@@ -5,6 +5,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE Trustworthy                #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -33,57 +34,69 @@ import GHC.Generics (Generic)
 
 -- | As it is above.
 --
--- @Above@ provides the monoid associated with the union of upward-directed sets.
-newtype Above = Above { getAbove :: Ordering }
+-- 'Above' provides the monoid associated with the union of upward-directed sets.
+--
+-- @since 0.7
+newtype Above = Above { 
+  -- | @since 0.7
+  getAbove :: Ordering 
+  }
   deriving
-    ( Bounded
-    , Enum
-    , Eq
-    , Generic
-    , Show
-    , Read
+    ( Bounded -- ^ @since 0.7
+    , Enum -- ^ @since 0.7
+    , Eq -- ^ @since 0.7
+    , Generic  -- ^ @since 0.7
+    , Show -- ^ @since 0.7
+    , Read -- ^ @since 0.7
 #if MIN_VERSION_base(4,7,0)
-    , Data
-    , Typeable
+    , Data -- ^ @since 0.7
+    , Typeable -- ^ @since 0.7
 #endif
     )
 
+-- | @since 0.7
 instance Semigroup Above where
   Above LT <> a = a
   a <> Above LT = a
   Above EQ <> Above EQ = Above EQ
-  Above EQ <> Above GT = Above GT
-  Above GT <> Above EQ = Above GT
-  Above GT <> Above GT = Above GT
+  _ <> Above GT = Above GT
+  Above GT <> _ = Above GT
 
+-- | @since 0.7
 instance Monoid Above where
   mempty = Above LT
 
 -- | So it shall be below.
 --
--- @Below@ provides the monoid associated with the intersection of downward-directed sets.
-newtype Below = Below { getBelow :: Ordering }
+-- 'Below' provides the monoid associated with the intersection of downward-directed sets.
+--
+-- @since 0.7
+newtype Below = Below { 
+  -- | @since 0.7
+  getBelow :: Ordering 
+  }
   deriving
-    ( Bounded
-    , Enum
-    , Eq
-    , Generic
-    , Show
-    , Read
+    ( Bounded -- ^ @since 0.7
+    , Enum -- ^ @since 0.7
+    , Eq -- ^ @since 0.7
+    , Generic  -- ^ @since 0.7
+    , Show -- ^ @since 0.7
+    , Read -- ^ @since 0.7
 #if MIN_VERSION_base(4,7,0)
-    , Data
-    , Typeable
+    , Data -- ^ @since 0.7
+    , Typeable -- ^ @since 0.7
 #endif
     )
 
+-- | @since 0.7
 instance Semigroup Below where
   Below GT <> a = a
   a <> Below GT = a
   Below EQ <> Below EQ = Below EQ
-  Below EQ <> Below LT = Below LT
-  Below LT <> Below EQ = Below LT
-  Below LT <> Below LT = Below LT
+  Below EQ <> _ = Below LT
+  _ <> Below EQ = Below LT
 
+-- | @since 0.7
 instance Monoid Below where
   mempty = Below GT
 
@@ -91,20 +104,24 @@ instance Monoid Below where
 --
 -- For the individual join/meet monoids associated with either
 -- algebra, see 'Above', and 'Below'.
-newtype Directed = Directed { getDirected :: Ordering }
+newtype Directed = Directed { 
+  -- | @since 0.7
+  getDirected :: Ordering 
+  }
   deriving
-    ( Bounded
-    , Enum
-    , Eq
-    , Generic
-    , Show
-    , Read
+    ( Bounded -- ^ @since 0.7
+    , Enum -- ^ @since 0.7
+    , Eq -- ^ @since 0.7
+    , Generic  -- ^ @since 0.7
+    , Show -- ^ @since 0.7
+    , Read -- ^ @since 0.7
 #if MIN_VERSION_base(4,7,0)
-    , Data
-    , Typeable
+    , Data -- ^ @since 0.7
+    , Typeable -- ^ @since 0.7
 #endif
     )
 
+-- | @since 0.7
 instance Semiring Directed where
   plus = coerce ((<>) :: Above -> Above -> Above)
   zero = coerce (mempty :: Above)
