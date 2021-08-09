@@ -1,3 +1,7 @@
+0.7: [2021-07-09]
+-----------------
+* Add `Semiring` instance for `Ordering`
+
 0.6: [2021-01-07]
 -----------------
 * Remove hashable flag (only necessary was unordered-containers flag)

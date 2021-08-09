@@ -97,7 +97,7 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
 import           Data.Monoid (Monoid(..), Dual(..))
-import           Data.Ord (Ord((<)), (>=))
+import           Data.Ord (Ord((<)), (>=), Ordering (LT, EQ, GT))
 import           Data.Ord (Down(..))
 import           Data.Proxy (Proxy(..))
 import           Data.Ratio (Ratio, Rational, (%))
@@ -503,6 +503,27 @@ fromIntegral x
 {--------------------------------------------------------------------
   Instances (base)
 --------------------------------------------------------------------}
+
+-- | @since 0.7
+instance Semiring Ordering where
+  {-# INLINE plus #-}
+  plus LT t = t
+  plus t LT = t
+  plus EQ GT = GT
+  plus GT EQ = GT
+  plus EQ EQ = EQ
+  plus GT GT = GT
+  {-# INLINE zero #-}
+  zero = LT
+  {-# INLINE times #-}
+  times LT _ = LT
+  times _ LT = LT
+  times EQ GT = EQ
+  times GT EQ = EQ
+  times EQ EQ = EQ
+  times GT GT = GT
+  {-# INLINE one #-}
+  one = GT
 
 instance Semiring b => Semiring (a -> b) where
   plus f g    = \x -> f x `plus` g x
