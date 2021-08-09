@@ -1,6 +1,6 @@
 0.7: [2021-07-09]
 -----------------
-* Add `Semiring` instance for `Ordering`
+* Add `Data.Semiring.Directed` for the semiring of directed sets.
 
 0.6: [2021-01-07]
 -----------------
