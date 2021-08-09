@@ -69,6 +69,7 @@ library
     Data.Field
     Data.Semiring
     Data.Star
+    Data.Semiring.Directed
     Data.Semiring.Tropical
     Data.Semiring.Generic
 
