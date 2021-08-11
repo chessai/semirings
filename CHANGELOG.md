@@ -1,3 +1,7 @@
+0.7: [2021-07-09]
+-----------------
+* Add `Data.Semiring.Directed` for the semiring of directed sets.
+
 0.6: [2021-01-07]
 -----------------
 * Remove hashable flag (only necessary was unordered-containers flag)
