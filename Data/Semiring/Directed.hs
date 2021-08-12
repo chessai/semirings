@@ -93,8 +93,8 @@ instance Semigroup Below where
   Below GT <> a = a
   a <> Below GT = a
   Below EQ <> Below EQ = Below EQ
-  Below EQ <> _ = Below LT
-  _ <> Below EQ = Below LT
+  Below LT <> _ = Below LT
+  _ <> Below LT = Below LT
 
 -- | @since 0.7
 instance Monoid Below where
