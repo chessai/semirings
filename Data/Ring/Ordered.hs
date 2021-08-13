@@ -6,7 +6,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE Trustworthy                #-}
-{-# LANGUAGE UndecidableInstances       #-}
 
 -- |
 -- Module: Data.Ring.Ordered
@@ -51,6 +50,7 @@ import Data.Monoid (Dual (Dual))
 import Data.Ord (Down (Down))
 import Data.Ratio (Ratio)
 import Data.Semiring (Ring (negate), Semiring(zero, one))
+import Data.Semiring.Generic ()
 import Data.Word (Word8, Word16, Word32, Word64)
 import GHC.Generics (Generic)
 import Prelude hiding (signum, abs, negate, (-))
@@ -346,11 +346,32 @@ instance OrderedRing (Modular Word) where
     | otherwise = Positive
   signum' (Modular x) = Modular . Num.signum $ x
 
--- Where @a@ and @b@ are both \'true\' or \'mathematical\' ordered rings, so is 
+-- | Where @a@ and @b@ are both \'true\' or \'mathematical\' ordered rings, so is 
 -- this.
 --
 -- @since 0.7
-instance (Ring (a, b), OrderedRing a, OrderedRing b) => OrderedRing (a, b) where
+instance (OrderedRing a, OrderedRing b) => 
+  OrderedRing (a, b) where
   abs (x, y) = (abs x, abs y)
   signum (x, y) = signum x <> signum y
   signum' (x, y) = (signum' x, signum' y)
+
+-- | Where all of @a@, @b@, @c@ are \'true\' or \'mathematical\' ordered rings,
+-- so is this.
+--
+-- @since 0.7
+instance (OrderedRing a, OrderedRing b, OrderedRing c) =>
+  OrderedRing (a, b, c) where
+  abs (x, y, z) = (abs x, abs y, abs z)
+  signum (x, y, z) = signum x <> signum y <> signum z
+  signum' (x, y, z) = (signum' x, signum' y, signum' z)
+
+-- | Where all of @a@, @b@, @c@, @d@ are \'true\' or \'mathematical\' ordered
+-- rings, so is this.
+--
+-- @since 0.7
+instance (OrderedRing a, OrderedRing b, OrderedRing c, OrderedRing d) =>
+  OrderedRing (a, b, c, d) where
+  abs (x, y, z, z2) = (abs x, abs y, abs z, abs z2)
+  signum (x, y, z, z2) = signum x <> signum y <> signum z <> signum z2
+  signum' (x, y, z, z2) = (signum' x, signum' y, signum' z, signum' z2)
