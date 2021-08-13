@@ -1,9 +1,11 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE Trustworthy                #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 -- |
 -- Module: Data.Ring.Ordered
@@ -70,6 +72,18 @@ data Signum = Negative | Zero | Positive
     , Typeable -- ^ @since 0.7
 #endif
     )
+
+-- @since 0.7
+instance Semigroup Signum where
+  Zero <> _ = Zero
+  _ <> Zero = Zero
+  Positive <> Positive = Positive
+  Negative <> Negative = Positive
+  _ <> _ = Negative
+
+-- @since 0.7
+instance Monoid Signum where
+  mempty = Positive
 
 -- | The class of rings which also have a total order.
 --
@@ -197,3 +211,8 @@ instance OrderedRing Integer where
     (-1) -> Negative
     0 -> Zero
     _ -> Positive
+
+-- @since 0.7
+instance (Ring (a, b), OrderedRing a, OrderedRing b) => OrderedRing (a, b) where
+  abs (x, y) = (abs x, abs y)
+  signum (x, y) = signum x <> signum y
