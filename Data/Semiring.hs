@@ -47,25 +47,17 @@ module Data.Semiring
   , IntSetOf(..)
   , IntMapOf(..)
 #endif
-
-    -- * Ring typeclass
-  , Ring(..)
-  , fromInteger
-  , fromIntegral
-  , minus
-  , (-)
   ) where
 
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
 import           Data.Bits (Bits (xor))
 import           Data.Bool (Bool(..), (||), (&&), otherwise)
 import           Data.Coerce (Coercible, coerce)
-import           Data.Complex (Complex(..))
 import           Data.Eq (Eq(..))
 import           Data.Fixed (Fixed, HasResolution)
 import           Data.Foldable (Foldable(foldMap))
 import qualified Data.Foldable as Foldable
-import           Data.Function ((.), const, id)
+import           Data.Function ((.), const)
 #if defined(VERSION_unordered_containers) || defined(VERSION_containers)
 import           Data.Function (flip)
 #endif
@@ -95,7 +87,7 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
 import           Data.Monoid (Monoid(..), Dual(..))
-import           Data.Ord (Ord((<)), (>=))
+import           Data.Ord (Ord((<)))
 import           Data.Ord (Down(..))
 import           Data.Proxy (Proxy(..))
 import           Data.Ratio (Ratio, Rational, (%))
@@ -148,7 +140,7 @@ import           System.Posix.Types
 #endif
 
 infixl 7 *, `times`
-infixl 6 +, `plus`, -, `minus`
+infixl 6 +, `plus`
 infixr 8 ^
 
 {--------------------------------------------------------------------
@@ -222,11 +214,6 @@ x ^ y
 (*) :: Semiring a => a -> a -> a
 (*) = times
 {-# INLINE (*) #-}
-
--- | Infix shorthand for 'minus'.
-(-) :: Ring a => a -> a -> a
-(-) = minus
-{-# INLINE (-) #-}
 
 -- | Map each element of the structure to a semiring, and combine the results
 --   using 'plus'.
@@ -372,9 +359,6 @@ instance Num.Num a => Semiring (WrappedNum a) where
   one   = 1
   fromNatural = Real.fromIntegral
 
-instance Num.Num a => Ring (WrappedNum a) where
-  negate = Num.negate
-
 -- | 'Mod2' represents the integers mod 2.
 --
 --   It is useful in the computing of <https://en.wikipedia.org/wiki/Zhegalkin_polynomial Zhegalkin polynomials>.
@@ -394,11 +378,6 @@ instance Semiring Mod2 where
   times (Mod2 x) (Mod2 y) = Mod2 (x && y)
   zero = Mod2 False
   one = Mod2 True
-
-instance Ring Mod2 where
-  negate = id
-  {-# INLINE negate #-}
-
 
 {--------------------------------------------------------------------
   Classes
@@ -442,7 +421,6 @@ instance Ring Mod2 where
 --     @(x '+' y) '*' z = (x '*' z) '+' (y '*' z)@
 -- [/annihilation/]
 --     @'zero' '*' x = x '*' 'zero' = 'zero'@
-
 class Semiring a where
   {-# MINIMAL plus, times, (zero, one | fromNatural) #-}
   plus  :: a -> a -> a -- ^ Commutative Operation
@@ -454,42 +432,6 @@ class Semiring a where
   fromNatural :: Natural -> a -- ^ Homomorphism of additive semigroups
   fromNatural 0 = zero
   fromNatural n = getAdd' (stimes n (Add' one))
-
--- | The class of semirings with an additive inverse.
---
---     @'negate' a '+' a = 'zero'@
-
-class Semiring a => Ring a where
-  {-# MINIMAL negate #-}
-  negate :: a -> a
-
--- | Subtract two 'Ring' values. For any type @R@ with
--- a 'Num.Num' instance, this is the same as '(Prelude.-)'.
---
---     @x `minus` y = x '+' 'negate' y@
-minus :: Ring a => a -> a -> a
-minus x y = x + negate y
-{-# INLINE minus #-}
-
--- | Convert from integer to ring.
---
--- When @{-#@ @LANGUAGE RebindableSyntax #-}@ is enabled,
--- this function is used for desugaring integer literals.
--- This may be used to facilitate transition from 'Num.Num' to 'Ring':
--- no need to replace 0 and 1 with 'one' and 'zero'
--- or to cast numeric literals.
-fromInteger :: Ring a => Integer -> a
-fromInteger x
-  | x >= 0    = fromNatural (Num.fromInteger x)
-  | otherwise = negate (fromNatural (Num.fromInteger (Num.negate x)))
-{-# INLINE fromInteger #-}
-
--- | Convert from integral to ring.
-fromIntegral :: (Integral a, Ring b) => a -> b
-fromIntegral x
-  | x >= 0    = fromNatural (Real.fromIntegral x)
-  | otherwise = negate (fromNatural (Real.fromIntegral (Num.negate x)))
-{-# INLINE fromIntegral #-}
 
 {--------------------------------------------------------------------
   Instances (base)
@@ -507,10 +449,6 @@ instance Semiring b => Semiring (a -> b) where
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
 
-instance Ring b => Ring (a -> b) where
-  negate f x = negate (f x)
-  {-# INLINE negate #-}
-
 instance Semiring () where
   plus _ _  = ()
   zero      = ()
@@ -522,10 +460,6 @@ instance Semiring () where
   {-# INLINE times #-}
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
-
-instance Ring () where
-  negate _ = ()
-  {-# INLINE negate #-}
 
 instance Semiring (Proxy a) where
   plus _ _  = Proxy
@@ -584,10 +518,6 @@ instance Semiring a => Semiring (IO a) where
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
 
-instance Ring a => Ring (IO a) where
-  negate = fmap negate
-  {-# INLINE negate #-}
-
 instance Semiring a => Semiring (Dual a) where
   zero = Dual zero
   Dual x `plus` Dual y = Dual (y `plus` x)
@@ -599,10 +529,6 @@ instance Semiring a => Semiring (Dual a) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
-
-instance Ring a => Ring (Dual a) where
-  negate (Dual x) = Dual (negate x)
-  {-# INLINE negate #-}
 
 instance Semiring a => Semiring (Const a b) where
   zero = Const zero
@@ -616,28 +542,6 @@ instance Semiring a => Semiring (Const a b) where
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
 
-instance Ring a => Ring (Const a b) where
-  negate (Const x) = Const (negate x)
-  {-# INLINE negate #-}
-
--- | This instance can suffer due to floating point arithmetic.
-instance Ring a => Semiring (Complex a) where
-  zero = zero :+ zero
-  one  = one  :+ zero
-  plus  (x :+ y) (x' :+ y') = plus x x' :+ plus y y'
-  times (x :+ y) (x' :+ y')
-    = (x * x' - (y * y')) :+ (x * y' + y * x')
-  fromNatural n = fromNatural n :+ zero
-  {-# INLINE plus  #-}
-  {-# INLINE zero  #-}
-  {-# INLINE times #-}
-  {-# INLINE one   #-}
-  {-# INLINE fromNatural #-}
-
-instance Ring a => Ring (Complex a) where
-  negate (x :+ y) = negate x :+ negate y
-  {-# INLINE negate #-}
-
 #if MIN_VERSION_base(4,12,0)
 instance (Semiring a, Applicative f) => Semiring (Ap f a) where
   zero  = pure zero
@@ -650,10 +554,6 @@ instance (Semiring a, Applicative f) => Semiring (Ap f a) where
   {-# INLINE times #-}
   {-# INLINE one   #-}
   {-# INLINE fromNatural #-}
-
-instance (Ring a, Applicative f) => Ring (Ap f a) where
-  negate = fmap negate
-  {-# INLINE negate #-}
 #endif
 
 #if MIN_VERSION_base(4,12,0)
@@ -662,7 +562,6 @@ deriving instance Semiring (Predicate a)
 deriving instance Semiring a => Semiring (Equivalence a)
 
 deriving instance Semiring a => Semiring (Op a b)
-deriving instance Ring a => Ring (Op a b)
 #endif
 
 instance Integral a => Semiring (Ratio a) where
@@ -690,16 +589,6 @@ instance HasResolution a => Semiring (Fixed a) where
   {-# INLINE plus  #-}
   {-# INLINE times #-}
   {-# INLINE fromNatural #-}
-
-instance Integral a => Ring (Ratio a) where
-  negate = Num.negate
-  {-# INLINE negate #-}
-
-deriving instance Ring a => Ring (Down a)
-deriving instance Ring a => Ring (Identity a)
-instance HasResolution a => Ring (Fixed a) where
-  negate = Num.negate
-  {-# INLINE negate #-}
 
 {--------------------------------------------------------------------
   Instances (containers)
@@ -1013,130 +902,4 @@ $(let
    ])
 #endif
 
-#if MIN_VERSION_base(4,12,0)
-deriving via (WrappedNum Int) instance Ring Int
-deriving via (WrappedNum Int8) instance Ring Int8
-deriving via (WrappedNum Int16) instance Ring Int16
-deriving via (WrappedNum Int32) instance Ring Int32
-deriving via (WrappedNum Int64) instance Ring Int64
-deriving via (WrappedNum Integer) instance Ring Integer
-deriving via (WrappedNum Word) instance Ring Word
-deriving via (WrappedNum Word8) instance Ring Word8
-deriving via (WrappedNum Word16) instance Ring Word16
-deriving via (WrappedNum Word32) instance Ring Word32
-deriving via (WrappedNum Word64) instance Ring Word64
-deriving via (WrappedNum Float) instance Ring Float
-deriving via (WrappedNum Double) instance Ring Double
-deriving via (WrappedNum CUIntMax) instance Ring CUIntMax
-deriving via (WrappedNum CIntMax) instance Ring CIntMax
-deriving via (WrappedNum CUIntPtr) instance Ring CUIntPtr
-deriving via (WrappedNum CIntPtr) instance Ring CIntPtr
-deriving via (WrappedNum CSUSeconds) instance Ring CSUSeconds
-deriving via (WrappedNum CUSeconds) instance Ring CUSeconds
-deriving via (WrappedNum CTime) instance Ring CTime
-deriving via (WrappedNum CClock) instance Ring CClock
-deriving via (WrappedNum CSigAtomic) instance Ring CSigAtomic
-deriving via (WrappedNum CWchar) instance Ring CWchar
-deriving via (WrappedNum CSize) instance Ring CSize
-deriving via (WrappedNum CPtrdiff) instance Ring CPtrdiff
-deriving via (WrappedNum CDouble) instance Ring CDouble
-deriving via (WrappedNum CFloat) instance Ring CFloat
-deriving via (WrappedNum CULLong) instance Ring CULLong
-deriving via (WrappedNum CLLong) instance Ring CLLong
-deriving via (WrappedNum CULong) instance Ring CULong
-deriving via (WrappedNum CLong) instance Ring CLong
-deriving via (WrappedNum CUInt) instance Ring CUInt
-deriving via (WrappedNum CInt) instance Ring CInt
-deriving via (WrappedNum CUShort) instance Ring CUShort
-deriving via (WrappedNum CShort) instance Ring CShort
-deriving via (WrappedNum CUChar) instance Ring CUChar
-deriving via (WrappedNum CSChar) instance Ring CSChar
-deriving via (WrappedNum CChar) instance Ring CChar
-deriving via (WrappedNum IntPtr) instance Ring IntPtr
-deriving via (WrappedNum WordPtr) instance Ring WordPtr
 
-#if !HOST_OS_WINDOWS
-deriving via (WrappedNum CCc) instance Ring CCc
-deriving via (WrappedNum CDev) instance Ring CDev
-deriving via (WrappedNum CGid) instance Ring CGid
-deriving via (WrappedNum CIno) instance Ring CIno
-deriving via (WrappedNum CMode) instance Ring CMode
-deriving via (WrappedNum CNlink) instance Ring CNlink
-deriving via (WrappedNum COff) instance Ring COff
-deriving via (WrappedNum CPid) instance Ring CPid
-deriving via (WrappedNum CRLim) instance Ring CRLim
-deriving via (WrappedNum CSpeed) instance Ring CSpeed
-deriving via (WrappedNum CSsize) instance Ring CSsize
-deriving via (WrappedNum CTcflag) instance Ring CTcflag
-deriving via (WrappedNum CUid) instance Ring CUid
-deriving via (WrappedNum Fd) instance Ring Fd
-#endif
-#else
-$(let
-  deriveRing :: Q Type -> Q [Dec]
-  deriveRing ty = [d|
-      instance Ring $ty where
-        negate = Num.negate
-        {-# INLINE negate #-}
-      |]
-
-  in P.concat P.<$> P.traverse deriveRing
-    [[t|Int|]
-    ,[t|Int8|]
-    ,[t|Int16|]
-    ,[t|Int32|]
-    ,[t|Int64|]
-    ,[t|Integer|]
-    ,[t|Word|]
-    ,[t|Word8|]
-    ,[t|Word16|]
-    ,[t|Word32|]
-    ,[t|Word64|]
-    ,[t|Float|]
-    ,[t|Double|]
-    ,[t|CUIntMax|]
-    ,[t|CIntMax|]
-    ,[t|CUIntPtr|]
-    ,[t|CIntPtr|]
-    ,[t|CSUSeconds|]
-    ,[t|CUSeconds|]
-    ,[t|CTime|]
-    ,[t|CClock|]
-    ,[t|CSigAtomic|]
-    ,[t|CWchar|]
-    ,[t|CSize|]
-    ,[t|CPtrdiff|]
-    ,[t|CDouble|]
-    ,[t|CFloat|]
-    ,[t|CULLong|]
-    ,[t|CLLong|]
-    ,[t|CULong|]
-    ,[t|CLong|]
-    ,[t|CUInt|]
-    ,[t|CInt|]
-    ,[t|CUShort|]
-    ,[t|CShort|]
-    ,[t|CUChar|]
-    ,[t|CSChar|]
-    ,[t|CChar|]
-    ,[t|IntPtr|]
-    ,[t|WordPtr|]
-
-#if !HOST_OS_WINDOWS
-    ,[t|CCc|]
-    ,[t|CDev|]
-    ,[t|CGid|]
-    ,[t|CIno|]
-    ,[t|CMode|]
-    ,[t|CNlink|]
-    ,[t|COff|]
-    ,[t|CPid|]
-    ,[t|CRLim|]
-    ,[t|CSpeed|]
-    ,[t|CSsize|]
-    ,[t|CTcflag|]
-    ,[t|CUid|]
-    ,[t|Fd|]
-#endif
-    ])
-#endif

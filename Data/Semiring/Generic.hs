@@ -35,6 +35,7 @@ module Data.Semiring.Generic
   ) where
 
 import           Data.Semiring
+import           Data.Ring (Ring (negate))
 import           GHC.Generics
 import           Numeric.Natural (Natural)
 

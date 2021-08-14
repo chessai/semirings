@@ -9,7 +9,7 @@
 -- |
 -- Module: Data.Ring.Ordered
 -- Copyright: (C) 2021 Koz Ross
--- License: 
+-- License: BSD3 
 -- Maintainer: Koz Ross <koz.ross@retro-freedom.nz>
 -- Stability: stable
 -- Portability: GHC only
@@ -46,7 +46,8 @@ import Data.Int (Int8, Int16, Int32, Int64)
 import Data.Monoid (Dual (Dual))
 import Data.Ord (Down (Down))
 import Data.Ratio (Ratio)
-import Data.Semiring (Ring (negate), Semiring(zero, one))
+import Data.Ring (Ring(negate))
+import Data.Semiring (Semiring(zero, one))
 import Data.Semiring.Generic ()
 import Data.Word (Word8, Word16, Word32, Word64)
 import GHC.Generics (Generic)

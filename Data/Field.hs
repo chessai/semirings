@@ -12,7 +12,8 @@ module Data.Field
 import Prelude hiding (fromInteger, fromRational, negate, quot, recip, (/))
 import Data.Euclidean (Field, quot)
 import Data.Ratio (denominator, numerator)
-import Data.Semiring (fromInteger, one)
+import Data.Semiring (one)
+import Data.Ring (fromInteger)
 
 ---------------------------------------------------------------------
 -- Functions

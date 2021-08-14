@@ -66,6 +66,7 @@ library
   exposed-modules:
     Data.Euclidean
     Data.Field
+    Data.Ring
     Data.Ring.Ordered
     Data.Semiring
     Data.Star
