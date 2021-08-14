@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP               #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
 -----------------------------------------------------------------------------
@@ -25,9 +24,7 @@ import Data.Semiring
 --
 -- @'aplus' x = x '*' 'star' x@
 class (Semiring a) => Star a where
-#if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL star | aplus #-}
-#endif
   star :: a -> a
   star a = one `plus` aplus a
 

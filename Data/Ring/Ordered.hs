@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -40,9 +39,7 @@ module Data.Ring.Ordered
   ) where
 
 import Control.Applicative (Const (Const))
-#if MIN_VERSION_base(4,7,0)
 import Data.Data (Data)
-#endif
 import Data.Fixed (HasResolution, Fixed)
 import Data.Functor.Identity (Identity (Identity))
 import Data.Int (Int8, Int16, Int32, Int64)
@@ -55,9 +52,7 @@ import Data.Word (Word8, Word16, Word32, Word64)
 import GHC.Generics (Generic)
 import Prelude hiding (signum, abs, negate, (-))
 import qualified Prelude as Num
-#if MIN_VERSION_base(4,7,0)
 import Data.Typeable (Typeable)
-#endif
 
 -- | A pattern-matching-friendly representation of the signum of a value.
 --
@@ -70,10 +65,8 @@ data Signum = Negative | Zero | Positive
     , Show -- ^ @since 0.7
     , Read -- ^ @since 0.7
     , Generic -- ^ @since 0.7
-#if MIN_VERSION_base(4,7,0)
     , Data -- ^ @since 0.7
     , Typeable -- ^ @since 0.7
-#endif
     )
 
 -- | If we treat 'Negative' as @-1@, 'Zero' as @0@ and 'Positive' as @1@, we 
@@ -111,10 +104,8 @@ newtype Modular a = Modular { getModular :: a }
     , Show -- ^ @since 0.7
     , Read -- ^ @since 0.7
     , Generic -- ^ @since 0.7
-#if MIN_VERSION_base(4,7,0)
     , Data -- ^ @since 0.7
     , Typeable -- ^ @since 0.7
-#endif
     )
 
 -- @since 0.7
@@ -169,9 +160,7 @@ deriving instance Ring (Modular Word)
 --
 -- @since 0.7
 class (Ring a, Ord a) => OrderedRing a where
-#if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL abs | signum  | signum' #-}
-#endif
   -- | Compute the absolute value.
   abs :: a -> a
   abs x = case signum x of 

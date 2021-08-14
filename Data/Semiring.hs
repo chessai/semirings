@@ -57,7 +57,7 @@ module Data.Semiring
   ) where
 
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
-import           Data.Bits (Bits)
+import           Data.Bits (Bits (xor))
 import           Data.Bool (Bool(..), (||), (&&), otherwise)
 import           Data.Coerce (Coercible, coerce)
 import           Data.Complex (Complex(..))
@@ -87,12 +87,10 @@ import           Data.Maybe (Maybe(..))
 import           Data.Monoid (Ap(..))
 #endif
 #if defined(VERSION_containers)
-#if MIN_VERSION_base(4,7,0)
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
 import           Data.IntSet (IntSet)
 import qualified Data.IntSet as IntSet
-#endif
 import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
@@ -392,10 +390,7 @@ newtype Mod2 = Mod2 { getMod2 :: Bool }
     )
 
 instance Semiring Mod2 where
-  -- we inline the definition of 'xor'
-  -- on Bools, since the instance did not exist until
-  -- base-4.7.0.
-  plus (Mod2 x) (Mod2 y) = Mod2 (x /= y)
+  plus (Mod2 x) (Mod2 y) = Mod2 (x `xor` y)
   times (Mod2 x) (Mod2 y) = Mod2 (x && y)
   zero = Mod2 False
   one = Mod2 True
@@ -449,9 +444,7 @@ instance Ring Mod2 where
 --     @'zero' '*' x = x '*' 'zero' = 'zero'@
 
 class Semiring a where
-#if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL plus, times, (zero, one | fromNatural) #-}
-#endif
   plus  :: a -> a -> a -- ^ Commutative Operation
   zero  :: a           -- ^ Commutative Unit
   zero = fromNatural 0
@@ -467,9 +460,7 @@ class Semiring a where
 --     @'negate' a '+' a = 'zero'@
 
 class Semiring a => Ring a where
-#if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL negate #-}
-#endif
   negate :: a -> a
 
 -- | Subtract two 'Ring' values. For any type @R@ with

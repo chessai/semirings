@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE KindSignatures      #-}
@@ -31,14 +30,10 @@ module Data.Semiring.Tropical
   , EProxy(EProxy)
   ) where
 
-#if MIN_VERSION_base(4,7,0)
 import Data.Data (Data)
-#endif
 import Data.Semiring (Semiring(..))
 import Data.Star (Star(..))
-#if MIN_VERSION_base(4,7,0)
 import Data.Typeable (Typeable)
-#endif
 
 -- done for haddocks, to make sure -Wall works
 import qualified Data.Monoid as Monoid
@@ -94,10 +89,8 @@ data Tropical (e :: Extrema) a
     ( Eq
     , Show
     , Read
-#if MIN_VERSION_base(4,7,0)
     , Typeable
     , Data
-#endif
     )
 
 instance forall e a. (Ord a, Extremum e) => Ord (Tropical e a) where

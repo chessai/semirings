@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -20,17 +19,11 @@ module Data.Semiring.Directed
   , Below(..)
   ) where
 
-#if MIN_VERSION_base(4,7,0)
 import Data.Data (Data)
-#endif
 import Data.Coerce (coerce)
 import Data.Semiring (Semiring(..))
-#if MIN_VERSION_base(4,7,0)
 import Data.Typeable (Typeable)
-#endif
-
 import GHC.Generics (Generic)
-
 
 -- | As it is above.
 --
@@ -48,10 +41,8 @@ newtype Above = Above {
     , Generic  -- ^ @since 0.7
     , Show -- ^ @since 0.7
     , Read -- ^ @since 0.7
-#if MIN_VERSION_base(4,7,0)
     , Data -- ^ @since 0.7
     , Typeable -- ^ @since 0.7
-#endif
     )
 
 -- | @since 0.7
@@ -82,10 +73,8 @@ newtype Below = Below {
     , Generic  -- ^ @since 0.7
     , Show -- ^ @since 0.7
     , Read -- ^ @since 0.7
-#if MIN_VERSION_base(4,7,0)
     , Data -- ^ @since 0.7
     , Typeable -- ^ @since 0.7
-#endif
     )
 
 -- | @since 0.7
@@ -115,10 +104,8 @@ newtype Directed = Directed {
     , Generic  -- ^ @since 0.7
     , Show -- ^ @since 0.7
     , Read -- ^ @since 0.7
-#if MIN_VERSION_base(4,7,0)
     , Data -- ^ @since 0.7
     , Typeable -- ^ @since 0.7
-#endif
     )
 
 -- | @since 0.7
