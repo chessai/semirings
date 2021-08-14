@@ -3,6 +3,8 @@
 * Add `Data.Semiring.Directed` for the semiring of directed sets.
 * Add `Data.Ring.Ordered` to represent ordered rings (as well as a simpler
   finitary case) and provide `signum` and `abs` via type class.
+* Move the `Ring` type class to `Data.Ring`.
+* Drop support for GHCs prior to 8.0.2, and note this in the Cabal file.
 
 0.6: [2021-01-07]
 -----------------
