@@ -10,3 +10,4 @@ result*
 *.o
 .stack-work
 hie.log
+cabal.project.local*
