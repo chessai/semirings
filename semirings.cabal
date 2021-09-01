@@ -29,7 +29,7 @@ description:
 
 build-type:    Simple
 extra-source-files: README.md CHANGELOG.md
-tested-with: , GHC == 8.6.5
+tested-with:   GHC == 8.6.5
              , GHC == 8.8.4
              , GHC == 8.10.4
              , GHC == 9.0.1
