@@ -34,7 +34,5 @@ jobs:
         key: ${{ runner.os }}-${{ matrix.ghc }}
     - name: Build
       run: cabal build
-    - name: Test
-      run: cabal test
 #    - name: Haddock
 #      run: cabal haddock

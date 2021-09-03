@@ -99,7 +99,7 @@ import           Data.Ord (Ord((<)), (>=))
 import           Data.Ord (Down(..))
 import           Data.Proxy (Proxy(..))
 import           Data.Ratio (Ratio, Rational, (%))
-import           Data.Semigroup.Compat (Semigroup(..))
+import           Data.Semigroup (Semigroup ((<>), stimes))
 #if defined(VERSION_containers)
 import           Data.Set (Set)
 import qualified Data.Set as Set

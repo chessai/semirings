@@ -21,11 +21,7 @@ module Data.Semiring.Directed
 import Data.Data (Data)
 import Data.Coerce (coerce)
 import Data.Semiring (Semiring(..))
-#if MIN_VERSION_base(4,9,0)
-import Data.Semigroup (Min(Min), Max(Max))
-#else
-import Data.Semigroup.Compat (Min(Min), Max(Max))
-#endif
+import Data.Semigroup (Min(Min), Max(Max), (<>))
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 
