@@ -1,10 +1,7 @@
-{-# LANGUAGE CPP                  #-}
-#if MIN_VERSION_base(4,6,0)
 {-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
-#endif
 
 -- below are safe orphan instances
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -27,7 +24,6 @@
 
 module Data.Semiring.Generic
   (
-#if MIN_VERSION_base(4,6,0)
     GSemiring(..)
   , gzero
   , gone
@@ -37,10 +33,8 @@ module Data.Semiring.Generic
   , GRing(..)
   , gnegate
   , GenericSemiring(..)
-#endif
   ) where
 
-#if MIN_VERSION_base(4,6,0)
 import           Data.Semiring
 import           GHC.Generics
 import           Numeric.Natural (Natural)
@@ -101,9 +95,7 @@ instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f, Ring g) => Ring (a,b,c
 -- | Generic 'Semiring' class, used to implement 'plus', 'times', 'zero',
 --   and 'one' for product-like types implementing 'Generic'.
 class GSemiring f where
-#if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL gplus', gzero', gtimes', gone', gfromNatural' #-}
-#endif
   gzero'  :: f a
   gone'   :: f a
   gplus'  :: f a -> f a -> f a
@@ -113,9 +105,7 @@ class GSemiring f where
 -- | Generic 'Ring' class, used to implement 'negate' for product-like
 --   types implementing 'Generic'.
 class GRing f where
-#if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL gnegate' #-}
-#endif
   gnegate' :: f a -> f a
 
 -- | Generically generate a 'Semiring' 'zero' for any product-like type
@@ -214,4 +204,3 @@ instance (Semiring a) => GSemiring (K1 i a) where
 
 instance (Ring a) => GRing (K1 i a) where
   gnegate' (K1 x) = K1 $ negate x
-#endif

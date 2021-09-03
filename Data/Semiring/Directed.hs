@@ -18,19 +18,15 @@ module Data.Semiring.Directed
     Directed(..)
   ) where
 
-#if MIN_VERSION_base(4,7,0)
 import Data.Data (Data)
-#endif
 import Data.Coerce (coerce)
 import Data.Semiring (Semiring(..))
-#if MIN_VERSION_base(4,7,0)
 #if MIN_VERSION_base(4,9,0)
 import Data.Semigroup (Min(Min), Max(Max))
 #else
 import Data.Semigroup.Compat (Min(Min), Max(Max))
 #endif
 import Data.Typeable (Typeable)
-#endif
 import GHC.Generics (Generic)
 
 -- | Wrapper for the semiring of upwards and downwards directed sets.
@@ -41,17 +37,23 @@ newtype Directed = Directed {
   -- | @since 0.7
   getDirected :: Ordering 
   }
-  deriving
-    ( Bounded -- ^ @since 0.7
-    , Enum -- ^ @since 0.7
-    , Eq -- ^ @since 0.7
-    , Generic  -- ^ @since 0.7
-    , Show -- ^ @since 0.7
-    , Read -- ^ @since 0.7
-#if MIN_VERSION_base(4,7,0)
-    , Data -- ^ @since 0.7
-    , Typeable -- ^ @since 0.7
-#endif
+  deriving ( 
+    -- | @since 0.7
+    Bounded, 
+    -- | @since 0.7
+    Enum,
+    -- | @since 0.7
+    Eq,
+    -- | @since 0.7
+    Generic,
+    -- | @since 0.7
+    Show,
+    -- | @since 0.7
+    Read,
+    -- | @since 0.7
+    Data,
+    -- | @since 0.7
+    Typeable 
     )
 
 -- | @since 0.7
