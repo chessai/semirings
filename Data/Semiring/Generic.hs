@@ -3,10 +3,6 @@
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 
--- below are safe orphan instances
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Semiring.Generic
@@ -51,42 +47,6 @@ instance (Generic a, GSemiring (Rep a)) => Semiring (GenericSemiring a) where
   plus (GenericSemiring x) (GenericSemiring y) = GenericSemiring (gplus x y)
   times (GenericSemiring x) (GenericSemiring y) = GenericSemiring (gtimes x y)
   fromNatural x = GenericSemiring (gfromNatural x)
-
-instance (Semiring a, Semiring b) => Semiring (a,b) where
-  zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
-
-instance (Semiring a, Semiring b, Semiring c) => Semiring (a,b,c) where
-  zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d) => Semiring (a,b,c,d) where
-  zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e) => Semiring (a,b,c,d,e) where
-  zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f) => Semiring (a,b,c,d,e,f) where
-  zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f, Semiring g) => Semiring (a,b,c,d,e,f,g) where
-  zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
-
-instance (Ring a, Ring b) => Ring (a,b) where
-  negate = gnegate
-
-instance (Ring a, Ring b, Ring c) => Ring (a,b,c) where
-  negate = gnegate
-
-instance (Ring a, Ring b, Ring c, Ring d) => Ring (a,b,c,d) where
-  negate = gnegate
-
-instance (Ring a, Ring b, Ring c, Ring d, Ring e) => Ring (a,b,c,d,e) where
-  negate = gnegate
-
-instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f) => Ring (a,b,c,d,e,f) where
-  negate = gnegate
-
-instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f, Ring g) => Ring (a,b,c,d,e,f,g) where
-  negate = gnegate
 
 {--------------------------------------------------------------------
   Generics
