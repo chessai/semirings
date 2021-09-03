@@ -3,6 +3,7 @@
 * Add `Data.Semiring.Directed` for the semiring of directed sets.
 * Add `Data.Ring.Ordered` to represent ordered rings (as well as a simpler
   finitary case) and provide `signum` and `abs` via type class.
+* Modify code and CI to support GHC 8.0 and later only.
 
 0.6: [2021-01-07]
 -----------------
