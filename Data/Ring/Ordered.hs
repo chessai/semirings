@@ -61,14 +61,14 @@ import Data.Typeable (Typeable)
 -- @since 0.7
 newtype Modular a = Modular { getModular :: a }
   deriving
-    ( Bounded -- ^ @since 0.7
-    , Eq -- ^ @since 0.7
-    , Ord -- ^ @since 0.7
-    , Show -- ^ @since 0.7
-    , Read -- ^ @since 0.7
-    , Generic -- ^ @since 0.7
-    , Data -- ^ @since 0.7
-    , Typeable -- ^ @since 0.7
+    ( Bounded 
+    , Eq 
+    , Ord
+    , Show
+    , Read
+    , Generic
+    , Data
+    , Typeable
     )
 
 -- @since 0.7

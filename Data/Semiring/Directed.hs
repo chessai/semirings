@@ -33,15 +33,15 @@ import GHC.Generics (Generic)
 -- @since 0.7
 newtype Directed = Directed { getDirected :: Ordering }
   deriving
-    ( Bounded -- ^ @since 0.7
-    , Eq -- ^ @since 0.7
-    , Enum -- ^ @since 0.7
-    , Ord -- ^ @since 0.7
-    , Show -- ^ @since 0.7
-    , Read -- ^ @since 0.7
-    , Generic -- ^ @since 0.7
-    , Data -- ^ @since 0.7
-    , Typeable -- ^ @since 0.7
+    ( Bounded 
+    , Eq 
+    , Enum 
+    , Ord 
+    , Show
+    , Read
+    , Generic
+    , Data
+    , Typeable
     )
 
 -- | @since 0.7
