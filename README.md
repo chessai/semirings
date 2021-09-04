@@ -79,6 +79,22 @@ http://r6.ca/blog/20110808T035622Z.html
 
 https://byorgey.wordpress.com/2016/04/05/the-network-reliability-problem-and-star-semirings/
 
+support window
+==============
+
+We support all GHCs from 8.0 onwards. Our CI currently checks the latest minor
+versions of the following GHCs:
+
+- 8.0
+- 8.2
+- 8.4
+- 8.6
+- 8.8
+- 9.0
+
+We support Windows, macOS and Linux: our CI checks all of them (with Ubuntu for
+the last).
+
 additional credit
 ======
 
