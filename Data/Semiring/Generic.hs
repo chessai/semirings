@@ -1,14 +1,7 @@
-{-# LANGUAGE CPP                  #-}
-#if MIN_VERSION_base(4,6,0)
 {-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
-#endif
-
--- below are safe orphan instances
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 
 -----------------------------------------------------------------------------
 -- |
@@ -27,7 +20,6 @@
 
 module Data.Semiring.Generic
   (
-#if MIN_VERSION_base(4,6,0)
     GSemiring(..)
   , gzero
   , gone
@@ -37,10 +29,8 @@ module Data.Semiring.Generic
   , GRing(..)
   , gnegate
   , GenericSemiring(..)
-#endif
   ) where
 
-#if MIN_VERSION_base(4,6,0)
 import           Data.Semiring
 import           GHC.Generics
 import           Numeric.Natural (Natural)
@@ -58,42 +48,6 @@ instance (Generic a, GSemiring (Rep a)) => Semiring (GenericSemiring a) where
   times (GenericSemiring x) (GenericSemiring y) = GenericSemiring (gtimes x y)
   fromNatural x = GenericSemiring (gfromNatural x)
 
-instance (Semiring a, Semiring b) => Semiring (a,b) where
-  zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
-
-instance (Semiring a, Semiring b, Semiring c) => Semiring (a,b,c) where
-  zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d) => Semiring (a,b,c,d) where
-  zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e) => Semiring (a,b,c,d,e) where
-  zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f) => Semiring (a,b,c,d,e,f) where
-  zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
-
-instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f, Semiring g) => Semiring (a,b,c,d,e,f,g) where
-  zero = gzero; one = gone; plus = gplus; times = gtimes; fromNatural = gfromNatural;
-
-instance (Ring a, Ring b) => Ring (a,b) where
-  negate = gnegate
-
-instance (Ring a, Ring b, Ring c) => Ring (a,b,c) where
-  negate = gnegate
-
-instance (Ring a, Ring b, Ring c, Ring d) => Ring (a,b,c,d) where
-  negate = gnegate
-
-instance (Ring a, Ring b, Ring c, Ring d, Ring e) => Ring (a,b,c,d,e) where
-  negate = gnegate
-
-instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f) => Ring (a,b,c,d,e,f) where
-  negate = gnegate
-
-instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f, Ring g) => Ring (a,b,c,d,e,f,g) where
-  negate = gnegate
-
 {--------------------------------------------------------------------
   Generics
 --------------------------------------------------------------------}
@@ -101,9 +55,7 @@ instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f, Ring g) => Ring (a,b,c
 -- | Generic 'Semiring' class, used to implement 'plus', 'times', 'zero',
 --   and 'one' for product-like types implementing 'Generic'.
 class GSemiring f where
-#if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL gplus', gzero', gtimes', gone', gfromNatural' #-}
-#endif
   gzero'  :: f a
   gone'   :: f a
   gplus'  :: f a -> f a -> f a
@@ -113,9 +65,7 @@ class GSemiring f where
 -- | Generic 'Ring' class, used to implement 'negate' for product-like
 --   types implementing 'Generic'.
 class GRing f where
-#if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL gnegate' #-}
-#endif
   gnegate' :: f a -> f a
 
 -- | Generically generate a 'Semiring' 'zero' for any product-like type
@@ -214,4 +164,3 @@ instance (Semiring a) => GSemiring (K1 i a) where
 
 instance (Ring a) => GRing (K1 i a) where
   gnegate' (K1 x) = K1 $ negate x
-#endif

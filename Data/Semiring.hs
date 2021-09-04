@@ -57,7 +57,7 @@ module Data.Semiring
   ) where
 
 import           Control.Applicative (Applicative(..), Const(..), liftA2)
-import           Data.Bits (Bits)
+import           Data.Bits (Bits (xor))
 import           Data.Bool (Bool(..), (||), (&&), otherwise)
 import           Data.Coerce (Coercible, coerce)
 import           Data.Complex (Complex(..))
@@ -87,12 +87,10 @@ import           Data.Maybe (Maybe(..))
 import           Data.Monoid (Ap(..))
 #endif
 #if defined(VERSION_containers)
-#if MIN_VERSION_base(4,7,0)
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
 import           Data.IntSet (IntSet)
 import qualified Data.IntSet as IntSet
-#endif
 import           Data.Map (Map)
 import qualified Data.Map as Map
 #endif
@@ -101,7 +99,7 @@ import           Data.Ord (Ord((<)), (>=))
 import           Data.Ord (Down(..))
 import           Data.Proxy (Proxy(..))
 import           Data.Ratio (Ratio, Rational, (%))
-import           Data.Semigroup.Compat (Semigroup(..))
+import           Data.Semigroup (Semigroup ((<>), stimes))
 #if defined(VERSION_containers)
 import           Data.Set (Set)
 import qualified Data.Set as Set
@@ -392,10 +390,7 @@ newtype Mod2 = Mod2 { getMod2 :: Bool }
     )
 
 instance Semiring Mod2 where
-  -- we inline the definition of 'xor'
-  -- on Bools, since the instance did not exist until
-  -- base-4.7.0.
-  plus (Mod2 x) (Mod2 y) = Mod2 (x /= y)
+  plus (Mod2 x) (Mod2 y) = Mod2 (x `xor` y)
   times (Mod2 x) (Mod2 y) = Mod2 (x && y)
   zero = Mod2 False
   one = Mod2 True
@@ -449,9 +444,7 @@ instance Ring Mod2 where
 --     @'zero' '*' x = x '*' 'zero' = 'zero'@
 
 class Semiring a where
-#if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL plus, times, (zero, one | fromNatural) #-}
-#endif
   plus  :: a -> a -> a -- ^ Commutative Operation
   zero  :: a           -- ^ Commutative Unit
   zero = fromNatural 0
@@ -467,9 +460,7 @@ class Semiring a where
 --     @'negate' a '+' a = 'zero'@
 
 class Semiring a => Ring a where
-#if __GLASGOW_HASKELL__ >= 708
   {-# MINIMAL negate #-}
-#endif
   negate :: a -> a
 
 -- | Subtract two 'Ring' values. For any type @R@ with
@@ -503,6 +494,72 @@ fromIntegral x
 {--------------------------------------------------------------------
   Instances (base)
 --------------------------------------------------------------------}
+
+instance (Semiring a, Semiring b) => Semiring (a,b) where
+  zero = (zero, zero)
+  one = (one, one)
+  plus (x1, x2) (y1, y2) =
+    (x1 `plus` y1, x2 `plus` y2)
+  times (x1, x2) (y1, y2) =
+    (x1 `times` y1, x2 `times` y2)
+
+instance (Semiring a, Semiring b, Semiring c) => Semiring (a,b,c) where
+  zero = (zero, zero, zero)
+  one = (one, one, one)
+  plus (x1, x2, x3) (y1, y2, y3) =
+    (x1 `plus` y1, x2 `plus` y2, x3 `plus` y3)
+  times (x1, x2, x3) (y1, y2, y3) =
+    (x1 `times` y1, x2 `times` y2, x3 `times` y3)
+
+instance (Semiring a, Semiring b, Semiring c, Semiring d) => Semiring (a,b,c,d) where
+  zero = (zero, zero, zero, zero)
+  one = (one, one, one, one)
+  plus (x1, x2, x3, x4) (y1, y2, y3, y4) =
+    (x1 `plus` y1, x2 `plus` y2, x3 `plus` y3, x4 `plus` y4)
+  times (x1, x2, x3, x4) (y1, y2, y3, y4) =
+    (x1 `times` y1, x2 `times` y2, x3 `times` y3, x4 `times` y4)
+
+instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e) => Semiring (a,b,c,d,e) where
+  zero = (zero, zero, zero, zero, zero)
+  one = (one, one, one, one, one)
+  plus (x1, x2, x3, x4, x5) (y1, y2, y3, y4, y5) =
+    (x1 `plus` y1, x2 `plus` y2, x3 `plus` y3, x4 `plus` y4, x5 `plus` y5)
+  times (x1, x2, x3, x4, x5) (y1, y2, y3, y4, y5) =
+    (x1 `times` y1, x2 `times` y2, x3 `times` y3, x4 `times` y4, x5 `times` y5)
+
+instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f) => Semiring (a,b,c,d,e,f) where
+  zero = (zero, zero, zero, zero, zero, zero)
+  one = (one, one, one, one, one, one)
+  plus (x1, x2, x3, x4, x5, x6) (y1, y2, y3, y4, y5, y6) =
+    (x1 `plus` y1, x2 `plus` y2, x3 `plus` y3, x4 `plus` y4, x5 `plus` y5, x6 `plus` y6)
+  times (x1, x2, x3, x4, x5, x6) (y1, y2, y3, y4, y5, y6) =
+    (x1 `times` y1, x2 `times` y2, x3 `times` y3, x4 `times` y4, x5 `times` y5, x6 `times` y6)
+
+instance (Semiring a, Semiring b, Semiring c, Semiring d, Semiring e, Semiring f, Semiring g) => Semiring (a,b,c,d,e,f,g) where
+  zero = (zero, zero, zero, zero, zero, zero, zero)
+  one = (one, one, one, one, one, one, one)
+  plus (x1, x2, x3, x4, x5, x6, x7) (y1, y2, y3, y4, y5, y6, y7) =
+    (x1 `plus` y1, x2 `plus` y2, x3 `plus` y3, x4 `plus` y4, x5 `plus` y5, x6 `plus` y6, x7 `plus` y7)
+  times (x1, x2, x3, x4, x5, x6, x7) (y1, y2, y3, y4, y5, y6, y7) =
+    (x1 `times` y1, x2 `times` y2, x3 `times` y3, x4 `times` y4, x5 `times` y5, x6 `times` y6, x7 `times` y7)
+
+instance (Ring a, Ring b) => Ring (a,b) where
+  negate (x1, x2) = (negate x1, negate x2)
+
+instance (Ring a, Ring b, Ring c) => Ring (a,b,c) where
+  negate (x1, x2, x3) = (negate x1, negate x2, negate x3)
+
+instance (Ring a, Ring b, Ring c, Ring d) => Ring (a,b,c,d) where
+  negate (x1, x2, x3, x4) = (negate x1, negate x2, negate x3, negate x4)
+
+instance (Ring a, Ring b, Ring c, Ring d, Ring e) => Ring (a,b,c,d,e) where
+  negate (x1, x2, x3, x4, x5) = (negate x1, negate x2, negate x3, negate x4, negate x5)
+
+instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f) => Ring (a,b,c,d,e,f) where
+  negate (x1, x2, x3, x4, x5, x6) = (negate x1, negate x2, negate x3, negate x4, negate x5, negate x6)
+
+instance (Ring a, Ring b, Ring c, Ring d, Ring e, Ring f, Ring g) => Ring (a,b,c,d,e,f,g) where
+  negate (x1, x2, x3, x4, x5, x6, x7) = (negate x1, negate x2, negate x3, negate x4, negate x5, negate x6, negate x7)
 
 instance Semiring b => Semiring (a -> b) where
   plus f g    = \x -> f x `plus` g x

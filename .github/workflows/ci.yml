@@ -15,13 +15,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-latest]
-        ghc: ['8.6', '8.8', '8.10', '9.0']
-        include:
-        - os: windows-latest
-          ghc: 'latest'
-        - os: macOS-latest
-          ghc: 'latest'
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        ghc: ['8.0', '8.2', '8.4', '8.6', '8.8', '8.10', '9.0']
     steps:
     - uses: actions/checkout@v2
     - uses: haskell/actions/setup@v1
@@ -37,7 +32,7 @@ jobs:
           ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
           dist-newstyle
         key: ${{ runner.os }}-${{ matrix.ghc }}
-    - name: Test
-      run: cabal test
-    - name: Haddock
-      run: cabal haddock
+    - name: Build
+      run: cabal build
+#    - name: Haddock
+#      run: cabal haddock
