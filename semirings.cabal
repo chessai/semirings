@@ -81,5 +81,5 @@ library
 
   if flag(unordered-containers)
     build-depends:
-        hashable >= 1.1  && < 1.4
+        hashable >= 1.1  && < 1.5
       , unordered-containers >= 0.2  && < 0.3
