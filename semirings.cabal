@@ -73,6 +73,9 @@ library
     Data.Semiring.Tropical
     Data.Semiring.Generic
 
+  if impl(ghc < 8)
+    build-depends: semigroups >= 0.17 && < 0.21
+
   if impl(ghc < 8.6.1)
     build-depends: template-haskell >= 2.4.0.0
 
