@@ -9,7 +9,7 @@
 -- |
 -- Module: Data.Ring.Ordered
 -- Copyright: (C) 2021 Koz Ross
--- License: BSD3 
+-- License: BSD3
 -- Maintainer: Koz Ross <koz.ross@retro-freedom.nz>
 -- Stability: stable
 -- Portability: GHC only
@@ -23,11 +23,11 @@
 -- [axioms](https://en.wikipedia.org/wiki/Ordered_ring) imply that the
 -- underlying set is either a singleton or infinite. Thus, the [additional
 -- properties](https://en.wikipedia.org/wiki/Ordered_ring#Basic_properties) of
--- ordered rings do not, in general, hold. 
+-- ordered rings do not, in general, hold.
 --
 -- We indicate those instances that /are/ \'truly\' or \'mathematically\'
 -- ordered rings in their documentation.
-module Data.Ring.Ordered 
+module Data.Ring.Ordered
   (
     -- * Helper types
     Modular(..),
