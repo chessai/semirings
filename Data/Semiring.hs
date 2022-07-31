@@ -127,7 +127,7 @@ import           GHC.Real (Integral, Fractional, Real, RealFrac)
 import qualified GHC.Real as Real
 import           GHC.Show (Show)
 import           Numeric.Natural (Natural)
-import           Prelude (Integer)
+import           Prelude (Integer, Ordering(..), compare, even, quot)
 
 #if !MIN_VERSION_base(4,12,0)
 import           Language.Haskell.TH.Syntax (Q, Dec, Type)
@@ -335,6 +335,20 @@ newtype Mul a = Mul { getMul :: a }
 instance Semiring a => Semigroup (Mul a) where
   Mul a <> Mul b = Mul (a * b)
   {-# INLINE (<>) #-}
+  stimes n x0 = case compare n 0 of
+    LT -> error "stimes: negative multiplier"
+    EQ -> mempty
+    GT -> f x0 n
+      where
+        f x y
+          | even y = f (x `mappend` x) (y `quot` 2)
+          | y == 1 = x
+          | otherwise = g (x `mappend` x) (y `quot` 2) x
+        g x y z
+          | even y = g (x `mappend` x) (y `quot` 2) z
+          | y == 1 = x `mappend` z
+          | otherwise = g (x `mappend` x) (y `quot` 2) (x `mappend` z)
+  {-# INLINE stimes #-}
 
 instance Semiring a => Monoid (Mul a) where
   mempty = Mul one
