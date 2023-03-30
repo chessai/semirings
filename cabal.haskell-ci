@@ -5,3 +5,5 @@ unconstrained:          False
 install-dependencies:   False
 copy-fields:            all
 installed:              +all -transformers
+haddock:                >= 8.6
+  -- haddock up to 8.4 cannot parse `-- | @since ...` in `deriving` tuple

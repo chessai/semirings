@@ -29,13 +29,13 @@ import GHC.Generics (Generic)
 --
 -- For the individual join/meet monoids associated with either
 -- algebra, see @'Max' 'Ordering', and @'Min' 'Ordering'@.
-newtype Directed = Directed { 
+newtype Directed = Directed {
   -- | @since 0.7
-  getDirected :: Ordering 
+  getDirected :: Ordering
   }
-  deriving ( 
+  deriving (
     -- | @since 0.7
-    Bounded, 
+    Bounded,
     -- | @since 0.7
     Enum,
     -- | @since 0.7
@@ -49,7 +49,7 @@ newtype Directed = Directed {
     -- | @since 0.7
     Data,
     -- | @since 0.7
-    Typeable 
+    Typeable
     )
 
 -- | @since 0.7
