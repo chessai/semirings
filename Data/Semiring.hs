@@ -141,10 +141,51 @@ import qualified Prelude as P
 #endif
 
 #if !HOST_OS_WINDOWS
-import           System.Posix.Types
-  (CCc, CDev, CGid, CIno, CMode, CNlink,
-   COff, CPid, CRLim, CSpeed, CSsize,
-   CTcflag, CUid, Fd)
+#include "HsBaseConfig.h"
+import           System.Posix.Types (
+#ifdef HTYPE_CC_T
+                 CCc(..),
+#endif
+#ifdef HTYPE_DEV_T
+                 CDev(..),
+#endif
+#ifdef HTYPE_GID_T
+                 CGid(..),
+#endif
+#ifdef HTYPE_INO_T
+                 CIno(..),
+#endif
+#ifdef HTYPE_MODE_T
+                 CMode(..),
+#endif
+#ifdef HTYPE_NLINK_T
+                 CNlink(..),
+#endif
+#ifdef HTYPE_OFF_T
+                 COff(..),
+#endif
+#ifdef HTYPE_PID_T
+                 CPid(..),
+#endif
+#ifdef HTYPE_RLIM_T
+                 CRLim(..),
+#endif
+#ifdef HTYPE_SPEED_T
+                 CSpeed(..),
+#endif
+#ifdef HTYPE_SSIZE_T
+                 CSsize(..),
+#endif
+#ifdef HTYPE_TCFLAG_T
+                 CTcflag(..),
+#endif
+#ifdef HTYPE_UID_T
+                 CUid(..),
+#endif
+#ifdef HTYPE_UID_T
+                 CUid(..),
+#endif
+                 Fd(..))
 #endif
 
 infixl 7 *, `times`
@@ -998,19 +1039,45 @@ deriving via (WrappedNum CChar) instance Semiring CChar
 deriving via (WrappedNum IntPtr) instance Semiring IntPtr
 deriving via (WrappedNum WordPtr) instance Semiring WordPtr
 #if !HOST_OS_WINDOWS
+#ifdef HTYPE_CC_T
 deriving via (WrappedNum CCc) instance Semiring CCc
+#endif
+#ifdef HTYPE_DEV_T
 deriving via (WrappedNum CDev) instance Semiring CDev
+#endif
+#ifdef HTYPE_GID_T
 deriving via (WrappedNum CGid) instance Semiring CGid
+#endif
+#ifdef HTYPE_INO_T
 deriving via (WrappedNum CIno) instance Semiring CIno
+#endif
+#ifdef HTYPE_MODE_T
 deriving via (WrappedNum CMode) instance Semiring CMode
+#endif
+#ifdef HTYPE_NLINK_T
 deriving via (WrappedNum CNlink) instance Semiring CNlink
+#endif
+#ifdef HTYPE_OFF_T
 deriving via (WrappedNum COff) instance Semiring COff
+#endif
+#ifdef HTYPE_PID_T
 deriving via (WrappedNum CPid) instance Semiring CPid
+#endif
+#ifdef HTYPE_RLIM_T
 deriving via (WrappedNum CRLim) instance Semiring CRLim
+#endif
+#ifdef HTYPE_SPEED_T
 deriving via (WrappedNum CSpeed) instance Semiring CSpeed
+#endif
+#ifdef HTYPE_SSIZE_T
 deriving via (WrappedNum CSsize) instance Semiring CSsize
+#endif
+#ifdef HTYPE_TCFLAG_T
 deriving via (WrappedNum CTcflag) instance Semiring CTcflag
+#endif
+#ifdef HTYPE_UID_T
 deriving via (WrappedNum CUid) instance Semiring CUid
+#endif
 deriving via (WrappedNum Fd) instance Semiring Fd
 #endif
 deriving via (WrappedNum Natural) instance Semiring Natural
@@ -1136,19 +1203,45 @@ deriving via (WrappedNum IntPtr) instance Ring IntPtr
 deriving via (WrappedNum WordPtr) instance Ring WordPtr
 
 #if !HOST_OS_WINDOWS
+#ifdef HTYPE_CC_T
 deriving via (WrappedNum CCc) instance Ring CCc
+#endif
+#ifdef HTYPE_DEV_T
 deriving via (WrappedNum CDev) instance Ring CDev
+#endif
+#ifdef HTYPE_GID_T
 deriving via (WrappedNum CGid) instance Ring CGid
+#endif
+#ifdef HTYPE_INO_T
 deriving via (WrappedNum CIno) instance Ring CIno
+#endif
+#ifdef HTYPE_MODE_T
 deriving via (WrappedNum CMode) instance Ring CMode
+#endif
+#ifdef HTYPE_NLINK_T
 deriving via (WrappedNum CNlink) instance Ring CNlink
+#endif
+#ifdef HTYPE_OFF_T
 deriving via (WrappedNum COff) instance Ring COff
+#endif
+#ifdef HTYPE_PID_T
 deriving via (WrappedNum CPid) instance Ring CPid
+#endif
+#ifdef HTYPE_RLIM_T
 deriving via (WrappedNum CRLim) instance Ring CRLim
+#endif
+#ifdef HTYPE_SPEED_T
 deriving via (WrappedNum CSpeed) instance Ring CSpeed
+#endif
+#ifdef HTYPE_SSIZE_T
 deriving via (WrappedNum CSsize) instance Ring CSsize
+#endif
+#ifdef HTYPE_TCFLAG_T
 deriving via (WrappedNum CTcflag) instance Ring CTcflag
+#endif
+#ifdef HTYPE_UID_T
 deriving via (WrappedNum CUid) instance Ring CUid
+#endif
 deriving via (WrappedNum Fd) instance Ring Fd
 #endif
 #else
