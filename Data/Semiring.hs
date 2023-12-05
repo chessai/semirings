@@ -134,13 +134,6 @@ import           Language.Haskell.TH.Syntax (Q, Dec, Type)
 import qualified Prelude as P
 #endif
 
-#ifdef mingw32_HOST_OS
-#define HOST_OS_WINDOWS 1
-#else
-#define HOST_OS_WINDOWS 0
-#endif
-
-#if !HOST_OS_WINDOWS
 #include "HsBaseConfig.h"
 import           System.Posix.Types (
 #ifdef HTYPE_CC_T
@@ -182,11 +175,7 @@ import           System.Posix.Types (
 #ifdef HTYPE_UID_T
                  CUid(..),
 #endif
-#ifdef HTYPE_UID_T
-                 CUid(..),
-#endif
                  Fd(..))
-#endif
 
 infixl 7 *, `times`
 infixl 6 +, `plus`, -, `minus`
@@ -1038,7 +1027,7 @@ deriving via (WrappedNum CSChar) instance Semiring CSChar
 deriving via (WrappedNum CChar) instance Semiring CChar
 deriving via (WrappedNum IntPtr) instance Semiring IntPtr
 deriving via (WrappedNum WordPtr) instance Semiring WordPtr
-#if !HOST_OS_WINDOWS
+
 #ifdef HTYPE_CC_T
 deriving via (WrappedNum CCc) instance Semiring CCc
 #endif
@@ -1079,7 +1068,7 @@ deriving via (WrappedNum CTcflag) instance Semiring CTcflag
 deriving via (WrappedNum CUid) instance Semiring CUid
 #endif
 deriving via (WrappedNum Fd) instance Semiring Fd
-#endif
+
 deriving via (WrappedNum Natural) instance Semiring Natural
 #else
 -- Integral and fieldlike instances
@@ -1140,22 +1129,48 @@ $(let
    ,[t|CChar|]
    ,[t|IntPtr|]
    ,[t|WordPtr|]
-#if !HOST_OS_WINDOWS
+
+#ifdef HTYPE_CC_T
    ,[t|CCc|]
-   ,[t|CDev|]
-   ,[t|CGid|]
-   ,[t|CIno|]
-   ,[t|CMode|]
-   ,[t|CNlink|]
-   ,[t|COff|]
-   ,[t|CPid|]
-   ,[t|CRLim|]
-   ,[t|CSpeed|]
-   ,[t|CSsize|]
-   ,[t|CTcflag|]
-   ,[t|CUid|]
-   ,[t|Fd|]
 #endif
+#ifdef HTYPE_DEV_T
+   ,[t|CDev|]
+#endif
+#ifdef HTYPE_GID_T
+   ,[t|CGid|]
+#endif
+#ifdef HTYPE_INO_T
+   ,[t|CIno|]
+#endif
+#ifdef HTYPE_MODE_T
+   ,[t|CMode|]
+#endif
+#ifdef HTYPE_NLINK_T
+   ,[t|CNlink|]
+#endif
+#ifdef HTYPE_OFF_T
+   ,[t|COff|]
+#endif
+#ifdef HTYPE_PID_T
+   ,[t|CPid|]
+#endif
+#ifdef HTYPE_RLIM_T
+   ,[t|CRLim|]
+#endif
+#ifdef HTYPE_SPEED_T
+   ,[t|CSpeed|]
+#endif
+#ifdef HTYPE_SSIZE_T
+   ,[t|CSsize|]
+#endif
+#ifdef HTYPE_TCFLAG_T
+   ,[t|CTcflag|]
+#endif
+#ifdef HTYPE_UID_T
+   ,[t|CUid|]
+#endif
+   ,[t|Fd|]
+
    ,[t|Natural|]
    ])
 #endif
@@ -1202,7 +1217,6 @@ deriving via (WrappedNum CChar) instance Ring CChar
 deriving via (WrappedNum IntPtr) instance Ring IntPtr
 deriving via (WrappedNum WordPtr) instance Ring WordPtr
 
-#if !HOST_OS_WINDOWS
 #ifdef HTYPE_CC_T
 deriving via (WrappedNum CCc) instance Ring CCc
 #endif
@@ -1243,7 +1257,6 @@ deriving via (WrappedNum CTcflag) instance Ring CTcflag
 deriving via (WrappedNum CUid) instance Ring CUid
 #endif
 deriving via (WrappedNum Fd) instance Ring Fd
-#endif
 #else
 $(let
   deriveRing :: Q Type -> Q [Dec]
@@ -1295,21 +1308,45 @@ $(let
     ,[t|IntPtr|]
     ,[t|WordPtr|]
 
-#if !HOST_OS_WINDOWS
+#ifdef HTYPE_CC_T
     ,[t|CCc|]
-    ,[t|CDev|]
-    ,[t|CGid|]
-    ,[t|CIno|]
-    ,[t|CMode|]
-    ,[t|CNlink|]
-    ,[t|COff|]
-    ,[t|CPid|]
-    ,[t|CRLim|]
-    ,[t|CSpeed|]
-    ,[t|CSsize|]
-    ,[t|CTcflag|]
-    ,[t|CUid|]
-    ,[t|Fd|]
 #endif
+#ifdef HTYPE_DEV_T
+    ,[t|CDev|]
+#endif
+#ifdef HTYPE_GID_T
+    ,[t|CGid|]
+#endif
+#ifdef HTYPE_INO_T
+    ,[t|CIno|]
+#endif
+#ifdef HTYPE_MODE_T
+    ,[t|CMode|]
+#endif
+#ifdef HTYPE_NLINK_T
+    ,[t|CNlink|]
+#endif
+#ifdef HTYPE_OFF_T
+    ,[t|COff|]
+#endif
+#ifdef HTYPE_PID_T
+    ,[t|CPid|]
+#endif
+#ifdef HTYPE_RLIM_T
+    ,[t|CRLim|]
+#endif
+#ifdef HTYPE_SPEED_T
+    ,[t|CSpeed|]
+#endif
+#ifdef HTYPE_SSIZE_T
+    ,[t|CSsize|]
+#endif
+#ifdef HTYPE_TCFLAG_T
+    ,[t|CTcflag|]
+#endif
+#ifdef HTYPE_UID_T
+    ,[t|CUid|]
+#endif
+    ,[t|Fd|]
     ])
 #endif
