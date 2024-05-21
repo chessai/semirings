@@ -81,9 +81,9 @@ library
     build-depends: template-haskell >= 2.4.0.0
 
   if flag(containers)
-    build-depends: containers >= 0.5.4 && < 0.7
+    build-depends: containers >= 0.5.4
 
   if flag(unordered-containers)
     build-depends:
-        hashable >= 1.1  && < 1.5
-      , unordered-containers >= 0.2  && < 0.3
+        hashable >= 1.1
+      , unordered-containers >= 0.2
