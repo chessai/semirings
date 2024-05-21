@@ -1,10 +1,10 @@
-0.7: [2021-07-09]
+0.7: [2024-05-21]
 -----------------
 * Add `Data.Semiring.Directed` for the semiring of directed sets.
 * Add `Data.Ring.Ordered` to represent ordered rings (as well as a simpler
   finitary case) and provide `signum` and `abs` via type class.
 * Modify code and CI to support GHC 8.0 and later only.
-* Support hashable-1.4
+* Support newer versions of dependencies
 * Move Generics-derived tuple instances from Data.Semiring.Generic to manually-written Data.Semiring
 
 0.6: [2021-01-07]
