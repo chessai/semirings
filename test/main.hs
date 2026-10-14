@@ -172,8 +172,6 @@ pPredicate = Proxy :: Proxy (Predicate Int)
 pEquivalence = Proxy :: Proxy (Equivalence Int)
 pOp = Proxy :: Proxy (Op Int Int)
 
-deriving instance Arbitrary a => Arbitrary (Down a)
-
 -- | Rationals constrained to being positive
 newtype PosRatio a = PosRatio { getPosRatio :: Ratio a }
   deriving (Eq, Show, Semiring)
