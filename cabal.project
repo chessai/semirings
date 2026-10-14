@@ -2,3 +2,12 @@ packages: .
           ./test
 package semirings-test
   ghc-options: -Wall
+
+if impl(ghc>=10.0)
+  constraints:
+    hashable <1.5.1.0 || >1.5.1.0
+  allow-newer:
+    hashable:base,
+    hashable:containers,
+    hashable:ghc-bignum,
+    unordered-containers:template-haskell
