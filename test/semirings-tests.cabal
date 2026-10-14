@@ -27,7 +27,7 @@ test-suite test
   main-is: main.hs
   type: exitcode-stdio-1.0
   build-depends: base >= 4.8 && < 5
-               , QuickCheck
+               , QuickCheck >= 2.17
                , base-compat-batteries
                , base-orphans
                , containers
