@@ -43,7 +43,7 @@ tested-with:
 
 source-repository head
   type: git
-  location: git://github.com/chessai/semirings.git
+  location: https://github.com/chessai/semirings
 
 flag containers
   description:

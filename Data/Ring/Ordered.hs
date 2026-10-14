@@ -9,7 +9,7 @@
 -- |
 -- Module: Data.Ring.Ordered
 -- Copyright: (C) 2021 Koz Ross
--- License: BSD3 
+-- License: BSD3
 -- Maintainer: Koz Ross <koz.ross@retro-freedom.nz>
 -- Stability: stable
 -- Portability: GHC only
@@ -23,11 +23,11 @@
 -- [axioms](https://en.wikipedia.org/wiki/Ordered_ring) imply that the
 -- underlying set is either a singleton or infinite. Thus, the [additional
 -- properties](https://en.wikipedia.org/wiki/Ordered_ring#Basic_properties) of
--- ordered rings do not, in general, hold. 
+-- ordered rings do not, in general, hold.
 --
 -- We indicate those instances that /are/ \'truly\' or \'mathematically\'
 -- ordered rings in their documentation.
-module Data.Ring.Ordered 
+module Data.Ring.Ordered
   (
     -- * Helper types
     Modular(..),
@@ -48,7 +48,6 @@ import Data.Word (Word8, Word16, Word32, Word64)
 import GHC.Generics (Generic)
 import Prelude hiding (signum, abs, negate, (-))
 import qualified Prelude as Num
-import Data.Typeable (Typeable)
 
 -- | A wrapper to indicate the type is being treated as a [modular arithmetic
 -- system](https://en.wikipedia.org/wiki/Modular_arithmetic) whose modulus is
@@ -68,7 +67,6 @@ newtype Modular a = Modular { getModular :: a }
     , Read -- ^ @since 0.7
     , Generic -- ^ @since 0.7
     , Data -- ^ @since 0.7
-    , Typeable -- ^ @since 0.7
     )
 
 -- @since 0.7
