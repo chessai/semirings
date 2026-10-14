@@ -5,16 +5,11 @@
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
 
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DefaultSignatures          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
-#if MIN_VERSION_base(4,12,0)
 {-# LANGUAGE DerivingVia                #-}
 {-# LANGUAGE StandaloneDeriving         #-}
-#else
-{-# LANGUAGE TemplateHaskell            #-}
-#endif
 
 module Data.Euclidean
   ( Euclidean(..)
@@ -36,11 +31,6 @@ import Data.Ratio (Ratio)
 import Data.Semiring (Semiring(..), Ring(..), (*), minus, isZero, Mod2)
 import Data.Word (Word, Word8, Word16, Word32, Word64)
 import Foreign.C.Types (CFloat, CDouble)
-
-#if !MIN_VERSION_base(4,12,0)
-import Language.Haskell.TH.Syntax (Q, Dec, Type)
-#endif
-
 import Numeric.Natural
 
 ---------------------------------------------------------------------
@@ -354,7 +344,6 @@ instance Field a => Euclidean (Complex a) where
 
 instance Field a => Field (Complex a)
 
-#if MIN_VERSION_base(4,12,0)
 deriving via (WrappedIntegral Int) instance GcdDomain Int
 deriving via (WrappedIntegral Int8) instance GcdDomain Int8
 deriving via (WrappedIntegral Int16) instance GcdDomain Int16
@@ -367,33 +356,7 @@ deriving via (WrappedIntegral Word16) instance GcdDomain Word16
 deriving via (WrappedIntegral Word32) instance GcdDomain Word32
 deriving via (WrappedIntegral Word64) instance GcdDomain Word64
 deriving via (WrappedIntegral Natural) instance GcdDomain Natural
-#else
-$(let
-  deriveGcdDomain :: Q Type -> Q [Dec]
-  deriveGcdDomain ty = [d|
-      instance GcdDomain $ty where
-         gcd     = P.gcd
-         lcm     = P.lcm
-         coprime = coprimeIntegral
-      |]
 
-  in P.concat P.<$> P.traverse deriveGcdDomain
-    [[t|Int|]
-    ,[t|Int8|]
-    ,[t|Int16|]
-    ,[t|Int32|]
-    ,[t|Int64|]
-    ,[t|Integer|]
-    ,[t|Word|]
-    ,[t|Word8|]
-    ,[t|Word16|]
-    ,[t|Word32|]
-    ,[t|Word64|]
-    ,[t|Natural|]
-    ])
-#endif
-
-#if MIN_VERSION_base(4,12,0)
 deriving via (WrappedIntegral Int) instance Euclidean Int
 deriving via (WrappedIntegral Int8) instance Euclidean Int8
 deriving via (WrappedIntegral Int16) instance Euclidean Int16
@@ -406,29 +369,3 @@ deriving via (WrappedIntegral Word16) instance Euclidean Word16
 deriving via (WrappedIntegral Word32) instance Euclidean Word32
 deriving via (WrappedIntegral Word64) instance Euclidean Word64
 deriving via (WrappedIntegral Natural) instance Euclidean Natural
-#else
-$(let
-  deriveEuclidean :: Q Type -> Q [Dec]
-  deriveEuclidean ty = [d|
-      instance Euclidean $ty where
-         degree  = P.fromIntegral . abs
-         quotRem = P.quotRem
-         quot    = P.quot
-         rem     = P.rem
-      |]
-
-  in P.concat P.<$> P.traverse deriveEuclidean
-    [[t|Int|]
-    ,[t|Int8|]
-    ,[t|Int16|]
-    ,[t|Int32|]
-    ,[t|Int64|]
-    ,[t|Integer|]
-    ,[t|Word|]
-    ,[t|Word8|]
-    ,[t|Word16|]
-    ,[t|Word32|]
-    ,[t|Word64|]
-    ,[t|Natural|]
-    ])
-#endif

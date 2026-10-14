@@ -1,9 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
-#if MIN_VERSION_base(4,12,0)
 {-# LANGUAGE DerivingVia #-}
-#endif
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -151,18 +149,6 @@ namedTests =
   , ("AB", semiringLaws pAB)
   ]
 
-#if !(MIN_VERSION_base(4,12,0))
-newtype Ap f a = Ap { getAp :: f a }
-  deriving (Eq, Functor, Applicative, Show)
-instance (Semiring a, Applicative f) => Semiring (Ap f a) where
-  zero = pure zero
-  one = pure one
-  plus = liftA2 plus
-  times = liftA2 times
-  fromNatural = pure . fromNatural
-instance (Ring a, Applicative f) => Ring (Ap f a) where
-  negate = fmap negate
-#endif
 deriving instance (Arbitrary (f a)) => Arbitrary (Ap f a)
 
 newtype Predicate a = Predicate (a -> Bool)
@@ -286,16 +272,7 @@ newtype B = B Integer
 
 data AB = AB A B
   deriving (Show, Eq, Generic)
-#if MIN_VERSION_base(4,12,0)
   deriving (Semiring) via (GenericSemiring AB)
-#else
-instance Semiring AB where
-  zero = gzero
-  one = gone
-  plus = gplus
-  times = gtimes
-  fromNatural = gfromNatural
-#endif
 
 instance Arbitrary AB where
   arbitrary = AB <$> arbitrary <*> arbitrary

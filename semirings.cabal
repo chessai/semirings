@@ -66,7 +66,7 @@ library
   ghc-options: -Wall
 
   build-depends:
-      base >= 4.8 && < 5
+      base >= 4.12 && < 5
   exposed-modules:
     Data.Euclidean
     Data.Field
@@ -76,9 +76,6 @@ library
     Data.Semiring.Directed
     Data.Semiring.Tropical
     Data.Semiring.Generic
-
-  if impl(ghc < 8.6.1)
-    build-depends: template-haskell >= 2.4.0.0
 
   if flag(containers)
     build-depends: containers >= 0.5.4
