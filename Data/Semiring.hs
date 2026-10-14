@@ -1,6 +1,5 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
-{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -11,11 +10,7 @@
 {-# LANGUAGE Rank2Types                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
-#if MIN_VERSION_base(4,12,0)
 {-# LANGUAGE DerivingVia                #-}
-#else
-{-# LANGUAGE TemplateHaskell            #-}
-#endif
 
 -----------------------------------------------------------------------------
 -- |
@@ -101,7 +96,6 @@ import           Data.Set (Set)
 import qualified Data.Set as Set
 #endif
 import           Data.Traversable (Traversable)
-import           Data.Typeable (Typeable)
 import           Data.Word (Word, Word8, Word16, Word32, Word64)
 import           Foreign.C.Types
   (CChar, CClock, CDouble, CFloat, CInt,
@@ -178,10 +172,9 @@ infixr 8 ^
 
 -- | Raise a number to a non-negative integral power.
 -- If the power is negative, this will call 'error'.
-{-# SPECIALISE [1] (^) ::
-        Integer -> Integer -> Integer,
-        Integer -> Int -> Integer,
-        Int -> Int -> Int #-}
+{-# SPECIALISE [1] (^) :: Integer -> Integer -> Integer  #-}
+{-# SPECIALISE [1] (^) :: Integer -> Int -> Integer  #-}
+{-# SPECIALISE [1] (^) :: Int -> Int -> Int #-}
 {-# INLINABLE [1] (^) #-} -- See note [Inlining (^)]
 (^) :: (Semiring a, Integral b) => a -> b -> a
 x ^ y
@@ -309,7 +302,6 @@ newtype Add a = Add { getAdd :: a }
     , Show
     , Storable
     , Traversable
-    , Typeable
     )
 
 instance Semiring a => Semigroup (Add a) where
@@ -350,7 +342,6 @@ newtype Mul a = Mul { getMul :: a }
     , Show
     , Storable
     , Traversable
-    , Typeable
     )
 
 instance Semiring a => Semigroup (Mul a) where
@@ -396,7 +387,6 @@ newtype WrappedNum a = WrapNum { unwrapNum :: a }
     , Show
     , Storable
     , Traversable
-    , Typeable
     , Bits
     )
 
@@ -833,7 +823,6 @@ newtype IntSetOf a = IntSetOf { getIntSet :: IntSet }
     , Ord
     , Read
     , Show
-    , Typeable
     , Semigroup
     , Monoid
     )
@@ -890,7 +879,6 @@ newtype IntMapOf k v = IntMapOf { getIntMap :: IntMap v }
     , Ord
     , Read
     , Show
-    , Typeable
     , Semigroup
     , Monoid
     )

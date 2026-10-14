@@ -33,7 +33,6 @@ module Data.Semiring.Tropical
 import Data.Data (Data)
 import Data.Semiring (Semiring(..))
 import Data.Star (Star(..))
-import Data.Typeable (Typeable)
 
 -- done for haddocks, to make sure -Wall works
 import qualified Data.Monoid as Monoid
@@ -89,7 +88,6 @@ data Tropical (e :: Extrema) a
     ( Eq
     , Show
     , Read
-    , Typeable
     , Data
     )
 

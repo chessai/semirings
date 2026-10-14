@@ -20,8 +20,7 @@ module Data.Semiring.Directed
 import Data.Data (Data)
 import Data.Coerce (coerce)
 import Data.Semiring (Semiring(..))
-import Data.Semigroup (Min(Min), Max(Max), (<>))
-import Data.Typeable (Typeable)
+import Data.Semigroup (Min(Min), Max(Max))
 import GHC.Generics (Generic)
 
 -- | Wrapper for the semiring of upwards and downwards directed sets.
@@ -46,9 +45,7 @@ newtype Directed = Directed {
     -- | @since 0.7
     Read,
     -- | @since 0.7
-    Data,
-    -- | @since 0.7
-    Typeable
+    Data
     )
 
 -- | @since 0.7
