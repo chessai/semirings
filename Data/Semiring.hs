@@ -70,9 +70,7 @@ import           Data.Function ((.), const, id)
 import           Data.Function (flip)
 #endif
 import           Data.Functor (Functor(..))
-#if MIN_VERSION_base(4,12,0)
 import           Data.Functor.Contravariant (Predicate(..), Equivalence(..), Op(..))
-#endif
 import           Data.Functor.Identity (Identity(..))
 #if defined(VERSION_unordered_containers)
 import           Data.Hashable (Hashable)
@@ -83,9 +81,7 @@ import qualified Data.HashSet as HashSet
 #endif
 import           Data.Int (Int, Int8, Int16, Int32, Int64)
 import           Data.Maybe (Maybe(..))
-#if MIN_VERSION_base(4,12,0)
 import           Data.Monoid (Ap(..))
-#endif
 #if defined(VERSION_containers)
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
@@ -128,11 +124,6 @@ import qualified GHC.Real as Real
 import           GHC.Show (Show)
 import           Numeric.Natural (Natural)
 import           Prelude (Integer, Ordering(..), compare, even, quot)
-
-#if !MIN_VERSION_base(4,12,0)
-import           Language.Haskell.TH.Syntax (Q, Dec, Type)
-import qualified Prelude as P
-#endif
 
 #include "HsBaseConfig.h"
 import           System.Posix.Types (
@@ -748,7 +739,6 @@ instance Ring a => Ring (Complex a) where
   negate (x :+ y) = negate x :+ negate y
   {-# INLINE negate #-}
 
-#if MIN_VERSION_base(4,12,0)
 instance (Semiring a, Applicative f) => Semiring (Ap f a) where
   zero  = pure zero
   one   = pure one
@@ -764,16 +754,13 @@ instance (Semiring a, Applicative f) => Semiring (Ap f a) where
 instance (Ring a, Applicative f) => Ring (Ap f a) where
   negate = fmap negate
   {-# INLINE negate #-}
-#endif
 
-#if MIN_VERSION_base(4,12,0)
 deriving instance Semiring (Predicate a)
 
 deriving instance Semiring a => Semiring (Equivalence a)
 
 deriving instance Semiring a => Semiring (Op a b)
 deriving instance Ring a => Ring (Op a b)
-#endif
 
 instance Integral a => Semiring (Ratio a) where
   {-# SPECIALIZE instance Semiring Rational #-}
@@ -986,7 +973,6 @@ isOne :: (Eq a, Semiring a) => a -> Bool
 isOne x = x == one
 {-# INLINEABLE isOne #-}
 
-#if MIN_VERSION_base(4,12,0)
 deriving via (WrappedNum Int) instance Semiring Int
 deriving via (WrappedNum Int8) instance Semiring Int8
 deriving via (WrappedNum Int16) instance Semiring Int16
@@ -1070,112 +1056,7 @@ deriving via (WrappedNum CUid) instance Semiring CUid
 deriving via (WrappedNum Fd) instance Semiring Fd
 
 deriving via (WrappedNum Natural) instance Semiring Natural
-#else
--- Integral and fieldlike instances
-$(let
-  deriveSemiring :: Q Type -> Q [Dec]
-  deriveSemiring ty = [d|
-      instance Semiring $ty where
-         zero  = 0
-         one   = 1
-         plus  x y = (Num.+) x y
-         times x y = (Num.*) x y
-         fromNatural = Real.fromIntegral
-         {-# INLINE zero #-}
-         {-# INLINE one  #-}
-         {-# INLINE plus #-}
-         {-# INLINE times #-}
-         {-# INLINE fromNatural #-}
-      |]
 
-  in P.concat P.<$> P.traverse deriveSemiring
-   [[t|Int|]
-   ,[t|Int8|]
-   ,[t|Int16|]
-   ,[t|Int32|]
-   ,[t|Int64|]
-   ,[t|Integer|]
-   ,[t|Word|]
-   ,[t|Word8|]
-   ,[t|Word16|]
-   ,[t|Word32|]
-   ,[t|Word64|]
-   ,[t|Float|]
-   ,[t|Double|]
-   ,[t|CUIntMax|]
-   ,[t|CIntMax|]
-   ,[t|CUIntPtr|]
-   ,[t|CIntPtr|]
-   ,[t|CSUSeconds|]
-   ,[t|CUSeconds|]
-   ,[t|CTime|]
-   ,[t|CClock|]
-   ,[t|CSigAtomic|]
-   ,[t|CWchar|]
-   ,[t|CSize|]
-   ,[t|CPtrdiff|]
-   ,[t|CDouble|]
-   ,[t|CFloat|]
-   ,[t|CULLong|]
-   ,[t|CLLong|]
-   ,[t|CULong|]
-   ,[t|CLong|]
-   ,[t|CUInt|]
-   ,[t|CInt|]
-   ,[t|CUShort|]
-   ,[t|CShort|]
-   ,[t|CUChar|]
-   ,[t|CSChar|]
-   ,[t|CChar|]
-   ,[t|IntPtr|]
-   ,[t|WordPtr|]
-
-#ifdef HTYPE_CC_T
-   ,[t|CCc|]
-#endif
-#ifdef HTYPE_DEV_T
-   ,[t|CDev|]
-#endif
-#ifdef HTYPE_GID_T
-   ,[t|CGid|]
-#endif
-#ifdef HTYPE_INO_T
-   ,[t|CIno|]
-#endif
-#ifdef HTYPE_MODE_T
-   ,[t|CMode|]
-#endif
-#ifdef HTYPE_NLINK_T
-   ,[t|CNlink|]
-#endif
-#ifdef HTYPE_OFF_T
-   ,[t|COff|]
-#endif
-#ifdef HTYPE_PID_T
-   ,[t|CPid|]
-#endif
-#ifdef HTYPE_RLIM_T
-   ,[t|CRLim|]
-#endif
-#ifdef HTYPE_SPEED_T
-   ,[t|CSpeed|]
-#endif
-#ifdef HTYPE_SSIZE_T
-   ,[t|CSsize|]
-#endif
-#ifdef HTYPE_TCFLAG_T
-   ,[t|CTcflag|]
-#endif
-#ifdef HTYPE_UID_T
-   ,[t|CUid|]
-#endif
-   ,[t|Fd|]
-
-   ,[t|Natural|]
-   ])
-#endif
-
-#if MIN_VERSION_base(4,12,0)
 deriving via (WrappedNum Int) instance Ring Int
 deriving via (WrappedNum Int8) instance Ring Int8
 deriving via (WrappedNum Int16) instance Ring Int16
@@ -1257,96 +1138,3 @@ deriving via (WrappedNum CTcflag) instance Ring CTcflag
 deriving via (WrappedNum CUid) instance Ring CUid
 #endif
 deriving via (WrappedNum Fd) instance Ring Fd
-#else
-$(let
-  deriveRing :: Q Type -> Q [Dec]
-  deriveRing ty = [d|
-      instance Ring $ty where
-        negate = Num.negate
-        {-# INLINE negate #-}
-      |]
-
-  in P.concat P.<$> P.traverse deriveRing
-    [[t|Int|]
-    ,[t|Int8|]
-    ,[t|Int16|]
-    ,[t|Int32|]
-    ,[t|Int64|]
-    ,[t|Integer|]
-    ,[t|Word|]
-    ,[t|Word8|]
-    ,[t|Word16|]
-    ,[t|Word32|]
-    ,[t|Word64|]
-    ,[t|Float|]
-    ,[t|Double|]
-    ,[t|CUIntMax|]
-    ,[t|CIntMax|]
-    ,[t|CUIntPtr|]
-    ,[t|CIntPtr|]
-    ,[t|CSUSeconds|]
-    ,[t|CUSeconds|]
-    ,[t|CTime|]
-    ,[t|CClock|]
-    ,[t|CSigAtomic|]
-    ,[t|CWchar|]
-    ,[t|CSize|]
-    ,[t|CPtrdiff|]
-    ,[t|CDouble|]
-    ,[t|CFloat|]
-    ,[t|CULLong|]
-    ,[t|CLLong|]
-    ,[t|CULong|]
-    ,[t|CLong|]
-    ,[t|CUInt|]
-    ,[t|CInt|]
-    ,[t|CUShort|]
-    ,[t|CShort|]
-    ,[t|CUChar|]
-    ,[t|CSChar|]
-    ,[t|CChar|]
-    ,[t|IntPtr|]
-    ,[t|WordPtr|]
-
-#ifdef HTYPE_CC_T
-    ,[t|CCc|]
-#endif
-#ifdef HTYPE_DEV_T
-    ,[t|CDev|]
-#endif
-#ifdef HTYPE_GID_T
-    ,[t|CGid|]
-#endif
-#ifdef HTYPE_INO_T
-    ,[t|CIno|]
-#endif
-#ifdef HTYPE_MODE_T
-    ,[t|CMode|]
-#endif
-#ifdef HTYPE_NLINK_T
-    ,[t|CNlink|]
-#endif
-#ifdef HTYPE_OFF_T
-    ,[t|COff|]
-#endif
-#ifdef HTYPE_PID_T
-    ,[t|CPid|]
-#endif
-#ifdef HTYPE_RLIM_T
-    ,[t|CRLim|]
-#endif
-#ifdef HTYPE_SPEED_T
-    ,[t|CSpeed|]
-#endif
-#ifdef HTYPE_SSIZE_T
-    ,[t|CSsize|]
-#endif
-#ifdef HTYPE_TCFLAG_T
-    ,[t|CTcflag|]
-#endif
-#ifdef HTYPE_UID_T
-    ,[t|CUid|]
-#endif
-    ,[t|Fd|]
-    ])
-#endif
